@@ -35,10 +35,11 @@ export class Intersection {
       greenTimeNS: 30,
       greenTimeEW: 25,
       yellowTime: 3,
+      redTime: 3,
       offset: 0,
       ...config
     };
-    this.totalCycle = this.config.greenTimeNS + this.config.greenTimeEW + 2 * this.config.yellowTime;
+    this.totalCycle = this.config.greenTimeNS + this.config.greenTimeEW + 2 * this.config.yellowTime + 2 * this.config.redTime;
     this.phaseTimer = this.config.offset;
     this._applyOffset();
   }
@@ -54,14 +55,22 @@ export class Intersection {
       this.currentPhase = SignalPhase.YELLOW;
       this.phaseDirection = Direction.NORTH;
       this.phaseTimer = remainingOffset - this.config.greenTimeNS;
-    } else if (remainingOffset < this.config.greenTimeNS + this.config.yellowTime + this.config.greenTimeEW) {
-      this.currentPhase = SignalPhase.GREEN;
+    } else if (remainingOffset < this.config.greenTimeNS + this.config.yellowTime + this.config.redTime) {
+      this.currentPhase = SignalPhase.RED;
       this.phaseDirection = Direction.EAST;
       this.phaseTimer = remainingOffset - this.config.greenTimeNS - this.config.yellowTime;
-    } else {
+    } else if (remainingOffset < this.config.greenTimeNS + this.config.yellowTime + this.config.redTime + this.config.greenTimeEW) {
+      this.currentPhase = SignalPhase.GREEN;
+      this.phaseDirection = Direction.EAST;
+      this.phaseTimer = remainingOffset - this.config.greenTimeNS - this.config.yellowTime - this.config.redTime;
+    } else if (remainingOffset < this.config.greenTimeNS + this.config.yellowTime + this.config.redTime + this.config.greenTimeEW + this.config.yellowTime) {
       this.currentPhase = SignalPhase.YELLOW;
       this.phaseDirection = Direction.EAST;
-      this.phaseTimer = remainingOffset - this.config.greenTimeNS - this.config.yellowTime - this.config.greenTimeEW;
+      this.phaseTimer = remainingOffset - this.config.greenTimeNS - this.config.yellowTime - this.config.redTime - this.config.greenTimeEW;
+    } else {
+      this.currentPhase = SignalPhase.RED;
+      this.phaseDirection = Direction.NORTH;
+      this.phaseTimer = remainingOffset - this.config.greenTimeNS - this.config.yellowTime - this.config.redTime - this.config.greenTimeEW - this.config.yellowTime;
     }
   }
 
@@ -82,8 +91,13 @@ export class Intersection {
       } else if (this.currentPhase === SignalPhase.YELLOW) {
         if (this.phaseTimer >= this.config.yellowTime) {
           this.phaseDirection = Direction.EAST;
-          this.currentPhase = SignalPhase.GREEN;
+          this.currentPhase = SignalPhase.RED;
           this.phaseTimer = this.phaseTimer - this.config.yellowTime;
+        }
+      } else if (this.currentPhase === SignalPhase.RED) {
+        if (this.phaseTimer >= this.config.redTime) {
+          this.currentPhase = SignalPhase.GREEN;
+          this.phaseTimer = this.phaseTimer - this.config.redTime;
         }
       }
     } else {
@@ -95,8 +109,13 @@ export class Intersection {
       } else if (this.currentPhase === SignalPhase.YELLOW) {
         if (this.phaseTimer >= this.config.yellowTime) {
           this.phaseDirection = Direction.NORTH;
-          this.currentPhase = SignalPhase.GREEN;
+          this.currentPhase = SignalPhase.RED;
           this.phaseTimer = this.phaseTimer - this.config.yellowTime;
+        }
+      } else if (this.currentPhase === SignalPhase.RED) {
+        if (this.phaseTimer >= this.config.redTime) {
+          this.currentPhase = SignalPhase.GREEN;
+          this.phaseTimer = this.phaseTimer - this.config.redTime;
         }
       }
     }

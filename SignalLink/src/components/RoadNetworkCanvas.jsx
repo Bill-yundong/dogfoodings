@@ -15,6 +15,8 @@ const PHASE_COLORS = {
 
 export function RoadNetworkCanvas({ 
   simulation, 
+  timeStep = 0,
+  intersectionCount = 0,
   width = 800, 
   height = 600,
   cellSize = CELL_SIZE 
@@ -32,15 +34,20 @@ export function RoadNetworkCanvas({
     drawGrid(ctx, simulation, cellSize);
     drawVehicles(ctx, simulation, cellSize);
     drawIntersections(ctx, simulation, cellSize);
-  }, [simulation, width, height, cellSize]);
+  }, [simulation, timeStep, intersectionCount, width, height, cellSize]);
 
   function drawRoads(ctx, w, h, cs) {
-    const midX = Math.floor(w / 2);
     const midY = Math.floor(h / 2);
     
     ctx.fillStyle = ROAD_COLOR;
     ctx.fillRect(0, midY - cs * 2, w, cs * 4);
-    ctx.fillRect(midX - cs * 2, 0, cs * 4, h);
+
+    const intersections = simulation?.getIntersectionStates?.() || {};
+    for (const id in intersections) {
+      const int = intersections[id];
+      const x = int.x * cs;
+      ctx.fillRect(x - cs * 2, 0, cs * 4, h);
+    }
 
     ctx.strokeStyle = LANE_LINE_COLOR;
     ctx.lineWidth = 1;
@@ -51,10 +58,14 @@ export function RoadNetworkCanvas({
     ctx.lineTo(w, midY);
     ctx.stroke();
     
-    ctx.beginPath();
-    ctx.moveTo(midX, 0);
-    ctx.lineTo(midX, h);
-    ctx.stroke();
+    for (const id in intersections) {
+      const int = intersections[id];
+      const x = int.x * cs + cs / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
     
     ctx.setLineDash([]);
   }
@@ -122,11 +133,16 @@ export function RoadNetworkCanvas({
       ctx.textBaseline = 'middle';
       ctx.fillText(int.direction[0].toUpperCase(), centerX, centerY);
       
-      const progress = int.timer / int.config[
-        int.phase === SignalPhase.GREEN 
-          ? (int.direction === 'north' ? 'greenTimeNS' : 'greenTimeEW')
-          : 'yellowTime'
-      ] || 0;
+      let progress = 0;
+      if (int.phase === SignalPhase.GREEN) {
+        const maxTime = int.direction === 'north' ? int.config.greenTimeNS : int.config.greenTimeEW;
+        progress = int.timer / maxTime;
+      } else if (int.phase === SignalPhase.YELLOW) {
+        progress = int.timer / int.config.yellowTime;
+      } else if (int.phase === SignalPhase.RED) {
+        progress = int.timer / int.config.redTime;
+      }
+      progress = progress || 0;
       
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius + 3, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);

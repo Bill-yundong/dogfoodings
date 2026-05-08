@@ -104,7 +104,10 @@ function App() {
   const handleIntersectionCountChange = useCallback((count) => {
     setSelectedIntersectionCount(count);
     setIntersectionCount(count);
-  }, [setIntersectionCount]);
+    resetSimulation(timeSlot, count);
+    initializeCoordination(timeSlot, count);
+    clearAlignmentStatus();
+  }, [setIntersectionCount, resetSimulation, initializeCoordination, clearAlignmentStatus, timeSlot]);
 
   const handleSyncDevices = useCallback(() => {
     syncDevices();
@@ -208,6 +211,8 @@ function App() {
             <h3>路网仿真 ({selectedIntersectionCount}个路口线性路网)</h3>
             <RoadNetworkCanvas
               simulation={simulationRef.current}
+              timeStep={timeStep}
+              intersectionCount={intersectionCount}
               width={CANVAS_WIDTH}
               height={CANVAS_HEIGHT}
               cellSize={CELL_SIZE}

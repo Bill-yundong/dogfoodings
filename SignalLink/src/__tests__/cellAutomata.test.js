@@ -49,11 +49,12 @@ describe('Intersection 类测试', () => {
       expect(intersection.phaseDirection).toBe(Direction.NORTH);
     });
 
-    test('应该从绿灯NS开始，然后切换到黄灯，再切换到绿灯EW', () => {
+    test('应该从绿灯NS开始，然后切换到黄灯，再切换到红灯，最后切换到绿灯EW', () => {
       const intersection = new Intersection('int_1', 50, 30, {
         greenTimeNS: 10,
         greenTimeEW: 8,
         yellowTime: 2,
+        redTime: 2,
         offset: 0
       });
 
@@ -65,6 +66,12 @@ describe('Intersection 类测试', () => {
       }
       expect(intersection.currentPhase).toBe(SignalPhase.YELLOW);
       expect(intersection.phaseDirection).toBe(Direction.NORTH);
+
+      for (let i = 0; i < 2; i++) {
+        intersection.update(1);
+      }
+      expect(intersection.currentPhase).toBe(SignalPhase.RED);
+      expect(intersection.phaseDirection).toBe(Direction.EAST);
 
       for (let i = 0; i < 3; i++) {
         intersection.update(1);
@@ -78,10 +85,11 @@ describe('Intersection 类测试', () => {
         greenTimeNS: 10,
         greenTimeEW: 8,
         yellowTime: 2,
+        redTime: 2,
         offset: 0
       });
 
-      const totalCycle = 10 + 2 + 8 + 2;
+      const totalCycle = 10 + 2 + 2 + 8 + 2 + 2;
 
       for (let i = 0; i < totalCycle; i++) {
         intersection.update(1);
@@ -148,11 +156,12 @@ describe('Intersection 类测试', () => {
     });
 
     test('offset 应该模运算处理', () => {
-      const totalCycle = 30 + 25 + 3 + 3;
+      const totalCycle = 30 + 25 + 3 + 3 + 3 + 3;
       const intersection = new Intersection('int_1', 50, 30, {
         greenTimeNS: 30,
         greenTimeEW: 25,
         yellowTime: 3,
+        redTime: 3,
         offset: totalCycle + 15
       });
 
@@ -182,11 +191,13 @@ describe('Intersection 类测试', () => {
         greenTimeNS: 10,
         greenTimeEW: 8,
         yellowTime: 2,
+        redTime: 2,
         offset: 0
       });
 
       intersection.update(11);
       intersection.update(2);
+      intersection.update(3);
 
       expect(intersection.canPass(Direction.EAST)).toBe(true);
       expect(intersection.canPass(Direction.WEST)).toBe(true);

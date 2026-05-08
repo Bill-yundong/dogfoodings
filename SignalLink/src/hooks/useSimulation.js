@@ -186,7 +186,9 @@ export function useSimulation() {
     for (const intersection of simulationRef.current.intersections.values()) {
       intersection.config.greenTimeNS = config.greenTimeNS;
       intersection.config.greenTimeEW = config.greenTimeEW;
-      intersection.totalCycle = config.greenTimeNS + config.greenTimeEW + 6;
+      const yellowTime = intersection.config.yellowTime || 3;
+      const redTime = intersection.config.redTime || 3;
+      intersection.totalCycle = config.greenTimeNS + config.greenTimeEW + 2 * yellowTime + 2 * redTime;
     }
   }, [getTimeSlotConfig]);
 
