@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Direction, TimeSlot } from './types';
-import { CellularAutomata } from './simulation/cellAutomata';
-import { trafficSystem } from './coordination/greenWave';
-import { database } from './services/database';
+import { useEffect, useCallback } from 'react';
+import { useSimulation } from './hooks/useSimulation';
+import { useGreenWaveCoordination } from './hooks/useGreenWaveCoordination';
+import { useDeviceSync } from './hooks/useDeviceSync';
 import { RoadNetworkCanvas } from './components/RoadNetworkCanvas';
 import { ControlPanel } from './components/ControlPanel';
 import { StatsPanel } from './components/StatsPanel';
@@ -14,232 +13,75 @@ const CANVAS_HEIGHT = 600;
 const CELL_SIZE = 5;
 
 function App() {
-  const simulationRef = useRef(null);
-  const animationRef = useRef(null);
-  const lastUpdateRef = useRef(Date.now());
+  const {
+    simulationRef,
+    isRunning,
+    simulationSpeed,
+    vehicleSpawnRate,
+    stats,
+    timeStep,
+    initialized,
+    setSimulationSpeed,
+    setVehicleSpawnRate,
+    initializeSimulation,
+    simulationLoop,
+    toggleRunning,
+    resetSimulation,
+    updateIntersectionConfigs
+  } = useSimulation();
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [timeSlot, setTimeSlot] = useState(TimeSlot.MIDDAY);
-  const [simulationSpeed, setSimulationSpeed] = useState(2);
-  const [vehicleSpawnRate, setVehicleSpawnRate] = useState(15);
-  const [stats, setStats] = useState({});
-  const [timeStep, setTimeStep] = useState(0);
-  const [alignmentStatus, setAlignmentStatus] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+  const {
+    timeSlot,
+    initializeCoordination,
+    changeTimeSlot
+  } = useGreenWaveCoordination();
 
-  const initializeSimulation = useCallback(() => {
-    const sim = new CellularAutomata(CANVAS_WIDTH, CANVAS_HEIGHT, CELL_SIZE);
-    
-    const centerX = Math.floor(CANVAS_WIDTH / CELL_SIZE / 2);
-    const centerY = Math.floor(CANVAS_HEIGHT / CELL_SIZE / 2);
-    
-    sim.addIntersection('int_1', centerX, centerY, {
-      greenTimeNS: 30,
-      greenTimeEW: 25,
-      yellowTime: 3
-    });
-    
-    simulationRef.current = sim;
-    
-    trafficSystem.reset();
-    trafficSystem.addRoadsideDevice('device_1', 'int_1', { x: centerX, y: centerY });
-    
-    const plan = trafficSystem.createGreenWavePlan(
-      'green_wave_default',
-      [{
-        intersectionId: 'int_1',
-        greenTimeNS: 30,
-        greenTimeEW: 25
-      }],
-      timeSlot
-    );
-    
-    trafficSystem.activatePlan(plan.id);
-    trafficSystem.syncDevices();
-    
-    setInitialized(true);
-  }, [timeSlot]);
+  const {
+    alignmentStatus,
+    syncDevices,
+    checkAlignments,
+    clearAlignmentStatus
+  } = useDeviceSync();
 
-  const spawnVehicles = useCallback(() => {
-    if (!simulationRef.current) return;
-    
-    const sim = simulationRef.current;
-    const gridW = sim.gridWidth;
-    const gridH = sim.gridHeight;
-    
-    if (Math.random() < vehicleSpawnRate / 100) {
-      const directions = [Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST];
-      const dir = directions[Math.floor(Math.random() * directions.length)];
-      
-      let x, y;
-      switch (dir) {
-        case Direction.NORTH:
-          x = Math.floor(gridW / 2) + (Math.random() > 0.5 ? 1 : -1);
-          y = gridH - 2;
-          break;
-        case Direction.SOUTH:
-          x = Math.floor(gridW / 2) + (Math.random() > 0.5 ? 1 : -1);
-          y = 1;
-          break;
-        case Direction.EAST:
-          x = 1;
-          y = Math.floor(gridH / 2) + (Math.random() > 0.5 ? 1 : -1);
-          break;
-        case Direction.WEST:
-          x = gridW - 2;
-          y = Math.floor(gridH / 2) + (Math.random() > 0.5 ? 1 : -1);
-          break;
-      }
-      
-      sim.addVehicle(x, y, dir);
-    }
-  }, [vehicleSpawnRate]);
-
-  const simulationLoop = useCallback(() => {
-    if (!isRunning || !simulationRef.current) return;
-
-    const now = Date.now();
-    const delta = now - lastUpdateRef.current;
-    const updateInterval = 1000 / simulationSpeed;
-
-    if (delta >= updateInterval) {
-      spawnVehicles();
-      
-      const newStats = simulationRef.current.step();
-      setStats({
-        ...newStats,
-        vehiclesInNetwork: simulationRef.current.vehicles.length
-      });
-      setTimeStep(simulationRef.current.timeStep);
-      
-      lastUpdateRef.current = now;
-      
-      if (simulationRef.current.timeStep % 100 === 0) {
-        database.saveSimulationResult({
-          timeStep: simulationRef.current.timeStep,
-          stats: newStats,
-          timeSlot
-        });
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(simulationLoop);
-  }, [isRunning, simulationSpeed, spawnVehicles, timeSlot]);
+  const initializeSystem = useCallback(() => {
+    initializeSimulation(timeSlot);
+    initializeCoordination(timeSlot);
+  }, [initializeSimulation, initializeCoordination, timeSlot]);
 
   useEffect(() => {
     if (!initialized) {
-      initializeSimulation();
+      initializeSystem();
     }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      trafficSystem.stopAutoSync();
-    };
-  }, [initialized, initializeSimulation]);
+  }, [initialized, initializeSystem]);
 
   useEffect(() => {
     if (isRunning) {
-      lastUpdateRef.current = Date.now();
-      animationRef.current = requestAnimationFrame(simulationLoop);
-    } else if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+      simulationLoop(timeSlot);
     }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isRunning, simulationLoop]);
+  }, [isRunning, simulationLoop, timeSlot]);
 
-  const handleToggleRunning = () => {
-    setIsRunning(!isRunning);
-  };
+  const handleToggleRunning = useCallback(() => {
+    toggleRunning();
+  }, [toggleRunning]);
 
-  const handleReset = () => {
-    setIsRunning(false);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    initializeSimulation();
-    setTimeStep(0);
-    setStats({});
-    setAlignmentStatus(null);
-  };
+  const handleReset = useCallback(() => {
+    resetSimulation(timeSlot);
+    initializeCoordination(timeSlot);
+    clearAlignmentStatus();
+  }, [resetSimulation, initializeCoordination, timeSlot, clearAlignmentStatus]);
 
-  const handleTimeSlotChange = (newTimeSlot) => {
-    setTimeSlot(newTimeSlot);
-    
-    if (simulationRef.current) {
-      for (const intersection of simulationRef.current.intersections.values()) {
-        const configs = {
-          [TimeSlot.MORNING_PEAK]: { greenTimeNS: 35, greenTimeEW: 20 },
-          [TimeSlot.MIDDAY]: { greenTimeNS: 30, greenTimeEW: 25 },
-          [TimeSlot.EVENING_PEAK]: { greenTimeNS: 20, greenTimeEW: 35 },
-          [TimeSlot.NIGHT]: { greenTimeNS: 25, greenTimeEW: 25 }
-        };
-        const config = configs[newTimeSlot];
-        intersection.config.greenTimeNS = config.greenTimeNS;
-        intersection.config.greenTimeEW = config.greenTimeEW;
-        intersection.totalCycle = config.greenTimeNS + config.greenTimeEW + 6;
-      }
-    }
-    
-    const plan = trafficSystem.createGreenWavePlan(
-      `green_wave_${newTimeSlot}`,
-      [{
-        intersectionId: 'int_1',
-        greenTimeNS: newTimeSlot === TimeSlot.EVENING_PEAK ? 20 : newTimeSlot === TimeSlot.MORNING_PEAK ? 35 : 30,
-        greenTimeEW: newTimeSlot === TimeSlot.MORNING_PEAK ? 20 : newTimeSlot === TimeSlot.EVENING_PEAK ? 35 : 25
-      }],
-      newTimeSlot
-    );
-    trafficSystem.activatePlan(plan.id);
-    trafficSystem.syncDevices();
-  };
+  const handleTimeSlotChange = useCallback((newTimeSlot) => {
+    changeTimeSlot(newTimeSlot);
+    updateIntersectionConfigs(newTimeSlot);
+  }, [changeTimeSlot, updateIntersectionConfigs]);
 
-  const handleSyncDevices = () => {
-    const results = trafficSystem.syncDevices();
-    console.log('同步设备结果:', results);
-    
-    const alignments = trafficSystem.getAllAlignments();
-    let allAligned = true;
-    let totalDevices = 0;
-    
-    for (const deviceId in alignments) {
-      totalDevices++;
-      if (!alignments[deviceId].isAligned) {
-        allAligned = false;
-      }
-      trafficSystem.saveAlignmentLog(deviceId, alignments[deviceId]);
-    }
-    
-    setAlignmentStatus({
-      allAligned,
-      totalDevices
-    });
-  };
+  const handleSyncDevices = useCallback(() => {
+    syncDevices();
+  }, [syncDevices]);
 
-  const handleAlignDevices = () => {
-    const alignments = trafficSystem.getAllAlignments();
-    let allAligned = true;
-    let totalDevices = 0;
-    
-    for (const deviceId in alignments) {
-      totalDevices++;
-      if (!alignments[deviceId].isAligned) {
-        allAligned = false;
-      }
-      trafficSystem.saveAlignmentLog(deviceId, alignments[deviceId]);
-    }
-    
-    setAlignmentStatus({
-      allAligned,
-      totalDevices
-    });
-  };
+  const handleAlignDevices = useCallback(() => {
+    checkAlignments();
+  }, [checkAlignments]);
 
   return (
     <div className="app-container">
