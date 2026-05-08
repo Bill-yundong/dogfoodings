@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useSimulation } from './hooks/useSimulation';
 import { useGreenWaveCoordination } from './hooks/useGreenWaveCoordination';
 import { useDeviceSync } from './hooks/useDeviceSync';
@@ -11,6 +11,7 @@ import './App.css';
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const CELL_SIZE = 5;
+const INTERSECTION_COUNT = 4;
 
 function App() {
   const {
@@ -21,19 +22,25 @@ function App() {
     stats,
     timeStep,
     initialized,
+    intersectionCount,
     setSimulationSpeed,
     setVehicleSpawnRate,
+    setIntersectionCount,
     initializeSimulation,
     simulationLoop,
     toggleRunning,
     resetSimulation,
-    updateIntersectionConfigs
+    updateIntersectionConfigs,
+    applyGreenWaveOffsets
   } = useSimulation();
 
   const {
     timeSlot,
+    activePlan,
     initializeCoordination,
-    changeTimeSlot
+    changeTimeSlot,
+    calculateGreenWaveOffsets,
+    trafficSystem
   } = useGreenWaveCoordination();
 
   const {
@@ -43,16 +50,31 @@ function App() {
     clearAlignmentStatus
   } = useDeviceSync();
 
+  const [selectedIntersectionCount, setSelectedIntersectionCount] = useState(INTERSECTION_COUNT);
+
   const initializeSystem = useCallback(() => {
-    initializeSimulation(timeSlot);
-    initializeCoordination(timeSlot);
-  }, [initializeSimulation, initializeCoordination, timeSlot]);
+    initializeSimulation(timeSlot, selectedIntersectionCount);
+    initializeCoordination(timeSlot, selectedIntersectionCount);
+  }, [initializeSimulation, initializeCoordination, timeSlot, selectedIntersectionCount]);
+
+  const applyGreenWaveToSimulation = useCallback(() => {
+    if (!activePlan) return;
+    
+    const offsets = calculateGreenWaveOffsets(activePlan, selectedIntersectionCount);
+    applyGreenWaveOffsets(offsets);
+  }, [activePlan, calculateGreenWaveOffsets, applyGreenWaveOffsets, selectedIntersectionCount]);
 
   useEffect(() => {
     if (!initialized) {
       initializeSystem();
     }
   }, [initialized, initializeSystem]);
+
+  useEffect(() => {
+    if (initialized && activePlan) {
+      applyGreenWaveToSimulation();
+    }
+  }, [initialized, activePlan, applyGreenWaveToSimulation]);
 
   useEffect(() => {
     if (isRunning) {
@@ -65,19 +87,29 @@ function App() {
   }, [toggleRunning]);
 
   const handleReset = useCallback(() => {
-    resetSimulation(timeSlot);
-    initializeCoordination(timeSlot);
+    resetSimulation(timeSlot, selectedIntersectionCount);
+    initializeCoordination(timeSlot, selectedIntersectionCount);
     clearAlignmentStatus();
-  }, [resetSimulation, initializeCoordination, timeSlot, clearAlignmentStatus]);
+  }, [resetSimulation, initializeCoordination, timeSlot, selectedIntersectionCount, clearAlignmentStatus]);
 
   const handleTimeSlotChange = useCallback((newTimeSlot) => {
-    changeTimeSlot(newTimeSlot);
+    const { plan, offsets } = changeTimeSlot(newTimeSlot, selectedIntersectionCount);
     updateIntersectionConfigs(newTimeSlot);
-  }, [changeTimeSlot, updateIntersectionConfigs]);
+    
+    if (offsets && offsets.length > 0) {
+      applyGreenWaveOffsets(offsets);
+    }
+  }, [changeTimeSlot, updateIntersectionConfigs, applyGreenWaveOffsets, selectedIntersectionCount]);
+
+  const handleIntersectionCountChange = useCallback((count) => {
+    setSelectedIntersectionCount(count);
+    setIntersectionCount(count);
+  }, [setIntersectionCount]);
 
   const handleSyncDevices = useCallback(() => {
     syncDevices();
-  }, [syncDevices]);
+    applyGreenWaveToSimulation();
+  }, [syncDevices, applyGreenWaveToSimulation]);
 
   const handleAlignDevices = useCallback(() => {
     checkAlignments();
@@ -87,7 +119,9 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <h1>SignalLink - 路网信控协同底座</h1>
-        <p className="subtitle">绿波方案动态对齐 · 元胞自动机微观仿真 · IndexedDB 分时段日志存储</p>
+        <p className="subtitle">
+          {selectedIntersectionCount}个路口线性路网 · 绿波方案动态对齐 · 元胞自动机微观仿真 · IndexedDB 分时段日志存储
+        </p>
       </header>
 
       <main className="main-content">
@@ -106,11 +140,72 @@ function App() {
             onAlignDevices={handleAlignDevices}
             alignmentStatus={alignmentStatus}
           />
+          
+          <div className="extra-controls" style={{
+            marginTop: '16px',
+            padding: '16px',
+            backgroundColor: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>路口数量设置</h4>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[2, 3, 4, 5].map((count) => (
+                <button
+                  key={count}
+                  onClick={() => handleIntersectionCountChange(count)}
+                  style={{
+                    padding: '8px 16px',
+                    border: '2px solid #ddd',
+                    borderRadius: '6px',
+                    backgroundColor: selectedIntersectionCount === count ? '#667eea' : '#fff',
+                    color: selectedIntersectionCount === count ? '#fff' : '#333',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px'
+                  }}
+                >
+                  {count}个路口
+                </button>
+              ))}
+            </div>
+            <p style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+              更改路口数量后需要点击"重置"按钮生效
+            </p>
+          </div>
+          
+          {activePlan && (
+            <div className="green-wave-info" style={{
+              marginTop: '16px',
+              padding: '16px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>绿波方案信息</h4>
+              <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
+                <p><strong>方案ID:</strong> {activePlan.id}</p>
+                <p><strong>周期长度:</strong> {activePlan.cycleLength} 步</p>
+                <p><strong>路口数量:</strong> {activePlan.intersections?.length || 0}</p>
+                <p><strong>优先方向:</strong> {activePlan.priorityDirection}</p>
+                <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                  <strong>绿波偏移量:</strong>
+                  <div style={{ marginTop: '6px', fontSize: '12px' }}>
+                    {activePlan.intersections?.map((int, index) => (
+                      <div key={index}>
+                        路口{index + 1}: {int.offset?.toFixed(1) || 0} 步
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="center-panel">
           <div className="canvas-container">
-            <h3>路网仿真</h3>
+            <h3>路网仿真 ({selectedIntersectionCount}个路口线性路网)</h3>
             <RoadNetworkCanvas
               simulation={simulationRef.current}
               width={CANVAS_WIDTH}
@@ -137,7 +232,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>基于 React + 异步元胞自动机 + IndexedDB 构建的路网信控协同系统</p>
+        <p>基于 React + 异步元胞自动机 + IndexedDB 构建的多路口绿波协同系统</p>
       </footer>
     </div>
   );
