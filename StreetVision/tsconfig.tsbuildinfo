@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/trafficassessmentmodule.tsx","./src/components/urbandesignmodule.tsx","./src/components/visibilitycanvas.tsx","./src/context/visibilitysynccontext.tsx","./src/data/mockdata.ts","./src/lib/geometricprojection.ts","./src/lib/roadnetworkcache.ts","./src/types/index.ts"],"version":"5.9.3"}
