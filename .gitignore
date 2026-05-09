@@ -4,6 +4,7 @@ Thumbs.db
 
 # 忽略所有前端缓存和依赖
 node_modules/
+.next/
 .vite/
 .turbo/
 dist/
