@@ -197,7 +197,7 @@ const MonitorDashboard = () => {
   const statusTag = getStatusTag(overallStatus);
 
   return (
-    <div style={{ padding: '16px', height: '100%', overflow: 'auto' }}>
+    <div style={{ padding: '16px' }}>
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Card 
@@ -206,7 +206,7 @@ const MonitorDashboard = () => {
               border: `2px solid ${getStatusColor(overallStatus)}`,
               borderRadius: 8
             }}
-            bodyStyle={{ padding: '16px' }}
+            styles={{ body: { padding: '16px' } }}
           >
             <Row align="middle" justify="space-between">
               <Col>
@@ -240,7 +240,7 @@ const MonitorDashboard = () => {
         <Col span={6}>
           <Card 
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#ff4d4f' }}
-            bodyStyle={{ padding: '12px' }}
+            styles={{ body: { padding: '12px' } }}
           >
             <Meta 
               avatar={<FireOutlined style={{ fontSize: 32, color: '#ff4d4f' }} />}
@@ -259,7 +259,7 @@ const MonitorDashboard = () => {
         <Col span={6}>
           <Card 
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#1890ff' }}
-            bodyStyle={{ padding: '12px' }}
+            styles={{ body: { padding: '12px' } }}
           >
             <Meta 
               avatar={<CloudOutlined style={{ fontSize: 32, color: '#1890ff' }} />}
@@ -278,7 +278,7 @@ const MonitorDashboard = () => {
         <Col span={6}>
           <Card 
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#faad14' }}
-            bodyStyle={{ padding: '12px' }}
+            styles={{ body: { padding: '12px' } }}
           >
             <Meta 
               avatar={<ThunderboltOutlined style={{ fontSize: 32, color: '#faad14' }} />}
@@ -296,7 +296,7 @@ const MonitorDashboard = () => {
         <Col span={6}>
           <Card 
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#52c41a' }}
-            bodyStyle={{ padding: '12px' }}
+            styles={{ body: { padding: '12px' } }}
           >
             <Meta 
               avatar={<BulbOutlined style={{ fontSize: 32, color: '#52c41a' }} />}
@@ -390,7 +390,7 @@ const MonitorDashboard = () => {
                     borderColor: getStatusColor(zoneInfo?.status || 'safe'),
                     borderWidth: 2
                   }}
-                  bodyStyle={{ padding: '8px' }}
+                  styles={{ body: { padding: '8px' } }}
                 >
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ 

@@ -303,14 +303,14 @@ const FireControlSystem = () => {
   ];
 
   return (
-    <div style={{ padding: '16px', height: '100%', overflow: 'auto' }}>
+    <div style={{ padding: '16px' }}>
       <Card 
         style={{ 
           background: 'rgba(0,21,41,0.95)',
           borderColor: '#333',
           marginBottom: 16
         }}
-        bodyStyle={{ padding: '16px' }}
+        styles={{ body: { padding: '16px' } }}
       >
         <Row align="middle" justify="space-between">
           <Col>
@@ -544,7 +544,7 @@ const FireControlSystem = () => {
           <Card 
             title={<span style={{ color: '#fff' }}>事件日志</span>}
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333' }}
-            bodyStyle={{ padding: '8px' }}
+            styles={{ body: { padding: '8px' } }}
           >
             <Table
               columns={logColumns}

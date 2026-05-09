@@ -150,13 +150,11 @@ const App = () => {
           </div>
         </Header>
 
-        <Content style={{ padding: 0, height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+        <Content style={{ padding: 0, minHeight: 'calc(100vh - 64px)', overflow: 'auto' }}>
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
             items={tabItems}
-            style={{ height: '100%' }}
-            itemsStyle={{ height: '100%', overflow: 'auto' }}
             type="card"
             size="large"
           />
