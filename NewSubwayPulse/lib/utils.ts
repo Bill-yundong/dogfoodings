@@ -3,15 +3,15 @@ import type { CongestionLevel } from '@/types'
 export function getCongestionColor(level: CongestionLevel): string {
   switch (level) {
     case 'low':
-      return 'bg-green-500'
+      return 'bg-green-600'
     case 'medium':
-      return 'bg-yellow-500'
+      return 'bg-yellow-600'
     case 'high':
-      return 'bg-orange-500'
+      return 'bg-orange-600'
     case 'critical':
       return 'bg-red-600'
     default:
-      return 'bg-gray-500'
+      return 'bg-gray-600'
   }
 }
 
