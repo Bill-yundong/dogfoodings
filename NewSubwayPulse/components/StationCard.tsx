@@ -1,7 +1,7 @@
 'use client'
 
 import type { Station, PassengerFlow, CapacityPrediction } from '@/types'
-import { getCongestionColor, getCongestionLabel, getCongestionTextColor, formatNumber, formatPercentage } from '@/lib/utils'
+import { getCongestionColor, getCongestionBadgeColor, getCongestionLabel, getCongestionTextColor, formatNumber, formatPercentage } from '@/lib/utils'
 
 interface StationCardProps {
   station: Station
@@ -45,7 +45,7 @@ export function StationCard({ station, flow, predictions, onSelect, isSelected }
           <h3 className="font-semibold text-gray-800 text-lg">{station.name}</h3>
           <p className="text-xs text-gray-500 mt-0.5">最大容量: {formatNumber(station.maxCapacity)}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium text-white ${getCongestionColor(flow.congestionLevel)}`}>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCongestionBadgeColor(flow.congestionLevel)}`}>
           {getCongestionLabel(flow.congestionLevel)}
         </span>
       </div>

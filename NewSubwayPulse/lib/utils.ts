@@ -15,6 +15,21 @@ export function getCongestionColor(level: CongestionLevel): string {
   }
 }
 
+export function getCongestionBadgeColor(level: CongestionLevel): string {
+  switch (level) {
+    case 'low':
+      return 'bg-green-600 text-white'
+    case 'medium':
+      return 'bg-yellow-700 text-white'
+    case 'high':
+      return 'bg-orange-700 text-white'
+    case 'critical':
+      return 'bg-red-700 text-white'
+    default:
+      return 'bg-gray-600 text-white'
+  }
+}
+
 export function getCongestionTextColor(level: CongestionLevel): string {
   switch (level) {
     case 'low':
