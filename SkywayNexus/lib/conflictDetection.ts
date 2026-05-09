@@ -130,7 +130,7 @@ export class ConflictDetectionEngine {
 
     for (const state of flightStates) {
       const plan = this.flightPlans.get(state.flightPlanId);
-      const route = plan ? this.flightRoutes.get(plan.routeId) : null;
+      const route = plan ? this.flightRoutes.get(plan.routeId) : undefined;
 
       const positions = this.generatePredictedPositions(
         state,

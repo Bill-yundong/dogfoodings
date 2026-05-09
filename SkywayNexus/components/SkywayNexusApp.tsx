@@ -319,71 +319,75 @@ export default function SkywayNexusApp() {
           selectedFlightPlanId={selectedFlightPlanId}
           onFlightSelect={setSelectedFlightPlanId}
         />
-        <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-xs">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            图例
-          </h3>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-1 bg-blue-500 rounded"></div>
-              <span className="text-gray-600 dark:text-gray-400">
-                商业航班
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-1 bg-green-500 rounded"></div>
-              <span className="text-gray-600 dark:text-gray-400">
-                物流航班
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-1 bg-yellow-500 rounded"></div>
-              <span className="text-gray-600 dark:text-gray-400">
-                私人飞行
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-red-500 opacity-30 border-2 border-red-500"></div>
-              <span className="text-gray-600 dark:text-gray-400">
-                冲突区域
-              </span>
+        <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-xs z-[1000] pointer-events-none">
+          <div className="pointer-events-auto">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              图例
+            </h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-1 bg-blue-500 rounded"></div>
+                <span className="text-gray-600 dark:text-gray-400">
+                  商业航班
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-1 bg-green-500 rounded"></div>
+                <span className="text-gray-600 dark:text-gray-400">
+                  物流航班
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-1 bg-yellow-500 rounded"></div>
+                <span className="text-gray-600 dark:text-gray-400">
+                  私人飞行
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-red-500 opacity-30 border-2 border-red-500"></div>
+                <span className="text-gray-600 dark:text-gray-400">
+                  冲突区域
+                </span>
+              </div>
             </div>
           </div>
         </div>
-        <div className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            系统状态
-          </h3>
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500 dark:text-gray-400">
-                活跃航班
-              </span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {flightStates.length}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500 dark:text-gray-400">
-                告警数量
-              </span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {conflicts.filter((c) => c.status !== "resolved").length}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500 dark:text-gray-400">
-                模拟状态
-              </span>
-              <span
-                className={`font-medium ${
-                  isSimulationRunning
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                {isSimulationRunning ? "运行中" : "已停止"}
-              </span>
+        <div className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-[1000] pointer-events-none">
+          <div className="pointer-events-auto">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              系统状态
+            </h3>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500 dark:text-gray-400">
+                  活跃航班
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {flightStates.length}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500 dark:text-gray-400">
+                  告警数量
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {conflicts.filter((c) => c.status !== "resolved").length}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500 dark:text-gray-400">
+                  模拟状态
+                </span>
+                <span
+                  className={`font-medium ${
+                    isSimulationRunning
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                >
+                  {isSimulationRunning ? "运行中" : "已停止"}
+                </span>
+              </div>
             </div>
           </div>
         </div>

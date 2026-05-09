@@ -101,8 +101,8 @@ class DatabaseService {
             keyPath: "id",
           });
           mappingStore.createIndex(
-            ["sourceSystem", "targetSystem"],
             "sourceSystem_targetSystem",
+            ["sourceSystem", "targetSystem"],
             { unique: false }
           );
           mappingStore.createIndex("entityType", "entityType", {
