@@ -150,7 +150,7 @@ const App = () => {
           </div>
         </Header>
 
-        <Content style={{ padding: 0, minHeight: 'calc(100vh - 64px)', overflow: 'auto' }}>
+        <Content style={{ padding: 0 }}>
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
