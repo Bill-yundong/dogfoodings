@@ -303,7 +303,7 @@ const FireControlSystem = () => {
   ];
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={{ padding: '16px', minHeight: '100%' }}>
       <Card 
         style={{ 
           background: 'rgba(0,21,41,0.95)',
@@ -314,7 +314,7 @@ const FireControlSystem = () => {
       >
         <Row align="middle" justify="space-between">
           <Col>
-            <Space size="large">
+            <Space size="large" wrap>
               <Button
                 type={isRunning ? 'default' : 'primary'}
                 icon={isRunning ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
@@ -359,8 +359,8 @@ const FireControlSystem = () => {
         </Row>
       </Card>
 
-      <Row gutter={[16, 16]}>
-        <Col span={16}>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 600 }}>
           <Card 
             title={<span style={{ color: '#fff' }}><ThunderboltOutlined /> 消防联动控制</span>}
             style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#ff4d4f' }}
@@ -368,7 +368,7 @@ const FireControlSystem = () => {
             <Space direction="vertical" style={{ width: '100%' }} size="large">
               <div>
                 <div style={{ color: '#999', marginBottom: 8 }}>火灾模拟</div>
-                <Space>
+                <Space wrap>
                   <Select
                     value={selectedZone}
                     onChange={setSelectedZone}
@@ -423,7 +423,7 @@ const FireControlSystem = () => {
 
               <div>
                 <div style={{ color: '#999', marginBottom: 8 }}>通风系统模式</div>
-                <Space>
+                <Space wrap>
                   {ventilationModeOptions.map(opt => (
                     <Button
                       key={opt.value}
@@ -454,6 +454,7 @@ const FireControlSystem = () => {
                 pagination={false}
                 size="small"
                 rowKey="key"
+                scroll={{ x: 600 }}
               />
             </Card>
           )}
@@ -464,15 +465,16 @@ const FireControlSystem = () => {
           >
             <ReactECharts 
               option={zoneChartOption} 
-              style={{ height: 300 }}
+              style={{ height: 350, minHeight: 300 }}
+              opts={{ renderer: 'canvas' }}
             />
           </Card>
-        </Col>
+        </div>
 
-        <Col span={8}>
+        <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card 
             title={<span style={{ color: '#fff' }}><CameraOutlined /> 系统状态</span>}
-            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333', marginBottom: 16 }}
+            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333', flexShrink: 0 }}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Statistic
@@ -503,7 +505,7 @@ const FireControlSystem = () => {
 
           <Card 
             title={<span style={{ color: '#fff' }}><WarningOutlined /> 逻辑验证</span>}
-            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333', marginBottom: 16 }}
+            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333', flexShrink: 0 }}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               <div>
@@ -543,20 +545,22 @@ const FireControlSystem = () => {
 
           <Card 
             title={<span style={{ color: '#fff' }}>事件日志</span>}
-            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333' }}
-            styles={{ body: { padding: '8px' } }}
+            style={{ background: 'rgba(0,21,41,0.9)', borderColor: '#333', flex: 1, minHeight: 300 }}
+            styles={{ body: { padding: '8px', height: '100%', display: 'flex', flexDirection: 'column' } }}
           >
-            <Table
-              columns={logColumns}
-              dataSource={logs}
-              pagination={false}
-              size="small"
-              rowKey="logId"
-              scroll={{ y: 250 }}
-            />
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Table
+                columns={logColumns}
+                dataSource={logs}
+                pagination={false}
+                size="small"
+                rowKey="logId"
+                scroll={{ y: 'auto' }}
+              />
+            </div>
           </Card>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
       <Modal
         title="火灾模拟确认"
