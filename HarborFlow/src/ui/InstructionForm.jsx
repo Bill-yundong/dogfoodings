@@ -77,56 +77,68 @@ export default function InstructionForm() {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">源位置</label>
-            <div class="flex gap-2">
-              <input
-                type="number"
-                min="0"
-                max="19"
-                value={formData().sourceX}
-                onChange={(e) => updateField('sourceX', e.target.value)}
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="X"
-                required
-              />
-              <input
-                type="number"
-                min="0"
-                max="19"
-                value={formData().sourceY}
-                onChange={(e) => updateField('sourceY', e.target.value)}
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Y"
-                required
-              />
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">X 坐标</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="19"
+                  value={formData().sourceX}
+                  onChange={(e) => updateField('sourceX', e.target.value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0-19"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Y 坐标</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="19"
+                  value={formData().sourceY}
+                  onChange={(e) => updateField('sourceY', e.target.value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0-19"
+                  required
+                />
+              </div>
             </div>
           </div>
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">目标位置</label>
-            <div class="flex gap-2">
-              <input
-                type="number"
-                min="0"
-                max="19"
-                value={formData().targetX}
-                onChange={(e) => updateField('targetX', e.target.value)}
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="X"
-                required
-              />
-              <input
-                type="number"
-                min="0"
-                max="19"
-                value={formData().targetY}
-                onChange={(e) => updateField('targetY', e.target.value)}
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Y"
-                required
-              />
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">X 坐标</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="19"
+                  value={formData().targetX}
+                  onChange={(e) => updateField('targetX', e.target.value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0-19"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Y 坐标</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="19"
+                  value={formData().targetY}
+                  onChange={(e) => updateField('targetY', e.target.value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0-19"
+                  required
+                />
+              </div>
             </div>
           </div>
         </div>
