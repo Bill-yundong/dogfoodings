@@ -401,6 +401,18 @@
 </div>
 
 <style>
+  .zone-item,
+  .destination-card,
+  .parking-option {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
   .dashboard {
     padding: 24px;
     max-width: 1600px;

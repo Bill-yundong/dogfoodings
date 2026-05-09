@@ -138,14 +138,13 @@
     }
   }
 
-  const filteredZones = $derived(() => {
-    if (!searchQuery) return zones
-    const query = searchQuery.toLowerCase()
-    return zones.filter(zone => 
-      zone.name.toLowerCase().includes(query) ||
-      zone.description.toLowerCase().includes(query)
-    )
-  })
+  const filteredZones = $derived(
+    !searchQuery ? zones : zones.filter(zone => {
+      const query = searchQuery.toLowerCase()
+      return zone.name.toLowerCase().includes(query) ||
+             zone.description.toLowerCase().includes(query)
+    })
+  )
 
   const handleSyncUpdate = (data) => {
     console.log('Navigation received update:', data)
@@ -287,7 +286,7 @@
     </div>
 
     <div class="destination-grid">
-      {#each filteredZones() as zone}
+      {#each filteredZones as zone}
         <button 
           type="button"
           class="destination-card {selectedDestination?.id === zone.id ? 'selected' : ''}"
