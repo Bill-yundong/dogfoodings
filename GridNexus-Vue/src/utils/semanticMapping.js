@@ -74,7 +74,7 @@ class SemanticMapper {
         transformerStatus: {
           targetField: 'transformerState',
           transform: this.transformTransformerStatus,
-          validation: (val) => ['normal', 'warning', 'fault', 'offline'].includes(val)
+          validation: (val) => ['normal', 'warning', 'fault', 'offline', 0, 1, 2, 3].includes(val)
         },
         busVoltage: {
           targetField: 'measuredVoltage',

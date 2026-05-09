@@ -2,9 +2,15 @@
   <div class="report-panel panel">
     <div class="panel-header">
       <span class="panel-title">结构健康日报</span>
-      <button class="refresh-btn" @click="loadReports">刷新</button>
+      <button 
+        class="refresh-btn" 
+        @click="refreshReports"
+        :disabled="isLoading"
+      >
+        {{ isLoading ? '刷新中...' : '刷新' }}
+      </button>
     </div>
-    <div class="report-content">
+    <div class="report-content" :class="{ 'loading': isLoading }">
       <div v-if="reports.length === 0" class="empty-state">
         <span>暂无日报数据</span>
         <button class="generate-btn" @click="generateTodayReport">生成今日报告</button>
@@ -59,22 +65,43 @@ import type { DailyHealthReport } from '../types'
 import { databaseService } from '../services/databaseService'
 
 const reports = ref<DailyHealthReport[]>([])
+const isLoading = ref(false)
 
 const loadReports = async () => {
+  isLoading.value = true
   try {
     reports.value = await databaseService.getDailyReports(7)
   } catch (error) {
     console.error('Failed to load reports:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const refreshReports = async () => {
+  isLoading.value = true
+  try {
+    // 重新生成今日的日报
+    const today = new Date().toISOString().split('T')[0]
+    await databaseService.generateDailyReport(today)
+    await loadReports()
+  } catch (error) {
+    console.error('Failed to refresh reports:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
 const generateTodayReport = async () => {
+  isLoading.value = true
   try {
     const today = new Date().toISOString().split('T')[0]
     await databaseService.generateDailyReport(today)
     await loadReports()
   } catch (error) {
     console.error('Failed to generate report:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -121,10 +148,20 @@ onMounted(() => {
   background: rgba(0, 212, 255, 0.3);
 }
 
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .report-content {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  transition: opacity 0.2s;
+}
+
+.report-content.loading {
+  opacity: 0.6;
 }
 
 .empty-state {

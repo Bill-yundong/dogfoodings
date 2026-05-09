@@ -121,14 +121,24 @@ export class DataSimulationService {
     let totalHealth = 0
     let sensorCount = 0
 
+    // 使用时间戳创建周期性变化，让变形更明显和规律
+    const timePhase = (timestamp % 10000) / 10000 // 0-1 周期
+
     bridgeSensors.forEach(sensor => {
       const value = this.generateValue(sensor, timestamp)
       const normalizedValue = Math.abs(value) / sensor.thresholds.warning
-
+      
+      // 增强变形效果
+      // 根据传感器位置和类型
+      const positionFactor = sensor.location.x / 100 // 0-2
+      
+      // 周期性变化
+      const wave = Math.sin(timePhase * Math.PI * 2 + sensor.id.length)
+      
       deformations[sensor.id] = {
-        dx: (Math.random() - 0.5) * normalizedValue * 0.1,
-        dy: -Math.min(normalizedValue * 0.5, 5),
-        dz: (Math.random() - 0.5) * normalizedValue * 0.1
+        dx: (Math.random() - 0.5) * normalizedValue * 2.0 + wave * 3.0,
+        dy: -Math.min(normalizedValue * 3.0, 15.0) + wave * 2.0,
+        dz: (Math.random() - 0.5) * normalizedValue * 1.5 + wave * 1.0
       }
 
       if (sensor.type === 'strain_gauge') {

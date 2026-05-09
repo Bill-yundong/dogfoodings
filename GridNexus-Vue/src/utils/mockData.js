@@ -99,11 +99,11 @@ export function generateHistoricalSnapshots(days = 7) {
   const count = (days * 24 * 60) / 15
 
   const substations = [
-    { id: 'SS-001', baseLoad: 920, variance: 200 },
-    { id: 'SS-002', baseLoad: 780, variance: 180 },
-    { id: 'SS-003', baseLoad: 1350, variance: 250 },
-    { id: 'SS-004', baseLoad: 650, variance: 150 },
-    { id: 'SS-005', baseLoad: 720, variance: 160 }
+    { id: 'SS-001', baseLoad: 920, variance: 200, capacity: 1200 },
+    { id: 'SS-002', baseLoad: 780, variance: 180, capacity: 1000 },
+    { id: 'SS-003', baseLoad: 1350, variance: 250, capacity: 1500 },
+    { id: 'SS-004', baseLoad: 650, variance: 150, capacity: 1100 },
+    { id: 'SS-005', baseLoad: 720, variance: 160, capacity: 800 }
   ]
 
   for (let i = 0; i < count; i++) {
@@ -184,7 +184,7 @@ export function generateLoadTimeSeries(hours = 24) {
 
     data.push({
       timestamp,
-      time: `${hour}:00`,
+      time: `${hour.toString().padStart(2, '0')}:00`,
       load: Math.round(load),
       predicted: Math.round(load * 1.05),
       capacity: 1200

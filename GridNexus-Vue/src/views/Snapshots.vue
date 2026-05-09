@@ -6,14 +6,14 @@
       </v-col>
     </v-row>
 
-    <v-row class="mb-4" align="end">
+    <v-row class="mb-4" align="center">
       <v-col cols="12" sm="6" md="4" lg="3">
         <v-select
           v-model="filterSubstation"
           label="选择变电站"
           :items="substationOptions"
           clearable
-          hide-details
+          density="compact"
         />
       </v-col>
       <v-col cols="12" sm="6" md="4" lg="2">
@@ -25,7 +25,7 @@
               label="开始日期"
               readonly
               prepend-icon="mdi-calendar"
-              hide-details
+              density="compact"
             />
           </template>
           <v-date-picker v-model="startDate" color="primary" />
@@ -40,13 +40,13 @@
               label="结束日期"
               readonly
               prepend-icon="mdi-calendar"
-              hide-details
+              density="compact"
             />
           </template>
           <v-date-picker v-model="endDate" color="primary" />
         </v-menu>
       </v-col>
-      <v-col cols="12" sm="6" md="4" lg="5" class="text-sm-end">
+      <v-col cols="12" sm="6" md="4" lg="5" class="d-flex align-end justify-sm-end">
         <v-btn @click="searchSnapshots" color="primary">
           <v-icon class="mr-1">mdi-magnify</v-icon>
           查询
