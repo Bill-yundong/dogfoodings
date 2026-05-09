@@ -99,8 +99,13 @@ const systemStatusText = computed(() => {
   return statusMap[systemStatus.value] || '未知'
 })
 
-let dataInterval = null
+let dataTimer = null
 let timeInterval = null
+
+const scheduleDataUpdate = async () => {
+  await generateSimulatedData()
+  dataTimer = setTimeout(scheduleDataUpdate, 2000)
+}
 
 const initStrainGauges = () => {
   const gauges = []
@@ -131,7 +136,7 @@ const initStrainGauges = () => {
   strainGauges.value = gauges
 }
 
-const generateSimulatedData = () => {
+const generateSimulatedData = async () => {
   const newData = {}
   const time = new Date()
   
@@ -173,7 +178,12 @@ const generateSimulatedData = () => {
   })
   
   const alignedData = alignData(newData, strainGauges.value)
-  saveStrainData(alignedData)
+  try {
+    await saveStrainData(alignedData)
+    await loadHealthRecords()
+  } catch (error) {
+    console.error('保存数据或刷新档案失败:', error)
+  }
   
   updateBridgeHealth()
 }
@@ -239,8 +249,8 @@ onMounted(async () => {
     updateTime()
     timeInterval = setInterval(updateTime, 1000)
     
-    generateSimulatedData()
-    dataInterval = setInterval(generateSimulatedData, 2000)
+    await generateSimulatedData()
+    scheduleDataUpdate()
     
   } catch (error) {
     console.error('系统初始化失败:', error)
@@ -249,8 +259,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (dataInterval) {
-    clearInterval(dataInterval)
+  if (dataTimer) {
+    clearTimeout(dataTimer)
   }
   if (timeInterval) {
     clearInterval(timeInterval)

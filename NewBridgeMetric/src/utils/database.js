@@ -1,7 +1,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'BridgeHealthDB'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORES = {
   STRAIN_DATA: 'strainData',
   HEALTH_RECORDS: 'healthRecords',
@@ -192,23 +192,19 @@ export const createDailyHealthRecord = async (data) => {
 
 export const getHealthRecordByDate = async (date) => {
   const db = getDB()
-  const index = db.transaction(STORES.HEALTH_RECORDS).store.index('date')
-  const cursor = await index.openCursor(IDBKeyRange.only(date))
-  return cursor ? cursor.value : null
+  const allRecords = await db.getAll(STORES.HEALTH_RECORDS)
+  return allRecords.find(record => record.date === date) || null
 }
 
 export const getHealthRecords = async (limit = 30) => {
   const db = getDB()
-  const index = db.transaction(STORES.HEALTH_RECORDS).store.index('timestamp')
-  const records = []
+  const allRecords = await db.getAll(STORES.HEALTH_RECORDS)
   
-  let cursor = await index.openCursor(null, 'prev')
-  while (cursor && records.length < limit) {
-    records.push(cursor.value)
-    cursor = await cursor.continue()
-  }
+  const sortedRecords = allRecords
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, limit)
   
-  return records
+  return sortedRecords
 }
 
 export const saveAlert = async (alert) => {
