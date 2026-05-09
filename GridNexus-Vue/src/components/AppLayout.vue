@@ -8,11 +8,50 @@
       </v-toolbar-title>
       <v-spacer />
       <v-toolbar-items>
-        <v-btn icon>
-          <v-badge color="error" :content="notificationCount">
-            <v-icon>mdi-bell</v-icon>
-          </v-badge>
-        </v-btn>
+        <v-menu offset-y>
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon>
+              <v-badge color="error" :content="notificationCount">
+                <v-icon>mdi-bell</v-icon>
+              </v-badge>
+            </v-btn>
+          </template>
+          <v-card max-width="320">
+            <v-card-title class="pb-2">
+              <v-icon class="mr-2">mdi-bell</v-icon>
+              通知中心
+              <v-spacer />
+              <v-btn icon variant="text" size="small" @click="notificationCount = 0">
+                <v-icon size="small">mdi-bell-off</v-icon>
+              </v-btn>
+            </v-card-title>
+            <v-divider />
+            <v-list>
+              <v-list-item v-for="alert in alerts" :key="alert.id">
+                <template v-slot:prepend>
+                  <v-icon
+                    :color="alert.severity === 'critical' ? 'error' : 'warning'"
+                  >
+                    mdi-alert-circle
+                  </v-icon>
+                </template>
+                <v-list-item-content>
+                  <v-list-item-title>{{ alert.title }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ alert.message }}</v-list-item-subtitle>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <span class="caption text-grey">{{ alert.time }}</span>
+                </v-list-item-action>
+              </v-list-item>
+            </v-list>
+            <v-divider v-if="alerts.length > 0" />
+            <v-card-actions>
+              <v-btn variant="text" block>
+                查看全部通知
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-menu>
         <v-menu offset-y>
           <template v-slot:activator="{ props }">
             <v-btn v-bind="props" icon>
@@ -81,6 +120,29 @@ import { useMappingStore } from '@/stores/mapping'
 
 const drawer = ref(true)
 const notificationCount = ref(3)
+const alerts = ref([
+  {
+    id: 1,
+    severity: 'warning',
+    title: '浦东变2号主变负载偏高',
+    message: '负载率达到100%，建议关注',
+    time: '10分钟前'
+  },
+  {
+    id: 2,
+    severity: 'warning',
+    title: '浦西变2号主变负载偏高',
+    message: '负载率达到107.5%，建议检查',
+    time: '15分钟前'
+  },
+  {
+    id: 3,
+    severity: 'info',
+    title: '系统每日巡检完成',
+    message: '所有关键指标正常',
+    time: '1小时前'
+  }
+])
 
 const navItems = [
   { title: '概览', icon: 'mdi-view-dashboard', to: '/' },

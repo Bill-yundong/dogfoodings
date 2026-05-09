@@ -6,16 +6,17 @@
       </v-col>
     </v-row>
 
-    <v-row class="mb-4">
-      <v-col cols="12" md="3">
+    <v-row class="mb-4" align="end">
+      <v-col cols="12" sm="6" md="4" lg="3">
         <v-select
           v-model="filterSubstation"
           label="选择变电站"
           :items="substationOptions"
           clearable
+          hide-details
         />
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" sm="6" md="4" lg="2">
         <v-menu v-model="startMenu" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field
@@ -24,12 +25,13 @@
               label="开始日期"
               readonly
               prepend-icon="mdi-calendar"
+              hide-details
             />
           </template>
           <v-date-picker v-model="startDate" color="primary" />
         </v-menu>
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" sm="6" md="4" lg="2">
         <v-menu v-model="endMenu" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field
@@ -38,17 +40,18 @@
               label="结束日期"
               readonly
               prepend-icon="mdi-calendar"
+              hide-details
             />
           </template>
           <v-date-picker v-model="endDate" color="primary" />
         </v-menu>
       </v-col>
-      <v-col cols="12" md="3">
-        <v-btn @click="searchSnapshots" color="primary" class="mt-5">
+      <v-col cols="12" sm="6" md="4" lg="5" class="text-sm-end">
+        <v-btn @click="searchSnapshots" color="primary">
           <v-icon class="mr-1">mdi-magnify</v-icon>
           查询
         </v-btn>
-        <v-btn @click="createSnapshot" color="secondary" class="mt-5 ml-2">
+        <v-btn @click="createSnapshot" color="secondary" class="ml-2">
           <v-icon class="mr-1">mdi-camera</v-icon>
           新建快照
         </v-btn>
@@ -69,9 +72,10 @@
               v-if="snapshotStore.isLoading"
               indeterminate
               color="primary"
+              class="mb-4"
             />
             
-            <v-table v-else density="compact">
+            <v-table density="compact">
               <thead>
                 <tr>
                   <th>时间</th>
@@ -199,7 +203,7 @@
                 />
               </v-col>
             </v-row>
-            <v-btn @click="clearOldSnapshots" color="error" variant="outlined">
+            <v-btn @click="clearOldSnapshots" color="error" variant="outlined" block>
               <v-icon class="mr-1">mdi-delete-sweep</v-icon>
               清理过期快照
             </v-btn>
