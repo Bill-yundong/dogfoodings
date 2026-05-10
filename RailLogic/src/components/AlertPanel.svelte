@@ -22,12 +22,12 @@
     return new Date(timestamp).toLocaleTimeString('zh-CN');
   }
 
-  function getLevelColor(level: Alert['level']): string {
+  function getLevelBadgeClass(level: Alert['level']): string {
     switch (level) {
-      case 'emergency': return 'bg-red-600';
-      case 'critical': return 'bg-red-500';
-      case 'warning': return 'bg-yellow-500';
-      default: return 'bg-blue-500';
+      case 'emergency': return 'alert-badge emergency';
+      case 'critical': return 'alert-badge critical';
+      case 'warning': return 'alert-badge warning';
+      default: return 'alert-badge info';
     }
   }
 
@@ -49,62 +49,61 @@
     }
   }
 
+  function getItemClass(alert: Alert): string {
+    const classes = ['alert-item'];
+    if (alert.level === 'critical' || alert.level === 'emergency') {
+      classes.push('critical');
+    } else if (alert.level === 'warning') {
+      classes.push('warning');
+    } else {
+      classes.push('info');
+    }
+    if (alert.acknowledged) {
+      classes.push('acknowledged');
+    }
+    return classes.join(' ');
+  }
+
   function acknowledgeAlert(id: string): void {
     alerts.acknowledge(id);
   }
 </script>
 
-<div class="p-4 bg-gray-900 rounded-lg shadow-lg">
-  <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-    <span class="text-2xl">⚠️</span>
-    告警中心
+<div class="card">
+  <div class="card-header">
+    <span class="card-icon">⚠️</span>
+    <h3 class="card-title">告警中心</h3>
     {#if unacknowledged.length > 0}
-      <span class="bg-red-500 text-white text-sm px-2 py-0.5 rounded-full animate-pulse">
-        {unacknowledged.length}
-      </span>
+      <span class="card-badge">{unacknowledged.length}</span>
     {/if}
-  </h3>
+  </div>
 
   {#if allAlerts.length === 0}
-    <div class="text-gray-400 text-center py-8">
-      暂无告警
-    </div>
+    <div class="alert-empty">暂无告警</div>
   {:else}
-    <div class="space-y-2 max-h-80 overflow-y-auto">
+    <div class="alert-list">
       {#each allAlerts.slice(0, 20) as alert (alert.id)}
-        <div
-          class="p-3 rounded-lg border-l-4 {alert.acknowledged ? 'bg-gray-800 opacity-60' : 'bg-gray-800'}"
-          class:border-red-500={alert.level === 'critical' || alert.level === 'emergency'}
-          class:border-yellow-500={alert.level === 'warning'}
-          class:border-blue-500={alert.level === 'info'}
-        >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs px-2 py-0.5 rounded text-white {getLevelColor(alert.level)}">
-                  {getLevelText(alert.level)}
-                </span>
-                <span class="text-xs text-gray-400">{getSourceText(alert.source)}</span>
-                <span class="text-xs text-gray-500">{formatTime(alert.timestamp)}</span>
-              </div>
-              <p class="text-white text-sm">{alert.message}</p>
-              {#if alert.trainId || alert.mileage}
-                <div class="text-xs text-gray-400 mt-1">
-                  {#if alert.trainId}列车: {alert.trainId}{/if}
-                  {#if alert.trainId && alert.mileage} | {/if}
-                  {#if alert.mileage}里程: K{(alert.mileage / 1000).toFixed(3)}{/if}
-                </div>
-              {/if}
+        <div class="{getItemClass(alert)}">
+          <div class="alert-content">
+            <div class="alert-header">
+              <span class="{getLevelBadgeClass(alert.level)}">{getLevelText(alert.level)}</span>
+              <span class="alert-source">{getSourceText(alert.source)}</span>
+              <span class="alert-time">{formatTime(alert.timestamp)}</span>
             </div>
-            {#if !alert.acknowledged}
-              <button
-                class="ml-2 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
-                onclick={() => acknowledgeAlert(alert.id)}
-              >
-                确认
-              </button>
+            <div class="alert-message">{alert.message}</div>
+            {#if alert.trainId || alert.mileage}
+              <div class="alert-meta">
+                {#if alert.trainId}列车: {alert.trainId}{/if}
+                {#if alert.trainId && alert.mileage} | {/if}
+                {#if alert.mileage}里程: K{(alert.mileage / 1000).toFixed(3)}{/if}
+              </div>
             {/if}
           </div>
+          {#if !alert.acknowledged}
+            <button class="alert-action" onclick={() => acknowledgeAlert(alert.id)}>
+              确认
+            </button>
+          {/if}
         </div>
       {/each}
     </div>

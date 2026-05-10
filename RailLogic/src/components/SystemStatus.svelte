@@ -25,16 +25,21 @@
     return () => clearInterval(interval);
   });
 
-  function getStatusIndicator(status: string): { color: string; text: string } {
+  function getStatusDotClass(status: string): string {
     switch (status) {
-      case 'active':
-        return { color: 'bg-green-500', text: '运行中' };
-      case 'standby':
-        return { color: 'bg-yellow-500', text: '待机' };
-      case 'error':
-        return { color: 'bg-red-500', text: '错误' };
-      default:
-        return { color: 'bg-gray-500', text: '未知' };
+      case 'active': return 'status-dot active';
+      case 'standby': return 'status-dot standby';
+      case 'error': return 'status-dot error';
+      default: return 'status-dot';
+    }
+  }
+
+  function getStatusText(status: string): string {
+    switch (status) {
+      case 'active': return '运行中';
+      case 'standby': return '待机';
+      case 'error': return '错误';
+      default: return '未知';
     }
   }
 
@@ -44,77 +49,69 @@
   }
 </script>
 
-<div class="p-4 bg-gray-900 rounded-lg shadow-lg">
-  <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-    <span class="text-2xl">🖥️</span>
-    系统状态
-  </h3>
+<div class="card">
+  <div class="card-header">
+    <span class="card-icon">🖥️</span>
+    <h3 class="card-title">系统状态</h3>
+  </div>
 
   {#if statusData}
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gray-800 p-3 rounded-lg">
-          <div class="text-gray-400 text-sm mb-2">接触网检测系统</div>
-          <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full {getStatusIndicator(statusData.catenarySystem.status).color}"></div>
-            <span class="text-white">{getStatusIndicator(statusData.catenarySystem.status).text}</span>
-          </div>
-          <div class="text-xs text-gray-400 mt-1">
-            数据质量: {statusData.catenarySystem.dataQuality.toFixed(1)}%
-          </div>
-          <div class="text-xs text-gray-500">
-            最后同步: {formatTime(statusData.catenarySystem.lastSync)}
-          </div>
+    <div class="status-grid">
+      <div class="status-card">
+        <div class="status-card-title">接触网检测系统</div>
+        <div class="status-card-content">
+          <div class="{getStatusDotClass(statusData.catenarySystem.status)}"></div>
+          <span class="status-card-value">{getStatusText(statusData.catenarySystem.status)}</span>
         </div>
-
-        <div class="bg-gray-800 p-3 rounded-lg">
-          <div class="text-gray-400 text-sm mb-2">行车保障系统</div>
-          <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full {getStatusIndicator(statusData.operationSystem.status).color}"></div>
-            <span class="text-white">{getStatusIndicator(statusData.operationSystem.status).text}</span>
-          </div>
-          <div class="text-xs text-gray-400 mt-1">
-            数据质量: {statusData.operationSystem.dataQuality.toFixed(1)}%
-          </div>
-          <div class="text-xs text-gray-500">
-            最后同步: {formatTime(statusData.operationSystem.lastSync)}
-          </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+          数据质量: {statusData.catenarySystem.dataQuality.toFixed(1)}%
         </div>
       </div>
 
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm mb-2">数据库状态</div>
-        <div class="grid grid-cols-3 gap-4">
-          <div>
-            <div class="text-gray-500 text-xs">连接</div>
-            <div class="text-green-400">已连接</div>
+      <div class="status-card">
+        <div class="status-card-title">行车保障系统</div>
+        <div class="status-card-content">
+          <div class="{getStatusDotClass(statusData.operationSystem.status)}"></div>
+          <span class="status-card-value">{getStatusText(statusData.operationSystem.status)}</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+          数据质量: {statusData.operationSystem.dataQuality.toFixed(1)}%
+        </div>
+      </div>
+    </div>
+
+    <div class="database-status">
+      <div class="status-card-title" style="margin-bottom: 8px;">数据库状态</div>
+      <div class="database-status-grid">
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted);">连接</div>
+          <div style="color: var(--accent-success); font-weight: 600;">已连接</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted);">缓存使用</div>
+          <div style="color: var(--accent-secondary); font-weight: 600;">
+            {statusData.databaseStatus.cacheUsage.toFixed(2)}%
           </div>
-          <div>
-            <div class="text-gray-500 text-xs">缓存使用</div>
-            <div class="text-cyan-400">{statusData.databaseStatus.cacheUsage.toFixed(2)}%</div>
-          </div>
-          <div>
-            <div class="text-gray-500 text-xs">清理时间</div>
-            <div class="text-gray-300">
-              {statusData.databaseStatus.lastCleanup === 0 ? '未执行' : formatTime(statusData.databaseStatus.lastCleanup)}
-            </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted);">清理时间</div>
+          <div style="color: var(--text-secondary); font-weight: 600;">
+            {statusData.databaseStatus.lastCleanup === 0
+              ? '未执行'
+              : formatTime(statusData.databaseStatus.lastCleanup)}
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="flex items-center justify-between">
-          <span class="text-gray-400">监测状态</span>
-          <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full {monitoringState ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}"></div>
-            <span class="text-white font-semibold">{monitoringState ? '运行中' : '已停止'}</span>
-          </div>
-        </div>
+    <div class="monitoring-status">
+      <span style="color: var(--text-secondary);">监测状态</span>
+      <div class="status-card-content">
+        <div class="status-dot {monitoringState ? 'active pulse' : ''}" style="background: var(--text-muted);"></div>
+        <span class="status-card-value">{monitoringState ? '运行中' : '已停止'}</span>
       </div>
     </div>
   {:else}
-    <div class="text-gray-400 text-center py-4">
-      加载中...
-    </div>
+    <div class="alert-empty">加载中...</div>
   {/if}
 </div>

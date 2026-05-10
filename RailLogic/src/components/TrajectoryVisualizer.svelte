@@ -28,10 +28,10 @@
     const width = canvas.width;
     const height = canvas.height;
 
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = '#2a2a4e';
+    ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= 10; i++) {
       const x = (i / 10) * width;
@@ -122,80 +122,67 @@
   function formatMileage(mileage: number): string {
     return (mileage / 1000).toFixed(3);
   }
+
+  function getSourceText(source: string): string {
+    switch (source) {
+      case 'visual': return '视觉';
+      case 'gps': return 'GPS';
+      case 'inertial': return '惯性';
+      default: return '融合';
+    }
+  }
 </script>
 
-<div class="p-4 bg-gray-900 rounded-lg shadow-lg">
-  <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-    <span class="text-2xl">📍</span>
-    实时运行轨迹复原
-  </h3>
+<div class="card">
+  <div class="card-header">
+    <span class="card-icon">📍</span>
+    <h3 class="card-title">实时运行轨迹复原</h3>
+  </div>
 
-  <div class="relative bg-gray-800 rounded-lg p-2 mb-4">
+  <div class="canvas-container">
     <canvas
       bind:this={canvasRef}
       width={600}
       height={400}
-      class="w-full rounded"
     ></canvas>
 
-    <div class="absolute top-4 left-4 bg-black bg-opacity-50 px-3 py-2 rounded text-sm">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-1">
-          <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
-          <span class="text-gray-300">融合数据</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <span class="w-3 h-3 rounded-full bg-pink-400"></span>
-          <span class="text-gray-300">视觉数据</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <span class="w-3 h-3 rounded-full bg-purple-400"></span>
-          <span class="text-gray-300">GPS数据</span>
-        </div>
+    <div class="canvas-legend">
+      <div class="legend-item">
+        <span class="legend-dot cyan"></span>
+        <span>融合数据</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot pink"></span>
+        <span>视觉数据</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot purple"></span>
+        <span>GPS数据</span>
       </div>
     </div>
 
     {#if points.length === 0}
-      <div class="absolute inset-0 flex items-center justify-center text-gray-400">
-        等待轨迹数据...
-      </div>
+      <div class="alert-empty">等待轨迹数据...</div>
     {/if}
   </div>
 
   {#if points.length > 0}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">数据点数量</div>
-        <div class="text-xl font-bold text-white">{points.length}</div>
+    <div class="trajectory-metrics">
+      <div class="trajectory-metric">
+        <div class="trajectory-metric-label">数据点</div>
+        <div class="trajectory-metric-value">{points.length}</div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">当前里程</div>
-        <div class="text-xl font-bold text-cyan-400">
-          K{formatMileage(points[points.length - 1].mileage)}
-        </div>
+      <div class="trajectory-metric">
+        <div class="trajectory-metric-label">当前里程</div>
+        <div class="trajectory-metric-value">K{formatMileage(points[points.length - 1].mileage)}</div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">当前速度</div>
-        <div class="text-xl font-bold text-green-400">
-          {points[points.length - 1].speed.toFixed(1)} km/h
-        </div>
+      <div class="trajectory-metric">
+        <div class="trajectory-metric-label">当前速度</div>
+        <div class="trajectory-metric-value">{points[points.length - 1].speed.toFixed(1)} km/h</div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">数据来源</div>
-        <div class="text-xl font-bold text-purple-400">
-          {(() => {
-            const latest = points[points.length - 1];
-            switch (latest.source) {
-              case 'visual': return '视觉';
-              case 'gps': return 'GPS';
-              case 'inertial': return '惯性';
-              default: return '融合';
-            }
-          })()}
-        </div>
+      <div class="trajectory-metric">
+        <div class="trajectory-metric-label">数据来源</div>
+        <div class="trajectory-metric-value">{getSourceText(points[points.length - 1].source)}</div>
       </div>
     </div>
   {/if}

@@ -22,13 +22,13 @@
     return (mileage / 1000).toFixed(2);
   }
 
-  function getConditionColor(condition: string): string {
+  function getConditionClass(condition: string): string {
     switch (condition) {
-      case 'excellent': return 'text-green-400';
-      case 'good': return 'text-blue-400';
-      case 'fair': return 'text-yellow-400';
-      case 'poor': return 'text-red-400';
-      default: return 'text-gray-400';
+      case 'excellent': return 'condition-excellent';
+      case 'good': return 'condition-good';
+      case 'fair': return 'condition-fair';
+      case 'poor': return 'condition-poor';
+      default: return '';
     }
   }
 
@@ -43,111 +43,107 @@
   }
 </script>
 
-<div class="p-4 bg-gray-900 rounded-lg shadow-lg">
-  <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-    <span class="text-2xl">🛤️</span>
-    轨道几何参数监测
-  </h3>
+<div class="card">
+  <div class="card-header">
+    <span class="card-icon">🛤️</span>
+    <h3 class="card-title">轨道几何参数监测</h3>
+  </div>
 
   {#if latestParam}
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">轨距</div>
-        <div class="text-xl font-bold text-cyan-400">
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">轨距</div>
+        <div class="metric-value">
           {latestParam.gauge.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
-        <div class="text-xs text-gray-500">
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
           偏差: {(latestParam.gauge - 1435).toFixed(2)} mm
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">方向</div>
-        <div class="text-xl font-bold text-purple-400">
+      <div class="metric">
+        <div class="metric-label">方向</div>
+        <div class="metric-value info">
           {latestParam.alignment.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">高低</div>
-        <div class="text-xl font-bold text-pink-400">
+      <div class="metric">
+        <div class="metric-label">高低</div>
+        <div class="metric-value info">
           {latestParam.profile.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">扭曲</div>
-        <div class="text-xl font-bold text-orange-400">
+      <div class="metric">
+        <div class="metric-label">扭曲</div>
+        <div class="metric-value warning">
           {latestParam.twist.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">超高</div>
-        <div class="text-xl font-bold text-blue-400">
+      <div class="metric">
+        <div class="metric-label">超高</div>
+        <div class="metric-value primary">
           {latestParam.cant.toFixed(1)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">欠超高</div>
-        <div class="text-xl font-bold text-green-400">
+      <div class="metric">
+        <div class="metric-label">欠超高</div>
+        <div class="metric-value success">
           {latestParam.cantDeficiency.toFixed(1)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">里程位置</div>
-        <div class="text-lg font-bold text-white">
-          K{formatMileage(latestParam.mileage)}
-        </div>
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">里程位置</div>
+        <div class="metric-value primary">K{formatMileage(latestParam.mileage)}</div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">限速</div>
-        <div class="text-lg font-bold text-yellow-400">
+      <div class="metric">
+        <div class="metric-label">限速</div>
+        <div class="metric-value warning">
           {latestParam.speedLimit.toFixed(0)}
-          <span class="text-sm font-normal">km/h</span>
+          <span class="unit">km/h</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">轨道状况</div>
-        <div class="text-lg font-bold {getConditionColor(latestParam.condition)}">
+      <div class="metric">
+        <div class="metric-label">轨道状况</div>
+        <div class="metric-value {getConditionClass(latestParam.condition)}">
           {getConditionText(latestParam.condition)}
+        </div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">环境温度</div>
+        <div class="metric-value">
+          {latestParam.temperature.toFixed(1)}
+          <span class="unit">°C</span>
         </div>
       </div>
     </div>
   {:else}
-    <div class="text-gray-400 text-center py-8">
-      等待轨道参数数据...
-    </div>
+    <div class="alert-empty">等待轨道参数数据...</div>
   {/if}
 
   {#if historyParams.length > 0}
-    <div class="mt-4 border-t border-gray-700 pt-4">
-      <h4 class="text-gray-300 font-semibold mb-2">历史轨道参数</h4>
-      <div class="grid grid-cols-5 gap-2 text-sm">
-        <div class="text-gray-400">里程</div>
-        <div class="text-gray-400 text-right">轨距</div>
-        <div class="text-gray-400 text-right">方向</div>
-        <div class="text-gray-400 text-right">高低</div>
-        <div class="text-gray-400 text-right">状况</div>
+    <div class="history-section">
+      <div class="history-title">历史轨道参数</div>
+      <div class="history-grid">
+        <div class="header">里程</div>
+        <div class="header">轨距</div>
+        <div class="header">方向</div>
+        <div class="header">高低</div>
+        <div class="header">状况</div>
 
         {#each historyParams as param (param.id)}
-          <div class="text-gray-300">K{formatMileage(param.mileage)}</div>
-          <div class="text-cyan-400 text-right">{param.gauge.toFixed(1)} mm</div>
-          <div class="text-purple-400 text-right">{param.alignment.toFixed(1)} mm</div>
-          <div class="text-pink-400 text-right">{param.profile.toFixed(1)} mm</div>
-          <div class="text-right {getConditionColor(param.condition)}">
+          <div class="cell">K{formatMileage(param.mileage)}</div>
+          <div class="cell">{param.gauge.toFixed(1)} mm</div>
+          <div class="cell">{param.alignment.toFixed(1)} mm</div>
+          <div class="cell">{param.profile.toFixed(1)} mm</div>
+          <div class="cell {getConditionClass(param.condition)}">
             {getConditionText(param.condition)}
           </div>
         {/each}

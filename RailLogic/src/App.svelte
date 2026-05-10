@@ -18,11 +18,13 @@
 
   let monitoring = $state(false);
   let trainId = $state('TRAIN-001');
+  let currentTime = $state(new Date().toLocaleString('zh-CN'));
+  let mileage = $state(0);
+
   let pantographInterval: ReturnType<typeof setInterval> | null = null;
   let trackInterval: ReturnType<typeof setInterval> | null = null;
   let trajectoryInterval: ReturnType<typeof setInterval> | null = null;
   let visualInterval: ReturnType<typeof setInterval> | null = null;
-  let mileage = $state(0);
 
   $effect(() => {
     const unsub1 = isMonitoring.subscribe((m) => {
@@ -35,6 +37,13 @@
       unsub1();
       unsub2();
     };
+  });
+
+  $effect(() => {
+    const timeInterval = setInterval(() => {
+      currentTime = new Date().toLocaleString('zh-CN');
+    }, 1000);
+    return () => clearInterval(timeInterval);
   });
 
   $effect(() => {
@@ -128,57 +137,46 @@
   }
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-  <header class="bg-gray-900 border-b border-gray-700 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="text-4xl">🚄</div>
-          <div>
-            <h1 class="text-2xl font-bold text-white">RailLogic</h1>
-            <p class="text-gray-400 text-sm">高铁弓网交互监测与行车保障系统</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="text-right">
-            <div class="text-gray-400 text-xs">当前列车</div>
-            <div class="text-white font-semibold">{trainId}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-gray-400 text-xs">当前时间</div>
-            <div class="text-white font-mono">
-              {new Date().toLocaleString('zh-CN')}
-            </div>
-          </div>
-        </div>
+<header class="header">
+  <div class="header-content">
+    <div class="header-title">
+      <span class="header-logo">🚄</span>
+      <div class="header-text">
+        <h1>RailLogic</h1>
+        <p>高铁弓网交互监测与行车保障系统</p>
       </div>
     </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4 py-6">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-2 space-y-6">
-        <PantographMonitor />
-        <TrackGeometryMonitor />
-        <TrajectoryVisualizer />
+    <div class="header-info">
+      <div class="header-info-item">
+        <span class="header-info-label">当前列车</span>
+        <span class="header-info-value">{trainId}</span>
       </div>
-
-      <div class="space-y-6">
-        <ControlPanel />
-        <SystemStatus />
-        <AlertPanel />
+      <div class="header-info-item">
+        <span class="header-info-label">当前时间</span>
+        <span class="header-info-value">{currentTime}</span>
       </div>
     </div>
-  </main>
+  </div>
+</header>
 
-  <footer class="bg-gray-900 border-t border-gray-700 mt-8">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-      <div class="flex items-center justify-between text-sm text-gray-500">
-        <div>RailLogic v1.0.0 - 高铁弓网交互监测系统</div>
-        <div>
-          基于 Svelte 5 + TypeScript + IndexedDB 构建
-        </div>
-      </div>
+<main class="main">
+  <div class="dashboard">
+    <div class="dashboard-main">
+      <PantographMonitor />
+      <TrackGeometryMonitor />
+      <TrajectoryVisualizer />
     </div>
-  </footer>
-</div>
+    <div class="dashboard-sidebar">
+      <ControlPanel />
+      <SystemStatus />
+      <AlertPanel />
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <span>RailLogic v1.0.0 - 高铁弓网交互监测系统</span>
+    <span>基于 Svelte 5 + TypeScript + IndexedDB 构建</span>
+  </div>
+</footer>

@@ -22,12 +22,12 @@
     return new Date(timestamp).toLocaleTimeString('zh-CN');
   }
 
-  function getStatusColor(status: string): string {
+  function getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'normal': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'critical': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'normal': return 'status-badge normal';
+      case 'warning': return 'status-badge warning';
+      case 'critical': return 'status-badge critical';
+      default: return 'status-badge';
     }
   }
 
@@ -39,115 +39,119 @@
       default: return '未知';
     }
   }
+
+  function getStatusDotClass(status: string): string {
+    switch (status) {
+      case 'normal': return 'status-dot active pulse';
+      case 'warning': return 'status-dot standby pulse';
+      case 'critical': return 'status-dot error pulse';
+      default: return 'status-dot';
+    }
+  }
 </script>
 
-<div class="p-4 bg-gray-900 rounded-lg shadow-lg">
-  <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-    <span class="text-2xl">⚡</span>
-    受电弓交互状态监测
-  </h3>
+<div class="card">
+  <div class="card-header">
+    <span class="card-icon">⚡</span>
+    <h3 class="card-title">受电弓交互状态监测</h3>
+  </div>
 
   {#if latestState}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">接触力</div>
-        <div class="text-2xl font-bold text-cyan-400">
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">接触力</div>
+        <div class="metric-value">
           {latestState.contactForce.toFixed(1)}
-          <span class="text-sm font-normal">N</span>
+          <span class="unit">N</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">磨损程度</div>
-        <div class="text-2xl font-bold text-orange-400">
+      <div class="metric">
+        <div class="metric-label">磨损程度</div>
+        <div class="metric-value warning">
           {latestState.wearLevel.toFixed(1)}
-          <span class="text-sm font-normal">%</span>
+          <span class="unit">%</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">垂直位移</div>
-        <div class="text-2xl font-bold text-purple-400">
+      <div class="metric">
+        <div class="metric-label">垂直位移</div>
+        <div class="metric-value info">
           {latestState.verticalDisplacement.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">水平位移</div>
-        <div class="text-2xl font-bold text-pink-400">
+      <div class="metric">
+        <div class="metric-label">水平位移</div>
+        <div class="metric-value info">
           {latestState.horizontalDisplacement.toFixed(2)}
-          <span class="text-sm font-normal">mm</span>
+          <span class="unit">mm</span>
         </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-4 mb-6">
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">振动频率</div>
-        <div class="text-xl font-bold text-blue-400">
-          {latestState.vibrationFrequency.toFixed(1)} Hz
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">振动频率</div>
+        <div class="metric-value primary">
+          {latestState.vibrationFrequency.toFixed(1)}
+          <span class="unit">Hz</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">温度</div>
-        <div class="text-xl font-bold text-red-400">
-          {latestState.temperature.toFixed(1)} °C
+      <div class="metric">
+        <div class="metric-label">温度</div>
+        <div class="metric-value danger">
+          {latestState.temperature.toFixed(1)}
+          <span class="unit">°C</span>
         </div>
       </div>
-
-      <div class="bg-gray-800 p-3 rounded-lg">
-        <div class="text-gray-400 text-sm">电弧检测</div>
-        <div class="text-xl font-bold" class:text-red-500={latestState.arcDetection} class:text-green-500={!latestState.arcDetection}>
+      <div class="metric">
+        <div class="metric-label">电弧检测</div>
+        <div class="metric-value" class:danger={latestState.arcDetection} class:success={!latestState.arcDetection}>
           {latestState.arcDetection ? '检测到' : '未检测'}
         </div>
       </div>
+      <div class="metric">
+        <div class="metric-label">列车速度</div>
+        <div class="metric-value success">
+          {latestState.speed.toFixed(0)}
+          <span class="unit">km/h</span>
+        </div>
+      </div>
     </div>
 
-    <div class="flex items-center gap-4 mb-4">
-      <div class="flex items-center gap-2">
-        <div class="w-3 h-3 rounded-full {getStatusColor(latestState.status)} animate-pulse"></div>
-        <span class="text-white font-semibold">
-          状态: {getStatusText(latestState.status)}
-        </span>
-      </div>
-      <div class="text-gray-400">
-        更新时间: {formatTime(latestState.timestamp)}
-      </div>
-      <div class="text-gray-400">
-        列车: {latestState.trainId}
-      </div>
+    <div class="status-indicator">
+      <div class="status-dot {getStatusDotClass(latestState.status)}"></div>
+      <span>状态: {getStatusText(latestState.status)}</span>
+      <span style="margin-left: auto; color: var(--text-muted); font-size: 13px;">
+        更新: {formatTime(latestState.timestamp)}
+      </span>
     </div>
   {:else}
-    <div class="text-gray-400 text-center py-8">
-      等待受电弓数据...
-    </div>
+    <div class="alert-empty">等待受电弓数据...</div>
   {/if}
 
   {#if historyStates.length > 0}
-    <div class="mt-4 border-t border-gray-700 pt-4">
-      <h4 class="text-gray-300 font-semibold mb-2">历史数据 (最近20条)</h4>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+    <div class="history-section">
+      <div class="history-title">历史数据 (最近20条)</div>
+      <div style="overflow-x: auto;">
+        <table class="history-table">
           <thead>
-            <tr class="text-gray-400">
-              <th class="text-left py-1">时间</th>
-              <th class="text-right py-1">接触力</th>
-              <th class="text-right py-1">磨损</th>
-              <th class="text-right py-1">垂移</th>
-              <th class="text-right py-1">状态</th>
+            <tr>
+              <th>时间</th>
+              <th>接触力</th>
+              <th>磨损</th>
+              <th>垂移</th>
+              <th>状态</th>
             </tr>
           </thead>
           <tbody>
             {#each historyStates as state (state.id)}
-              <tr class="text-gray-300 border-t border-gray-800">
-                <td class="py-1">{formatTime(state.timestamp)}</td>
-                <td class="text-right">{state.contactForce.toFixed(1)} N</td>
-                <td class="text-right">{state.wearLevel.toFixed(1)}%</td>
-                <td class="text-right">{state.verticalDisplacement.toFixed(2)} mm</td>
-                <td class="text-right">
-                  <span class="px-2 py-0.5 rounded text-xs {getStatusColor(state.status)} text-white">
+              <tr>
+                <td>{formatTime(state.timestamp)}</td>
+                <td>{state.contactForce.toFixed(1)} N</td>
+                <td>{state.wearLevel.toFixed(1)}%</td>
+                <td>{state.verticalDisplacement.toFixed(2)} mm</td>
+                <td>
+                  <span class="{getStatusBadgeClass(state.status)}">
                     {getStatusText(state.status)}
                   </span>
                 </td>
@@ -159,13 +163,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-</style>
