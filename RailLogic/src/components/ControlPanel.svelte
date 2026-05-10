@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { isMonitoring, currentTrainId } from '../lib/stores';
+  import { isMonitoring, currentTrainId, pantographStates, trackParameters, trajectoryPoints, alerts } from '../lib/stores';
   import { indexeddb } from '../lib/indexeddb';
   import { generateHistoricalTrackParameters } from '../lib/mockDataGenerator';
-  import { trackParameters } from '../lib/stores';
 
   let monitoringState = $state(false);
   let trainIdValue = $state('TRAIN-001');
@@ -38,8 +37,16 @@
   async function cleanupDatabase(): Promise<void> {
     loadingState = true;
     try {
-      const deleted = await indexeddb.cleanupOldData(1);
-      console.log(`Cleaned up ${deleted} old records`);
+      const deleted = await indexeddb.clearAllData();
+      pantographStates.clear();
+      trackParameters.clear();
+      trajectoryPoints.clear();
+      alerts.clear();
+      console.log(`清理数据库完成，共删除 ${deleted} 条记录`);
+      alert(`数据库清理完成，共删除 ${deleted} 条记录`);
+    } catch (error) {
+      console.error('清理数据库失败:', error);
+      alert('清理数据库失败，请查看控制台');
     } finally {
       loadingState = false;
     }

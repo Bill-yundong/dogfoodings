@@ -209,10 +209,24 @@ class IndexedDBManager {
     const cutoffTime = Date.now() - maxAgeHours * 60 * 60 * 1000;
     let deletedCount = 0;
 
-    const stores = [STORES.TRACK_PARAMS, STORES.TRAJECTORY, STORES.PANTOGRAPH];
+    const stores = [STORES.TRACK_PARAMS, STORES.TRAJECTORY, STORES.PANTOGRAPH, STORES.ALERTS];
 
     for (const storeName of stores) {
       const count = await this.deleteOldRecords(db, storeName, cutoffTime);
+      deletedCount += count;
+    }
+
+    return deletedCount;
+  }
+
+  async clearAllData(): Promise<number> {
+    const db = await this.init();
+    let deletedCount = 0;
+
+    const stores = [STORES.TRACK_PARAMS, STORES.TRAJECTORY, STORES.PANTOGRAPH, STORES.ALERTS];
+
+    for (const storeName of stores) {
+      const count = await this.clearStore(db, storeName);
       deletedCount += count;
     }
 
@@ -227,6 +241,13 @@ class IndexedDBManager {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(storeName, 'readwrite');
       const store = transaction.objectStore(storeName);
+
+      if (!store.indexNames.contains('timestamp')) {
+        console.warn(`Index 'timestamp' not found in store ${storeName}`);
+        resolve(0);
+        return;
+      }
+
       const index = store.index('timestamp');
       const range = IDBKeyRange.upperBound(cutoffTime);
       const request = index.openCursor(range);
@@ -243,7 +264,37 @@ class IndexedDBManager {
         }
       };
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        console.error(`Error deleting old records from ${storeName}:`, request.error);
+        resolve(count);
+      };
+    });
+  }
+
+  private async clearStore(
+    db: IDBDatabase,
+    storeName: string
+  ): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      let count = 0;
+
+      const countRequest = store.count();
+      countRequest.onsuccess = () => {
+        count = countRequest.result as number;
+      };
+
+      const clearRequest = store.clear();
+
+      clearRequest.onsuccess = () => {
+        resolve(count);
+      };
+
+      clearRequest.onerror = () => {
+        console.error(`Error clearing store ${storeName}:`, clearRequest.error);
+        resolve(0);
+      };
     });
   }
 
