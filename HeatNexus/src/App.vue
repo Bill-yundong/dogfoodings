@@ -260,43 +260,50 @@
                     <stop offset="100%" style="stop-color:#4ecdc4;stop-opacity:1" />
                   </linearGradient>
                 </defs>
-                <g v-for="conn in displayConnections" :key="conn.id">
-                  <line
-                    :x1="getNodeCoord(conn.from, 'x')"
-                    :y1="getNodeCoord(conn.from, 'y')"
-                    :x2="getNodeCoord(conn.to, 'x')"
-                    :y2="getNodeCoord(conn.to, 'y')"
-                    :stroke="getConnectionColor(conn)"
-                    stroke-width="3"
-                    opacity="0.6"
-                  />
-                </g>
-                <g v-for="node in displayNodes" :key="node.id" @click="selectNode(node)">
-                  <circle
-                    :cx="node.coords.x"
-                    :cy="node.coords.y"
-                    :r="getNodeRadius(node)"
-                    :fill="getNodeColor(node)"
-                    stroke="white"
-                    stroke-width="1"
-                    opacity="0.9"
-                  />
-                  <text
-                    :x="node.coords.x"
-                    :y="node.coords.y"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="white"
-                    font-size="10"
-                    font-weight="bold"
-                  >
-                    {{ getNodeSymbol(node) }}
-                  </text>
+                <g :transform="`scale(${zoomLevel}) translate(${(1000 / zoomLevel - 1000) / 2}, ${(600 / zoomLevel - 600) / 2})`">
+                  <g v-for="conn in displayConnections" :key="conn.id">
+                    <line
+                      :x1="getNodeCoord(conn.from, 'x')"
+                      :y1="getNodeCoord(conn.from, 'y')"
+                      :x2="getNodeCoord(conn.to, 'x')"
+                      :y2="getNodeCoord(conn.to, 'y')"
+                      :stroke="getConnectionColor(conn)"
+                      :stroke-width="3 / zoomLevel"
+                      opacity="0.6"
+                    />
+                  </g>
+                  <g v-for="node in displayNodes" :key="node.id" @click="selectNode(node)" style="cursor: pointer;">
+                    <circle
+                      :cx="node.coords.x"
+                      :cy="node.coords.y"
+                      :r="getNodeRadius(node) / zoomLevel"
+                      :fill="getNodeColor(node)"
+                      stroke="white"
+                      :stroke-width="1 / zoomLevel"
+                      opacity="0.9"
+                    />
+                    <text
+                      :x="node.coords.x"
+                      :y="node.coords.y"
+                      text-anchor="middle"
+                      dominant-baseline="middle"
+                      fill="white"
+                      :font-size="10 / zoomLevel"
+                      font-weight="bold"
+                      style="pointer-events: none;"
+                    >
+                      {{ getNodeSymbol(node) }}
+                    </text>
+                  </g>
                 </g>
               </svg>
               <div class="zoom-controls">
                 <button class="zoom-btn" @click="zoomIn">+</button>
+                <button class="zoom-btn" @click="resetZoom">⟲</button>
                 <button class="zoom-btn" @click="zoomOut">−</button>
+              </div>
+              <div class="zoom-indicator">
+                {{ Math.round(zoomLevel * 100) }}%
               </div>
             </div>
           </div>
@@ -368,6 +375,11 @@ const alignmentMetrics = ref({
 
 const logs = ref([])
 const logsPanel = ref(null)
+
+const zoomLevel = ref(1)
+const minZoom = 0.5
+const maxZoom = 3
+const zoomStep = 0.25
 
 const hasData = computed(() => nodes.value.length > 0)
 
@@ -706,11 +718,26 @@ function getNodeTempDrop(node) {
 }
 
 function zoomIn() {
-  addLog('放大视图', 'info')
+  if (zoomLevel.value < maxZoom) {
+    zoomLevel.value = Math.min(maxZoom, zoomLevel.value + zoomStep)
+    addLog(`放大视图: ${Math.round(zoomLevel.value * 100)}%`, 'info')
+  } else {
+    addLog('已达到最大缩放级别', 'warn')
+  }
 }
 
 function zoomOut() {
-  addLog('缩小视图', 'info')
+  if (zoomLevel.value > minZoom) {
+    zoomLevel.value = Math.max(minZoom, zoomLevel.value - zoomStep)
+    addLog(`缩小视图: ${Math.round(zoomLevel.value * 100)}%`, 'info')
+  } else {
+    addLog('已达到最小缩放级别', 'warn')
+  }
+}
+
+function resetZoom() {
+  zoomLevel.value = 1
+  addLog('重置缩放: 100%', 'info')
 }
 
 watch(isSyncing, (val) => {

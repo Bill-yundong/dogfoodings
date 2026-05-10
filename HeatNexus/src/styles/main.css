@@ -272,6 +272,18 @@ body {
   background: rgba(255, 165, 0, 0.5);
 }
 
+.zoom-indicator {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #ffa500;
+  font-weight: 600;
+}
+
 .zone-list {
   max-height: 350px;
   overflow-y: auto;
