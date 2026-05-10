@@ -116,27 +116,27 @@ export function generateVisualFrame(
   cameraId: string = 'CAM-01'
 ): VisualFrame {
   const canvas = document.createElement('canvas');
-  canvas.width = 640;
-  canvas.height = 480;
+  canvas.width = 160;
+  canvas.height = 120;
   const ctx = canvas.getContext('2d')!;
 
   ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, 640, 480);
+  ctx.fillRect(0, 0, 160, 120);
 
   ctx.strokeStyle = '#4a4a6a';
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 10; i++) {
-    const y = randomInRange(50, 430);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    const y = randomInRange(20, 100);
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(640, y + randomInRange(-50, 50));
+    ctx.lineTo(160, y + randomInRange(-10, 10));
     ctx.stroke();
   }
 
   ctx.fillStyle = '#e94560';
-  ctx.fillRect(randomInRange(200, 400), randomInRange(200, 300), 80, 60);
+  ctx.fillRect(randomInRange(50, 90), randomInRange(40, 70), 20, 15);
 
-  const imageData = ctx.getImageData(0, 0, 640, 480);
+  const imageData = ctx.getImageData(0, 0, 160, 120);
 
   return {
     id: generateId(),

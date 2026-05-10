@@ -114,7 +114,7 @@
     visualInterval = setInterval(() => {
       const frame = generateVisualFrame(trainId, 'CAM-01');
       disparityAlgorithm.addFrame(frame);
-    }, 500);
+    }, 4000);
   }
 
   function stopMonitoring(): void {
