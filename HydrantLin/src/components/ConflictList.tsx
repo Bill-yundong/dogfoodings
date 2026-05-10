@@ -17,7 +17,8 @@ export const ConflictList: Component<ConflictListProps> = (props) => {
     conflict: ConflictRecord,
     resolution: 'fire_dept' | 'water_company' | 'average'
   ) => {
-    actions.resolveConflict(conflict, resolution);
+    const plainConflict: ConflictRecord = JSON.parse(JSON.stringify(conflict));
+    actions.resolveConflict(plainConflict, resolution);
   };
 
   return (

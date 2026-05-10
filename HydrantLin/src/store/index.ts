@@ -276,8 +276,9 @@ export function createAppStore() {
     resolution: 'fire_dept' | 'water_company' | 'average'
   ) => {
     try {
+      const plainConflict: ConflictRecord = JSON.parse(JSON.stringify(conflict));
       const resolvedConflict: ConflictRecord = {
-        ...conflict,
+        ...plainConflict,
         resolved: true,
         resolution,
       };
