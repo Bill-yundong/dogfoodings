@@ -1,0 +1,23 @@
+{
+  "name": "hydrant-lin",
+  "version": "1.0.0",
+  "description": "消防水源压力分布映射系统",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.15",
+    "idb": "^8.0.0",
+    "maplibre-gl": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vite": "^5.2.0",
+    "vite-plugin-solid": "^2.10.0",
+    "vitest": "^1.4.0"
+  }
+}
