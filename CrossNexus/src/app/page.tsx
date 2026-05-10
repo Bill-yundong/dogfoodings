@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTrafficSimulation } from '@/hooks/useTrafficSimulation';
 import { useTrafficDB } from '@/hooks/useTrafficDB';
 import { useTrafficAlignment } from '@/hooks/useTrafficAlignment';
@@ -42,6 +42,22 @@ export default function HomePage() {
   const [mobileIndex, setMobileIndex] = useState<TrafficIndex | null>(null);
   const [density, setDensity] = useState(0.8);
   const [autoSync, setAutoSync] = useState(true);
+  
+  const trafficIndexRef = useRef<TrafficIndex | null>(null);
+  const isRunningRef = useRef(false);
+  const dbInitializedRef = useRef(false);
+
+  useEffect(() => {
+    trafficIndexRef.current = trafficIndex;
+  }, [trafficIndex]);
+
+  useEffect(() => {
+    isRunningRef.current = isRunning;
+  }, [isRunning]);
+
+  useEffect(() => {
+    dbInitializedRef.current = dbInitialized;
+  }, [dbInitialized]);
 
   useEffect(() => {
     initDB();
@@ -61,14 +77,16 @@ export default function HomePage() {
   }, [trafficIndex, autoSync]);
 
   useEffect(() => {
-    if (!dbInitialized || !trafficIndex) return;
+    if (!dbInitialized) return;
     
     const interval = setInterval(() => {
-      addRecord(trafficIndex);
+      if (isRunningRef.current && trafficIndexRef.current) {
+        addRecord(trafficIndexRef.current);
+      }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [dbInitialized, trafficIndex, addRecord]);
+  }, [dbInitialized, addRecord]);
 
   const addNoiseToIndex = (index: TrafficIndex): TrafficIndex => {
     const noise = Math.floor(Math.random() * 10) - 5;
@@ -105,7 +123,7 @@ export default function HomePage() {
   const handleFetchTimeRange = useCallback(async (hours: number) => {
     const now = Date.now();
     const start = now - hours * 60 * 60 * 1000;
-    await getRecordsByTimeRange(start, now);
+    return await getRecordsByTimeRange(start, now);
   }, [getRecordsByTimeRange]);
 
   const getSyncStatus = (): 'synced' | 'out-of-sync' | 'unknown' => {

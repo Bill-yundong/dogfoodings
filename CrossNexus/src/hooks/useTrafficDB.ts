@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { trafficDB, TrafficDatabase } from '@/lib/database/indexedDB';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { trafficDB } from '@/lib/database/indexedDB';
 import { TrafficIndex, HistoricalRecord } from '@/lib/types/traffic';
 
 export function useTrafficDB() {
@@ -7,32 +7,66 @@ export function useTrafficDB() {
   const [records, setRecords] = useState<HistoricalRecord[]>([]);
   const [recordCount, setRecordCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
+  const isInitializedRef = useRef(false);
+  const recordsRef = useRef<HistoricalRecord[]>([]);
+
+  useEffect(() => {
+    isInitializedRef.current = isInitialized;
+  }, [isInitialized]);
+
+  useEffect(() => {
+    recordsRef.current = records;
+  }, [records]);
+
+  const refreshRecentRecords = useCallback(async () => {
+    if (!isInitializedRef.current) return;
+    
+    const now = Date.now();
+    const sixHoursAgo = now - 6 * 60 * 60 * 1000;
+    const result = await trafficDB.getRecordsByTimeRange(sixHoursAgo, now);
+    setRecords(result);
+  }, []);
+
+  const updateCount = useCallback(async () => {
+    if (!isInitializedRef.current) return;
+    
+    try {
+      const count = await trafficDB.getRecordCount();
+      setRecordCount(count);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to get record count');
+    }
+  }, []);
 
   const init = useCallback(async () => {
     try {
       await trafficDB.init();
       setIsInitialized(true);
+      isInitializedRef.current = true;
       await updateCount();
+      await refreshRecentRecords();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initialize database');
     }
-  }, []);
+  }, [updateCount, refreshRecentRecords]);
 
   const addRecord = useCallback(async (index: TrafficIndex): Promise<string | null> => {
-    if (!isInitialized) return null;
+    if (!isInitializedRef.current) return null;
     
     try {
       const id = await trafficDB.addRecord(index);
       await updateCount();
+      await refreshRecentRecords();
       return id;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add record');
       return null;
     }
-  }, [isInitialized]);
+  }, [updateCount, refreshRecentRecords]);
 
   const getRecordsSince = useCallback(async (timestamp: number): Promise<HistoricalRecord[]> => {
-    if (!isInitialized) return [];
+    if (!isInitializedRef.current) return [];
     
     try {
       const result = await trafficDB.getRecordsSince(timestamp);
@@ -42,13 +76,13 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to fetch records');
       return [];
     }
-  }, [isInitialized]);
+  }, []);
 
   const getRecordsByTimeRange = useCallback(async (
     startTime: number,
     endTime: number
   ): Promise<HistoricalRecord[]> => {
-    if (!isInitialized) return [];
+    if (!isInitializedRef.current) return [];
     
     try {
       const result = await trafficDB.getRecordsByTimeRange(startTime, endTime);
@@ -58,13 +92,13 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to fetch records');
       return [];
     }
-  }, [isInitialized]);
+  }, []);
 
   const getIncrementalRecords = useCallback(async (
     fromTimestamp: number,
     batchSize: number = 100
   ): Promise<{ records: HistoricalRecord[]; hasMore: boolean; nextTimestamp: number }> => {
-    if (!isInitialized) {
+    if (!isInitializedRef.current) {
       return { records: [], hasMore: false, nextTimestamp: fromTimestamp };
     }
     
@@ -75,12 +109,12 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to fetch incremental records');
       return { records: [], hasMore: false, nextTimestamp: fromTimestamp };
     }
-  }, [isInitialized]);
+  }, []);
 
   const getPeakRecords = useCallback(async (
     peakType: 'morning' | 'evening' | 'both' = 'both'
   ): Promise<HistoricalRecord[]> => {
-    if (!isInitialized) return [];
+    if (!isInitializedRef.current) return [];
     
     try {
       const result = await trafficDB.getPeakTrafficRecords(peakType);
@@ -90,13 +124,13 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to fetch peak records');
       return [];
     }
-  }, [isInitialized]);
+  }, []);
 
   const compareWithHistorical = useCallback(async (
     currentIndex: TrafficIndex,
     historicalHours: number = 24
   ) => {
-    if (!isInitialized) {
+    if (!isInitializedRef.current) {
       return { current: currentIndex, historical: null, comparison: { overallChange: 0, hotspotChange: 0 } };
     }
     
@@ -106,21 +140,10 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to compare with historical');
       return { current: currentIndex, historical: null, comparison: { overallChange: 0, hotspotChange: 0 } };
     }
-  }, [isInitialized]);
-
-  const updateCount = useCallback(async () => {
-    if (!isInitialized) return;
-    
-    try {
-      const count = await trafficDB.getRecordCount();
-      setRecordCount(count);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get record count');
-    }
-  }, [isInitialized]);
+  }, []);
 
   const cleanupOldRecords = useCallback(async (maxAgeDays: number = 30): Promise<number> => {
-    if (!isInitialized) return 0;
+    if (!isInitializedRef.current) return 0;
     
     try {
       const deleted = await trafficDB.cleanupOldRecords(maxAgeDays);
@@ -130,10 +153,10 @@ export function useTrafficDB() {
       setError(err instanceof Error ? err.message : 'Failed to cleanup records');
       return 0;
     }
-  }, [isInitialized, updateCount]);
+  }, [updateCount]);
 
   const clearAllRecords = useCallback(async () => {
-    if (!isInitialized) return;
+    if (!isInitializedRef.current) return;
     
     try {
       await trafficDB.clearAllRecords();
@@ -142,7 +165,7 @@ export function useTrafficDB() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear records');
     }
-  }, [isInitialized, updateCount]);
+  }, [updateCount]);
 
   return {
     isInitialized,

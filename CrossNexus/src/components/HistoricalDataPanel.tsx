@@ -4,9 +4,9 @@ import { HistoricalRecord } from '@/lib/types/traffic';
 interface HistoricalDataPanelProps {
   records: HistoricalRecord[];
   recordCount: number;
-  onFetchPeak: (type: 'morning' | 'evening' | 'both') => void;
-  onFetchTimeRange: (hours: number) => void;
-  onClearAll: () => void;
+  onFetchPeak: (type: 'morning' | 'evening' | 'both') => Promise<HistoricalRecord[]>;
+  onFetchTimeRange: (hours: number) => Promise<HistoricalRecord[]>;
+  onClearAll: () => Promise<void>;
 }
 
 export function HistoricalDataPanel({
@@ -28,9 +28,9 @@ export function HistoricalDataPanel({
     }
   };
 
-  const handleTimeRangeChange = (range: '1h' | '6h' | '24h' | '7d') => {
+  const handleTimeRangeChange = async (range: '1h' | '6h' | '24h' | '7d') => {
     setTimeRange(range);
-    onFetchTimeRange(getTimeRangeHours(range));
+    await onFetchTimeRange(getTimeRangeHours(range));
   };
 
   const formatTimestamp = (timestamp: number): string => {
@@ -86,19 +86,19 @@ export function HistoricalDataPanel({
           <div className="flex items-center gap-1">
             <span className="text-sm text-slate-400">高峰:</span>
             <button
-              onClick={() => onFetchPeak('morning')}
+              onClick={async () => await onFetchPeak('morning')}
               className="px-2 py-1 rounded text-sm bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
             >
               早高峰
             </button>
             <button
-              onClick={() => onFetchPeak('evening')}
+              onClick={async () => await onFetchPeak('evening')}
               className="px-2 py-1 rounded text-sm bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
             >
               晚高峰
             </button>
             <button
-              onClick={() => onFetchPeak('both')}
+              onClick={async () => await onFetchPeak('both')}
               className="px-2 py-1 rounded text-sm bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
             >
               全部
@@ -146,7 +146,7 @@ export function HistoricalDataPanel({
         {records.length > 0 && (
           <div className="pt-3 border-t border-slate-700">
             <button
-              onClick={onClearAll}
+              onClick={async () => await onClearAll()}
               className="w-full px-3 py-2 rounded bg-red-900/50 text-red-400 hover:bg-red-900/70 transition-colors text-sm"
             >
               清除所有历史数据
