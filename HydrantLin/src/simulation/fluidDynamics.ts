@@ -26,18 +26,58 @@ export const calculateDarcyWeisbachFrictionFactor = (
     return 64 / reynoldsNumber;
   }
 
+  const defaultFriction = 0.03;
+  if (reynoldsNumber <= 0 || relativeRoughness < 0) {
+    return defaultFriction;
+  }
+
   let f = 0.02;
-  for (let i = 0; i < 10; i++) {
-    const left = 1 / Math.sqrt(f);
+  const maxIterations = 10;
+  const tolerance = 0.0001;
+
+  for (let i = 0; i < maxIterations; i++) {
+    if (f <= 0 || !isFinite(f)) {
+      f = defaultFriction;
+    }
+
+    const sqrtF = Math.sqrt(f);
+    const left = 1 / sqrtF;
     const right =
       -2 *
       Math.log10(
-        relativeRoughness / 3.7 + 2.51 / (reynoldsNumber * Math.sqrt(f))
+        relativeRoughness / 3.7 + 2.51 / (reynoldsNumber * sqrtF)
       );
+
     const error = Math.abs(left - right);
-    if (error < 0.0001) break;
-    f = f - (left - right) / (1 / (2 * f * Math.sqrt(f)));
+    if (error < tolerance) {
+      break;
+    }
+
+    const derivative = -0.5 / Math.pow(f, 1.5);
+    if (derivative === 0 || !isFinite(derivative)) {
+      break;
+    }
+
+    const nextF = f - (left - right) / derivative;
+
+    if (nextF <= 0 || !isFinite(nextF)) {
+      f = Math.max(0.001, f * 0.8);
+      continue;
+    }
+
+    const maxStep = f * 0.5;
+    const diff = nextF - f;
+    if (Math.abs(diff) > maxStep) {
+      f = f + (diff > 0 ? maxStep : -maxStep);
+    } else {
+      f = nextF;
+    }
   }
+
+  if (!isFinite(f) || f <= 0.001 || f > 0.1) {
+    return defaultFriction;
+  }
+
   return f;
 };
 

@@ -370,6 +370,19 @@ class SemanticSynchronizer {
     this.callbacks.clear();
     this.fireDeptQueue = [];
     this.waterCompanyQueue = [];
+    this.stats = {
+      totalMessages: 0,
+      synced: 0,
+      conflicts: 0,
+      failures: 0,
+      lastSyncTime: 0,
+    };
+    this.isProcessing = false;
+  }
+
+  reset(): void {
+    this.destroy();
+    this.startAutoSync();
   }
 }
 

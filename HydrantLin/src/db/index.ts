@@ -261,3 +261,21 @@ export const closeDB = (): void => {
     db = null;
   }
 };
+
+export const clearAllStores = async (): Promise<void> => {
+  const database = await initDB();
+  const tx = database.transaction(
+    ['hydrants', 'pressureReadings', 'waterMains', 'semanticMetadata', 'conflictRecords'],
+    'readwrite'
+  );
+
+  await Promise.all([
+    tx.store.clear(),
+    tx.objectStore('pressureReadings').clear(),
+    tx.objectStore('waterMains').clear(),
+    tx.objectStore('semanticMetadata').clear(),
+    tx.objectStore('conflictRecords').clear(),
+  ]);
+
+  await tx.done;
+};
