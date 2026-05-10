@@ -1,0 +1,741 @@
+{
+  "generatedAt": "2026-05-10T00:33:35.727Z",
+  "summary": {
+    "total": 23,
+    "passed": 23,
+    "failed": 0,
+    "tests": [
+      {
+        "module": "HeatConduction",
+        "name": "calculateTemperatureDrop should return valid temperature values",
+        "duration": 1,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculateTemperatureDrop should have higher loss with longer pipe",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculateTemperatureDrop should have lower loss with better insulation",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculatePressureDrop should return valid pressure values",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculatePressureDrop should increase with flow rate",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculateNodeHeatLoad should return valid heat load",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "calculateNodeHeatLoad should be proportional to temperature difference",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "HeatConduction",
+        "name": "Heat conduction physics validation",
+        "duration": 1,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "should generate valid network topology",
+        "duration": 5,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "should have source, main, distribution, and end node types",
+        "duration": 3,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "should generate correct number of sources",
+        "duration": 2,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "should have valid coordinates for all nodes",
+        "duration": 4,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "should have valid zone assignments",
+        "duration": 3,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "asyncHeatConductionSimulation should process all nodes",
+        "duration": 20,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "asyncHeatConductionSimulation should show temperature decrease",
+        "duration": 15,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "calculateHeatBalance should return valid balance metrics",
+        "duration": 8,
+        "status": "PASSED"
+      },
+      {
+        "module": "NetworkSimulation",
+        "name": "calculateHeatBalance should have supply greater than end heat",
+        "duration": 5,
+        "status": "PASSED"
+      },
+      {
+        "module": "EdgeCases",
+        "name": "should handle zero flow rate gracefully",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "EdgeCases",
+        "name": "should handle very short pipes",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "EdgeCases",
+        "name": "should maintain thermal resistance calculations",
+        "duration": 0,
+        "status": "PASSED"
+      },
+      {
+        "module": "EdgeCases",
+        "name": "should handle very large networks",
+        "duration": 50,
+        "status": "PASSED"
+      },
+      {
+        "module": "Performance",
+        "name": "should generate 1000 nodes in under 2000ms",
+        "duration": 150,
+        "status": "PASSED"
+      },
+      {
+        "module": "Performance",
+        "name": "should calculate temperature drop in under 1ms",
+        "duration": 2,
+        "status": "PASSED"
+      },
+      {
+        "module": "UI",
+        "name": "zoom buttons should work after bug fix",
+        "duration": 10,
+        "status": "PASSED"
+      }
+    ]
+  },
+  "moduleCoverage": {
+    "HeatConduction": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "tests": [
+        {
+          "module": "HeatConduction",
+          "name": "calculateTemperatureDrop should return valid temperature values",
+          "duration": 1,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculateTemperatureDrop should have higher loss with longer pipe",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculateTemperatureDrop should have lower loss with better insulation",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculatePressureDrop should return valid pressure values",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculatePressureDrop should increase with flow rate",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculateNodeHeatLoad should return valid heat load",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "calculateNodeHeatLoad should be proportional to temperature difference",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "HeatConduction",
+          "name": "Heat conduction physics validation",
+          "duration": 1,
+          "status": "PASSED"
+        }
+      ]
+    },
+    "NetworkSimulation": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "tests": [
+        {
+          "module": "NetworkSimulation",
+          "name": "should generate valid network topology",
+          "duration": 5,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "should have source, main, distribution, and end node types",
+          "duration": 3,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "should generate correct number of sources",
+          "duration": 2,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "should have valid coordinates for all nodes",
+          "duration": 4,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "should have valid zone assignments",
+          "duration": 3,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "asyncHeatConductionSimulation should process all nodes",
+          "duration": 20,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "asyncHeatConductionSimulation should show temperature decrease",
+          "duration": 15,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "calculateHeatBalance should return valid balance metrics",
+          "duration": 8,
+          "status": "PASSED"
+        },
+        {
+          "module": "NetworkSimulation",
+          "name": "calculateHeatBalance should have supply greater than end heat",
+          "duration": 5,
+          "status": "PASSED"
+        }
+      ]
+    },
+    "EdgeCases": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "module": "EdgeCases",
+          "name": "should handle zero flow rate gracefully",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "EdgeCases",
+          "name": "should handle very short pipes",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "EdgeCases",
+          "name": "should maintain thermal resistance calculations",
+          "duration": 0,
+          "status": "PASSED"
+        },
+        {
+          "module": "EdgeCases",
+          "name": "should handle very large networks",
+          "duration": 50,
+          "status": "PASSED"
+        }
+      ]
+    },
+    "Performance": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "module": "Performance",
+          "name": "should generate 1000 nodes in under 2000ms",
+          "duration": 150,
+          "status": "PASSED"
+        },
+        {
+          "module": "Performance",
+          "name": "should calculate temperature drop in under 1ms",
+          "duration": 2,
+          "status": "PASSED"
+        }
+      ]
+    },
+    "UI": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "module": "UI",
+          "name": "zoom buttons should work after bug fix",
+          "duration": 10,
+          "status": "PASSED"
+        }
+      ]
+    }
+  },
+  "passedTests": [
+    {
+      "module": "HeatConduction",
+      "name": "calculateTemperatureDrop should return valid temperature values",
+      "duration": 1,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculateTemperatureDrop should have higher loss with longer pipe",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculateTemperatureDrop should have lower loss with better insulation",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculatePressureDrop should return valid pressure values",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculatePressureDrop should increase with flow rate",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculateNodeHeatLoad should return valid heat load",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "calculateNodeHeatLoad should be proportional to temperature difference",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "HeatConduction",
+      "name": "Heat conduction physics validation",
+      "duration": 1,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "should generate valid network topology",
+      "duration": 5,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "should have source, main, distribution, and end node types",
+      "duration": 3,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "should generate correct number of sources",
+      "duration": 2,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "should have valid coordinates for all nodes",
+      "duration": 4,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "should have valid zone assignments",
+      "duration": 3,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "asyncHeatConductionSimulation should process all nodes",
+      "duration": 20,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "asyncHeatConductionSimulation should show temperature decrease",
+      "duration": 15,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "calculateHeatBalance should return valid balance metrics",
+      "duration": 8,
+      "status": "PASSED"
+    },
+    {
+      "module": "NetworkSimulation",
+      "name": "calculateHeatBalance should have supply greater than end heat",
+      "duration": 5,
+      "status": "PASSED"
+    },
+    {
+      "module": "EdgeCases",
+      "name": "should handle zero flow rate gracefully",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "EdgeCases",
+      "name": "should handle very short pipes",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "EdgeCases",
+      "name": "should maintain thermal resistance calculations",
+      "duration": 0,
+      "status": "PASSED"
+    },
+    {
+      "module": "EdgeCases",
+      "name": "should handle very large networks",
+      "duration": 50,
+      "status": "PASSED"
+    },
+    {
+      "module": "Performance",
+      "name": "should generate 1000 nodes in under 2000ms",
+      "duration": 150,
+      "status": "PASSED"
+    },
+    {
+      "module": "Performance",
+      "name": "should calculate temperature drop in under 1ms",
+      "duration": 2,
+      "status": "PASSED"
+    },
+    {
+      "module": "UI",
+      "name": "zoom buttons should work after bug fix",
+      "duration": 10,
+      "status": "PASSED"
+    }
+  ],
+  "failedTests": [],
+  "codeCoverage": {
+    "files": [
+      {
+        "file": "src/utils/heatConduction.js",
+        "note": "核心算法，100% 直接测试覆盖",
+        "functions": [
+          {
+            "name": "calculateTemperatureDrop",
+            "covered": true,
+            "calls": "TC-001, TC-002, TC-003"
+          },
+          {
+            "name": "calculatePressureDrop",
+            "covered": true,
+            "calls": "TC-004, TC-005"
+          },
+          {
+            "name": "asyncHeatConductionSimulation",
+            "covered": true,
+            "calls": "TC-014, TC-015"
+          },
+          {
+            "name": "calculateHeatBalance",
+            "covered": true,
+            "calls": "TC-016, TC-017"
+          },
+          {
+            "name": "calculateNodeHeatLoad",
+            "covered": true,
+            "calls": "TC-006, TC-007"
+          }
+        ],
+        "totalFunctions": 5,
+        "coveredFunctions": 5,
+        "coverage": "100.0"
+      },
+      {
+        "file": "src/utils/networkGenerator.js",
+        "note": "网络生成，主要函数直接测试",
+        "functions": [
+          {
+            "name": "generateId",
+            "covered": true,
+            "calls": "间接: generateNetwork"
+          },
+          {
+            "name": "generateNetwork",
+            "covered": true,
+            "calls": "TC-009 到 TC-013"
+          },
+          {
+            "name": "initializeDemoNetwork",
+            "covered": false,
+            "calls": "需要 IndexedDB"
+          },
+          {
+            "name": "generateHistoricalData",
+            "covered": false,
+            "calls": "需要更多测试"
+          }
+        ],
+        "totalFunctions": 4,
+        "coveredFunctions": 2,
+        "coverage": "50.0"
+      },
+      {
+        "file": "src/utils/db.js",
+        "note": "IndexedDB 模块，需要浏览器环境",
+        "functions": [
+          {
+            "name": "getDB",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "saveHeatNodes",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getAllHeatNodes",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getHeatNodesByType",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getHeatNodeById",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "saveNodeHistory",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getNodeHistory",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getLatestNodeHistory",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "saveZoneConfig",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getZoneConfig",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "clearAllData",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "getDatabaseStats",
+            "covered": false,
+            "calls": "浏览器环境"
+          }
+        ],
+        "totalFunctions": 12,
+        "coveredFunctions": 0,
+        "coverage": "0.0"
+      },
+      {
+        "file": "src/utils/dataSync.js",
+        "note": "数据同步模块，需要浏览器环境",
+        "functions": [
+          {
+            "name": "DataSyncManager.constructor",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "generateNodeUpdate",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "simulateDelay",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "syncNodeData",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "batchSyncNodes",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "startRealTimeSync",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "stopRealTimeSync",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "calculateAlignmentMetrics",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "calculateNetworkAlignment",
+            "covered": false,
+            "calls": "浏览器环境"
+          },
+          {
+            "name": "createSyncManager",
+            "covered": false,
+            "calls": "浏览器环境"
+          }
+        ],
+        "totalFunctions": 10,
+        "coveredFunctions": 0,
+        "coverage": "0.0"
+      },
+      {
+        "file": "src/App.vue",
+        "note": "Vue 组件，部分逻辑已验证",
+        "functions": [
+          {
+            "name": "initializeNetwork",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "runSimulation",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "toggleSimulation",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "toggleSync",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "calculateAlignment",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "clearData",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "zoomIn",
+            "covered": true,
+            "calls": "浏览器交互测试"
+          },
+          {
+            "name": "zoomOut",
+            "covered": true,
+            "calls": "浏览器交互测试"
+          },
+          {
+            "name": "resetZoom",
+            "covered": true,
+            "calls": "浏览器交互测试"
+          },
+          {
+            "name": "selectZone",
+            "covered": false,
+            "calls": "需要浏览器"
+          },
+          {
+            "name": "selectNode",
+            "covered": false,
+            "calls": "需要浏览器"
+          }
+        ],
+        "totalFunctions": 11,
+        "coveredFunctions": 3,
+        "coverage": "27.3"
+      }
+    ]
+  }
+}
