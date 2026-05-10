@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -32,12 +32,44 @@ import {
 } from '@mui/icons-material';
 
 const COLORS = ['#4CAF50', '#FF9800', '#F44336'];
+const MAX_CHART_POINTS = 15;
 
 function formatTime(timestamp) {
   return new Date(timestamp).toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function sampleData(data, maxPoints) {
+  if (data.length <= maxPoints) return data;
+  
+  const step = Math.ceil(data.length / maxPoints);
+  const sampled = [];
+  
+  for (let i = 0; i < data.length; i += step) {
+    sampled.push(data[i]);
+  }
+  
+  return sampled;
+}
+
+function shallowEqual(objA, objB) {
+  if (objA === objB) return true;
+  if (typeof objA !== 'object' || typeof objB !== 'object') return false;
+  if (objA === null || objB === null) return false;
+  
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  
+  if (keysA.length !== keysB.length) return false;
+  
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key)) return false;
+    if (objA[key] !== objB[key]) return false;
+  }
+  
+  return true;
 }
 
 function OperationAnalysis({ metricsHistory, trajectoryOffsets, passengerFlow }) {
@@ -51,7 +83,7 @@ function OperationAnalysis({ metricsHistory, trajectoryOffsets, passengerFlow })
   useEffect(() => {
     if (metricsHistory.length > 0) {
       const latest = metricsHistory[metricsHistory.length - 1];
-      const totalPassengers = passengerFlow.reduce(
+      const totalPassengers = passengerFlow.slice(0, 100).reduce(
         (sum, flow) => sum + flow.boardingCount, 0
       );
       
@@ -64,30 +96,44 @@ function OperationAnalysis({ metricsHistory, trajectoryOffsets, passengerFlow })
     }
   }, [metricsHistory, passengerFlow]);
 
-  const punctualityChartData = metricsHistory.map(m => ({
-    time: formatTime(m.timestamp),
-    准点率: Math.round(m.onTimeRate * 100),
-    平均延误: Math.abs(Math.round(m.avgDelay))
-  }));
+  const punctualityChartData = useMemo(() => {
+    const data = metricsHistory.map(m => ({
+      time: formatTime(m.timestamp),
+      准点率: Math.round(m.onTimeRate * 100),
+      平均延误: Math.abs(Math.round(m.avgDelay))
+    }));
+    return sampleData(data, MAX_CHART_POINTS);
+  }, [metricsHistory]);
 
-  const statusDistribution = metricsHistory.length > 0 ? [
-    { name: '准点', value: metricsHistory[metricsHistory.length - 1].onTimeCount },
-    { name: '早到', value: metricsHistory[metricsHistory.length - 1].earlyCount },
-    { name: '延误', value: metricsHistory[metricsHistory.length - 1].delayedCount }
-  ] : [];
+  const statusDistribution = useMemo(() => {
+    if (metricsHistory.length === 0) return [];
+    
+    const latest = metricsHistory[metricsHistory.length - 1];
+    return [
+      { name: '准点', value: latest.onTimeCount },
+      { name: '早到', value: latest.earlyCount },
+      { name: '延误', value: latest.delayedCount }
+    ];
+  }, [metricsHistory]);
 
-  const delayChartData = trajectoryOffsets.map(o => ({
-    time: formatTime(o.timestamp),
-    延误秒数: o.delaySeconds,
-    偏离距离: Math.round(o.distanceFromRoute * 1000)
-  }));
+  const delayChartData = useMemo(() => {
+    const data = trajectoryOffsets.map(o => ({
+      time: formatTime(o.timestamp),
+      延误秒数: o.delaySeconds,
+      偏离距离: Math.round(o.distanceFromRoute * 1000)
+    }));
+    return sampleData(data, MAX_CHART_POINTS);
+  }, [trajectoryOffsets]);
 
-  const passengerChartData = passengerFlow.map(f => ({
-    time: formatTime(f.timestamp),
-    上车人数: f.boardingCount,
-    下车人数: f.alightingCount,
-    满载率: Math.round(f.occupancyRate * 100)
-  }));
+  const passengerChartData = useMemo(() => {
+    const sampledFlow = sampleData(passengerFlow, MAX_CHART_POINTS);
+    return sampledFlow.map(f => ({
+      time: formatTime(f.timestamp),
+      上车人数: f.boardingCount,
+      下车人数: f.alightingCount,
+      满载率: Math.round(f.occupancyRate * 100)
+    }));
+  }, [passengerFlow]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -267,8 +313,8 @@ function OperationAnalysis({ metricsHistory, trajectoryOffsets, passengerFlow })
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="延误秒数" stroke="#F44336" strokeWidth={2} />
-                  <Line type="monotone" dataKey="偏离距离" stroke="#2196F3" strokeWidth={2} />
+                  <Line type="monotone" dataKey="延误秒数" stroke="#F44336" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="偏离距离" stroke="#2196F3" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -300,4 +346,14 @@ function OperationAnalysis({ metricsHistory, trajectoryOffsets, passengerFlow })
   );
 }
 
-export default OperationAnalysis;
+export default React.memo(OperationAnalysis, (prevProps, nextProps) => {
+  return (
+    prevProps.metricsHistory.length === nextProps.metricsHistory.length &&
+    prevProps.trajectoryOffsets.length === nextProps.trajectoryOffsets.length &&
+    prevProps.passengerFlow.length === nextProps.passengerFlow.length &&
+    shallowEqual(
+      prevProps.metricsHistory[prevProps.metricsHistory.length - 1],
+      nextProps.metricsHistory[nextProps.metricsHistory.length - 1]
+    )
+  );
+});

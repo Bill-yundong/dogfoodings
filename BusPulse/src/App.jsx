@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -70,18 +70,56 @@ function App() {
   const [trajectoryOffsets, setTrajectoryOffsets] = useState([]);
   const [passengerFlow, setPassengerFlow] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [simulationInterval, setSimulationInterval] = useState(null);
+
+  const simulationIntervalRef = useRef(null);
+  const offsetsBufferRef = useRef([]);
+  const metricsBufferRef = useRef([]);
+  const adjustmentsBufferRef = useRef([]);
+  const dbStatsTimeoutRef = useRef(null);
+  const unsubscribeRef = useRef([]);
+  const isProcessingRef = useRef(false);
 
   const showNotification = useCallback((message, severity = 'info') => {
     setNotification({ message, severity });
   }, []);
 
   const updateDBStats = useCallback(async () => {
-    try {
-      const stats = await getStats();
-      setDbStats(stats);
-    } catch (error) {
-      console.error('Failed to get DB stats:', error);
+    if (dbStatsTimeoutRef.current) {
+      return;
+    }
+    
+    dbStatsTimeoutRef.current = setTimeout(async () => {
+      try {
+        const stats = await getStats();
+        setDbStats(stats);
+      } catch (error) {
+        console.error('Failed to get DB stats:', error);
+      } finally {
+        dbStatsTimeoutRef.current = null;
+      }
+    }, 3000);
+  }, []);
+
+  const flushBuffers = useCallback(() => {
+    if (offsetsBufferRef.current.length > 0) {
+      setTrajectoryOffsets(prev => {
+        const updated = [...prev, ...offsetsBufferRef.current];
+        return updated.slice(-30);
+      });
+      offsetsBufferRef.current = [];
+    }
+
+    if (metricsBufferRef.current.length > 0) {
+      setMetricsHistory(prev => {
+        const updated = [...prev, ...metricsBufferRef.current];
+        return updated.slice(-10);
+      });
+      metricsBufferRef.current = [];
+    }
+
+    if (adjustmentsBufferRef.current.length > 0) {
+      setAdjustments(prev => [...prev, ...adjustmentsBufferRef.current]);
+      adjustmentsBufferRef.current = [];
     }
   }, []);
 
@@ -94,7 +132,7 @@ function App() {
       
       const mockData = generateFullMockDataset();
       
-      await saveStopsInBatch(mockData.stops);
+      await saveStopsInBatch(mockData.stops, 100);
       
       for (const route of mockData.routes) {
         await saveRoute(route);
@@ -104,7 +142,7 @@ function App() {
         await saveSchedule(schedule);
       }
       
-      await savePassengerFlowInBatch(mockData.passengerFlow);
+      await savePassengerFlowInBatch(mockData.passengerFlow, 100);
       
       setRoutes(mockData.routes);
       setSchedules(mockData.schedules);
@@ -157,22 +195,23 @@ function App() {
       return;
     }
 
+    if (isProcessingRef.current) {
+      return;
+    }
+
+    isProcessingRef.current = true;
     setIsSimulating(true);
     showNotification('开始模拟实时 GPS 数据...', 'info');
 
-    let gpsDataIndex = 0;
     const gpsDataMap = new Map();
 
     for (const schedule of schedules) {
       const route = routes.find(r => r.id === schedule.routeId);
       if (route) {
         const isDelayed = Math.random() > 0.7;
-        const startTime = schedule.startTime;
-        
         const points = [];
         const path = route.routePath;
-        const count = 15;
-        const interval = 30000;
+        const count = 8;
         
         for (let i = 0; i < count; i++) {
           const progress = i / (count - 1);
@@ -194,7 +233,7 @@ function App() {
           const delayOffset = isDelayed ? (Math.random() * 180 + 120) * 1000 : 0;
           
           points.push({
-            timestamp: Date.now() + i * 500 + delayOffset,
+            timestamp: Date.now() + i * 300 + delayOffset,
             coordinate: {
               lat: lat + noiseLat,
               lng: lng + noiseLng
@@ -214,26 +253,26 @@ function App() {
       }
     }
 
+    unsubscribeRef.current.forEach(unsub => unsub());
+    unsubscribeRef.current = [];
+
     defaultFitter.setCallback((offset, fittingResult) => {
       integrationService.processTrajectoryOffset(offset, fittingResult);
-      
-      setTrajectoryOffsets(prev => {
-        const updated = [...prev, offset];
-        return updated.slice(-50);
-      });
+      offsetsBufferRef.current.push(offset);
     });
 
-    integrationService.subscribe('onPunctualityUpdate', (metrics) => {
-      setMetricsHistory(prev => {
-        const updated = [...prev, metrics];
-        return updated.slice(-20);
-      });
+    const metricsUnsub = integrationService.subscribe('onPunctualityUpdate', (metrics) => {
+      metricsBufferRef.current.push(metrics);
     });
+    unsubscribeRef.current.push(metricsUnsub);
 
-    integrationService.subscribe('onScheduleAdjustment', ({ adjustment, reason }) => {
-      setAdjustments(prev => [...prev, adjustment]);
+    const adjustmentUnsub = integrationService.subscribe('onScheduleAdjustment', ({ adjustment, reason }) => {
+      adjustmentsBufferRef.current.push(adjustment);
       showNotification(`排班调整: ${reason}`, 'warning');
     });
+    unsubscribeRef.current.push(adjustmentUnsub);
+
+    let flushInterval = null;
 
     const interval = setInterval(() => {
       let hasMoreData = false;
@@ -242,7 +281,7 @@ function App() {
         if (busData.currentIndex < busData.points.length) {
           const pointsToSend = busData.points.slice(
             busData.currentIndex,
-            busData.currentIndex + 3
+            busData.currentIndex + 2
           );
           
           defaultFitter.addGPSPoints(
@@ -253,42 +292,64 @@ function App() {
             busData.stopTimes
           );
           
-          busData.currentIndex += 3;
+          busData.currentIndex += 2;
           hasMoreData = true;
         }
       }
       
-      updateDBStats();
-      
       if (!hasMoreData) {
         clearInterval(interval);
+        if (flushInterval) {
+          clearInterval(flushInterval);
+        }
+        flushBuffers();
+        updateDBStats();
         setIsSimulating(false);
-        setSimulationInterval(null);
+        simulationIntervalRef.current = null;
+        isProcessingRef.current = false;
         showNotification('模拟完成！', 'success');
       }
-    }, 1000);
+    }, 1500);
 
-    setSimulationInterval(interval);
-  }, [routes, schedules, showNotification, updateDBStats]);
+    flushInterval = setInterval(() => {
+      flushBuffers();
+      updateDBStats();
+    }, 2000);
+
+    simulationIntervalRef.current = { interval, flushInterval };
+  }, [routes, schedules, showNotification, updateDBStats, flushBuffers]);
 
   const stopSimulation = useCallback(() => {
-    if (simulationInterval) {
-      clearInterval(simulationInterval);
-      setSimulationInterval(null);
+    if (simulationIntervalRef.current) {
+      clearInterval(simulationIntervalRef.current.interval);
+      if (simulationIntervalRef.current.flushInterval) {
+        clearInterval(simulationIntervalRef.current.flushInterval);
+      }
+      simulationIntervalRef.current = null;
     }
+    
+    flushBuffers();
     setIsSimulating(false);
     defaultFitter.clearAll();
+    isProcessingRef.current = false;
     showNotification('模拟已停止', 'info');
-  }, [simulationInterval, showNotification]);
+  }, [flushBuffers, showNotification]);
 
   useEffect(() => {
     initDB();
     loadExistingData();
 
     return () => {
-      if (simulationInterval) {
-        clearInterval(simulationInterval);
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current.interval);
+        if (simulationIntervalRef.current.flushInterval) {
+          clearInterval(simulationIntervalRef.current.flushInterval);
+        }
       }
+      if (dbStatsTimeoutRef.current) {
+        clearTimeout(dbStatsTimeoutRef.current);
+      }
+      unsubscribeRef.current.forEach(unsub => unsub());
       defaultFitter.clearAll();
     };
   }, []);
@@ -300,6 +361,10 @@ function App() {
   const handleCloseNotification = () => {
     setNotification(null);
   };
+
+  const dbStatsLabel = useMemo(() => {
+    return `站点: ${dbStats.stops || 0} | 线路: ${dbStats.routes || 0} | 客流: ${dbStats.passengerFlow || 0}`;
+  }, [dbStats]);
 
   return (
     <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: '#f5f5f5' }}>
@@ -348,7 +413,7 @@ function App() {
           
           <Chip
             icon={<Storage />}
-            label={`站点: ${dbStats.stops || 0} | 线路: ${dbStats.routes || 0} | 客流: ${dbStats.passengerFlow || 0}`}
+            label={dbStatsLabel}
             color="primary"
             variant="outlined"
             sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}
@@ -423,4 +488,4 @@ function App() {
   );
 }
 
-export default App;
+export default React.memo(App);

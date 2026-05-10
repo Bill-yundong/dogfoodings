@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -31,6 +31,24 @@ import {
   History
 } from '@mui/icons-material';
 
+const STATUS_MAP = {
+  active: { color: 'success', text: '运行中' },
+  adjusted: { color: 'warning', text: '已调整' },
+  completed: { color: 'default', text: '已完成' }
+};
+
+const ADJUSTMENT_ICONS = {
+  significant_delay: <Warning sx={{ color: '#F44336' }} />,
+  early_arrival: <Update sx={{ color: '#2196F3' }} />
+};
+
+const DEFAULT_ADJUSTMENT_ICON = <CheckCircle sx={{ color: '#4CAF50' }} />;
+
+const ADJUSTMENT_REASONS = {
+  significant_delay: '严重延误调整',
+  early_arrival: '提前到达调整'
+};
+
 function formatDateTime(timestamp) {
   return new Date(timestamp).toLocaleString('zh-CN', {
     month: '2-digit',
@@ -47,74 +65,29 @@ function formatTime(timestamp) {
   });
 }
 
-function SchedulingSystem({ schedules, adjustments, onAdjustSchedule }) {
+function getStatusInfo(status) {
+  return STATUS_MAP[status] || { color: 'default', text: status };
+}
+
+function getAdjustmentIcon(reason) {
+  return ADJUSTMENT_ICONS[reason] || DEFAULT_ADJUSTMENT_ICON;
+}
+
+function getAdjustmentReasonText(reason) {
+  return ADJUSTMENT_REASONS[reason] || '自动调整';
+}
+
+function SchedulingSystem({ schedules, adjustments }) {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [groupedSchedules, setGroupedSchedules] = useState(new Map());
 
-  useEffect(() => {
-    const grouped = new Map();
-    
-    for (const schedule of schedules) {
-      if (!grouped.has(schedule.routeId)) {
-        grouped.set(schedule.routeId, []);
-      }
-      grouped.get(schedule.routeId).push(schedule);
-    }
-    
-    setGroupedSchedules(grouped);
-  }, [schedules]);
+  const recentAdjustments = useMemo(() => {
+    return adjustments.slice(-10).reverse();
+  }, [adjustments]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'adjusted':
-        return 'warning';
-      case 'completed':
-        return 'default';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'active':
-        return '运行中';
-      case 'adjusted':
-        return '已调整';
-      case 'completed':
-        return '已完成';
-      default:
-        return status;
-    }
-  };
-
-  const getAdjustmentIcon = (reason) => {
-    switch (reason) {
-      case 'significant_delay':
-        return <Warning sx={{ color: '#F44336' }} />;
-      case 'early_arrival':
-        return <Update sx={{ color: '#2196F3' }} />;
-      default:
-        return <CheckCircle sx={{ color: '#4CAF50' }} />;
-    }
-  };
-
-  const getAdjustmentReasonText = (reason) => {
-    switch (reason) {
-      case 'significant_delay':
-        return '严重延误调整';
-      case 'early_arrival':
-        return '提前到达调整';
-      default:
-        return '自动调整';
-    }
-  };
-
-  const scheduleAdjustments = selectedSchedule
-    ? adjustments.filter(a => a.scheduleId === selectedSchedule.id)
-    : [];
+  const scheduleAdjustments = useMemo(() => {
+    if (!selectedSchedule) return [];
+    return adjustments.filter(a => a.scheduleId === selectedSchedule.id);
+  }, [selectedSchedule, adjustments]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -153,50 +126,53 @@ function SchedulingSystem({ schedules, adjustments, onAdjustSchedule }) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {schedules.map((schedule) => (
-                      <TableRow 
-                        key={schedule.id}
-                        hover
-                        selected={selectedSchedule?.id === schedule.id}
-                        onClick={() => setSelectedSchedule(schedule)}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>
-                          <Chip 
-                            label={schedule.routeId} 
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <DirectionsBus sx={{ fontSize: 18, mr: 1, color: '#666' }} />
-                            {schedule.busId}
-                          </Box>
-                        </TableCell>
-                        <TableCell>{formatDateTime(schedule.startTime)}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={getStatusText(schedule.status)}
-                            size="small"
-                            color={getStatusColor(schedule.status)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            size="small"
-                            variant="outlined"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedSchedule(schedule);
-                            }}
-                          >
-                            详情
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {schedules.map((schedule) => {
+                      const statusInfo = getStatusInfo(schedule.status);
+                      return (
+                        <TableRow 
+                          key={schedule.id}
+                          hover
+                          selected={selectedSchedule?.id === schedule.id}
+                          onClick={() => setSelectedSchedule(schedule)}
+                          sx={{ cursor: 'pointer' }}
+                        >
+                          <TableCell>
+                            <Chip 
+                              label={schedule.routeId} 
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <DirectionsBus sx={{ fontSize: 18, mr: 1, color: '#666' }} />
+                              {schedule.busId}
+                            </Box>
+                          </TableCell>
+                          <TableCell>{formatDateTime(schedule.startTime)}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={statusInfo.text}
+                              size="small"
+                              color={statusInfo.color}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              size="small"
+                              variant="outlined"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSchedule(schedule);
+                              }}
+                            >
+                              详情
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -212,47 +188,50 @@ function SchedulingSystem({ schedules, adjustments, onAdjustSchedule }) {
                 调整历史
               </Typography>
               
-              {adjustments.length === 0 ? (
+              {recentAdjustments.length === 0 ? (
                 <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
                   暂无排班调整记录
                 </Typography>
               ) : (
                 <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  {adjustments.slice(-10).reverse().map((adjustment, index) => (
-                    <React.Fragment key={index}>
-                      <ListItem>
-                        <ListItemIcon>
-                          {getAdjustmentIcon(adjustment.reason)}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                                {getAdjustmentReasonText(adjustment.reason)}
-                              </Typography>
-                              <Chip 
-                                label={adjustment.scheduleId} 
-                                size="small"
-                                variant="outlined"
-                              />
-                            </Box>
-                          }
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" display="block">
-                                {formatDateTime(adjustment.timestamp)}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                原计划: {formatTime(adjustment.newStartTime - (adjustment.newStartTime - adjustment.newEndTime))} → 
-                                调整后: {formatTime(adjustment.newStartTime)}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      {index < adjustments.length - 1 && <Divider variant="inset" component="li" />}
-                    </React.Fragment>
-                  ))}
+                  {recentAdjustments.map((adjustment, index) => {
+                    const isLast = index === recentAdjustments.length - 1;
+                    return (
+                      <React.Fragment key={index}>
+                        <ListItem>
+                          <ListItemIcon>
+                            {getAdjustmentIcon(adjustment.reason)}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                                  {getAdjustmentReasonText(adjustment.reason)}
+                                </Typography>
+                                <Chip 
+                                  label={adjustment.scheduleId} 
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </Box>
+                            }
+                            secondary={
+                              <Box>
+                                <Typography variant="caption" display="block">
+                                  {formatDateTime(adjustment.timestamp)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  原计划: {formatTime(adjustment.newStartTime - (adjustment.newStartTime - adjustment.newEndTime))} → 
+                                  调整后: {formatTime(adjustment.newStartTime)}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {!isLast && <Divider variant="inset" component="li" />}
+                      </React.Fragment>
+                    );
+                  })}
                 </List>
               )}
             </CardContent>
@@ -289,9 +268,9 @@ function SchedulingSystem({ schedules, adjustments, onAdjustSchedule }) {
                         
                         <Typography color="text.secondary">状态:</Typography>
                         <Chip 
-                          label={getStatusText(selectedSchedule.status)}
+                          label={getStatusInfo(selectedSchedule.status).text}
                           size="small"
-                          color={getStatusColor(selectedSchedule.status)}
+                          color={getStatusInfo(selectedSchedule.status).color}
                         />
                       </Box>
                     </Card>
@@ -363,4 +342,9 @@ function SchedulingSystem({ schedules, adjustments, onAdjustSchedule }) {
   );
 }
 
-export default SchedulingSystem;
+export default React.memo(SchedulingSystem, (prevProps, nextProps) => {
+  return (
+    prevProps.schedules.length === nextProps.schedules.length &&
+    prevProps.adjustments.length === nextProps.adjustments.length
+  );
+});

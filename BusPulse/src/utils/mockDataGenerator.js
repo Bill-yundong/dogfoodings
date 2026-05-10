@@ -187,10 +187,10 @@ export function generateDelayedGPSPoints(busId, route, startTime, count = 20, de
 }
 
 export function generateFullMockDataset() {
-  const stops = generateMockStops(1000);
+  const stops = generateMockStops(100);
   const routes = generateMockRoutes(stops);
   const schedules = generateSchedules(routes, 2);
-  const passengerFlow = generatePassengerFlowData(stops.slice(0, 100), 3);
+  const passengerFlow = generatePassengerFlowData(stops.slice(0, 10), 1);
   
   const gpsData = [];
   for (const schedule of schedules) {
@@ -198,9 +198,9 @@ export function generateFullMockDataset() {
     if (route) {
       const isDelayed = Math.random() > 0.7;
       if (isDelayed) {
-        gpsData.push(generateDelayedGPSPoints(schedule.busId, route, schedule.startTime, 15, 240));
+        gpsData.push(generateDelayedGPSPoints(schedule.busId, route, schedule.startTime, 10, 240));
       } else {
-        gpsData.push(generateGPSPoints(schedule.busId, route, schedule.startTime, 15));
+        gpsData.push(generateGPSPoints(schedule.busId, route, schedule.startTime, 10));
       }
     }
   }
