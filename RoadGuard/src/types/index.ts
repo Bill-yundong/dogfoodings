@@ -109,6 +109,8 @@ export interface TrendSimulation {
   status: 'running' | 'completed' | 'error';
   progress: number;
   createdAt: string;
+  simulationType: 'trend' | 'single';
+  method: string;
 }
 
 export interface DashboardStats {

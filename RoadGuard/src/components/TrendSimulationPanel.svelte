@@ -13,6 +13,9 @@
   let isSimulating = $state(false);
   let interpolationResult = $state<InterpolationResult | null>(null);
   let activeSimulations = $state<TrendSimulation[]>([]);
+  let selectedSimulation = $state<TrendSimulation | null>(null);
+  let resultMode = $state<'single' | 'trend'>('single');
+  let currentStepIndex = $state(0);
 
   const cracks = $derived(dataStore.getCracks());
   const methods = $derived(interpolationService.getAvailableMethods());
@@ -39,16 +42,27 @@
     return '#ef4444';
   }
 
+  function getSimulationTypeLabel(type: 'trend' | 'single'): string {
+    return type === 'trend' ? '趋势模拟 (180天)' : '单次预测';
+  }
+
+  function getSimulationTypeBadgeClass(type: 'trend' | 'single'): string {
+    return type === 'trend' ? 'type-trend' : 'type-single';
+  }
+
   async function runInterpolation() {
     if (!selectedCrack || !targetDate) return;
 
     isSimulating = true;
     try {
+      resultMode = 'single';
       interpolationResult = await interpolationService.interpolateCrack(
         selectedCrack,
         targetDate,
         selectedMethod as any
       );
+      selectedSimulation = null;
+      activeSimulations = interpolationService.getAllSimulations();
     } finally {
       isSimulating = false;
     }
@@ -67,20 +81,50 @@
         selectedMethod as any
       );
 
-      checkSimulation(simulation.id);
+      interpolationService.onSimulationComplete(simulation.id, (completedSim) => {
+        if (completedSim.status === 'completed' && completedSim.steps.length > 0) {
+          selectedSimulation = completedSim;
+          resultMode = 'trend';
+          currentStepIndex = completedSim.steps.length - 1;
+          interpolationResult = completedSim.steps[currentStepIndex];
+        }
+        activeSimulations = interpolationService.getAllSimulations();
+      });
+
+      const updateProgress = () => {
+        const sim = interpolationService.getSimulation(simulation.id);
+        if (sim) {
+          activeSimulations = interpolationService.getAllSimulations();
+          if (sim.status === 'running') {
+            setTimeout(updateProgress, 500);
+          }
+        }
+      };
+      setTimeout(updateProgress, 500);
+
     } finally {
       isSimulating = false;
     }
   }
 
-  function checkSimulation(id: string) {
-    const simulation = interpolationService.getSimulation(id);
-    if (!simulation) return;
+  function selectSimulation(sim: TrendSimulation) {
+    selectedSimulation = sim;
+    if (sim.simulationType === 'trend') {
+      resultMode = 'trend';
+      currentStepIndex = Math.max(0, sim.steps.length - 1);
+      if (sim.steps.length > 0) {
+        interpolationResult = sim.steps[currentStepIndex];
+      }
+    } else if (sim.steps.length > 0) {
+      resultMode = 'single';
+      interpolationResult = sim.steps[0];
+    }
+  }
 
-    activeSimulations = interpolationService.getAllSimulations();
-
-    if (simulation.status === 'running') {
-      setTimeout(() => checkSimulation(id), 500);
+  function goToStep(index: number) {
+    if (selectedSimulation && selectedSimulation.steps[index]) {
+      currentStepIndex = index;
+      interpolationResult = selectedSimulation.steps[index];
     }
   }
 
@@ -100,7 +144,8 @@
           <option value={null}>-- 请选择 --</option>
           {#each cracks as crack}
             <option value={crack}>
-              {crack.id} - {crack.roadSection} ({SEVERITY_LABELS[crack.severity]}</option>
+              {crack.id} - {crack.roadSection} ({SEVERITY_LABELS[crack.severity]})
+            </option>
           {/each}
         </select>
       </div>
@@ -168,7 +213,15 @@
     </div>
 
     <div class="card">
-      <h3 class="card-title">预测结果</h3>
+      <h3 class="card-title">
+        预测结果
+        {#if resultMode === 'trend' && selectedSimulation && selectedSimulation.steps.length > 0}
+          <span class="step-indicator">
+            步骤 {currentStepIndex + 1} / {selectedSimulation.steps.length}
+          </span>
+        {/if}
+      </h3>
+
       {#if interpolationResult}
         <div class="result-panel">
           <div class="confidence-bar">
@@ -193,7 +246,7 @@
                 {#if selectedCrack}
                   <span class="change">
                     ({interpolationResult.predictedLength > selectedCrack.length ? '+' : ''}
-                    {(interpolationResult.predictedLength - selectedCrack.length).toFixed(1)} cm
+                    {(interpolationResult.predictedLength - selectedCrack.length).toFixed(1)} cm)
                   </span>
                 {/if}
               </span>
@@ -205,12 +258,28 @@
                 {#if selectedCrack}
                   <span class="change">
                     ({interpolationResult.predictedWidth > selectedCrack.width ? '+' : ''}
-                    {(interpolationResult.predictedWidth - selectedCrack.width).toFixed(1)} mm
+                    {(interpolationResult.predictedWidth - selectedCrack.width).toFixed(1)} mm)
                   </span>
                 {/if}
               </span>
             </div>
           </div>
+
+          {#if resultMode === 'trend' && selectedSimulation}
+            <div class="time-slider">
+              <input
+                type="range"
+                min="0"
+                max={Math.max(0, selectedSimulation.steps.length - 1)}
+                bind:value={currentStepIndex}
+                oninput={() => goToStep(currentStepIndex)}
+              />
+              <div class="slider-labels">
+                <span>{formatDate(selectedSimulation.startDate)}</span>
+                <span>{formatDate(selectedSimulation.endDate)}</span>
+              </div>
+            </div>
+          {/if}
 
           <div class="visualization-area">
             <h4>演化轨迹预测</h4>
@@ -219,15 +288,27 @@
                 <rect x="10" y="10" width="380" height="180" fill="#f1f5f9" rx="4"/>
                 <line x1="20" y1="100" x2="380" y2="100" stroke="#cbd5e1" stroke-width="1"/>
 
-                {#each interpolationResult.predictedPoints.slice(0, 10) as point, i}
-                  <circle
-                    cx={20 + (i * 36)}
-                    cy={100 + (point.y - selectedCrack.coordinate.y) * 0.5}
-                    r="4"
-                    fill={i === 0 ? '#10b981' : i === interpolationResult.predictedPoints.length - 1 ? '#ef4444' : '#3b82f6'}
-                    opacity={0.3 + (i / interpolationResult.predictedPoints.length) * 0.7}
-                  />
-                {/each}
+                {#if resultMode === 'trend' && selectedSimulation}
+                  {#each selectedSimulation.steps.slice(0, 10) as step, i}
+                    <circle
+                      cx={20 + (i * 36)}
+                      cy={100 + (step.predictedPoints[0]?.y - selectedCrack.coordinate.y) * 0.5}
+                      r="4"
+                      fill={i <= currentStepIndex ? '#3b82f6' : '#cbd5e1'}
+                      opacity={0.3 + (i / 10) * 0.7}
+                    />
+                  {/each}
+                {:else}
+                  {#each interpolationResult.predictedPoints.slice(0, 10) as point, i}
+                    <circle
+                      cx={20 + (i * 36)}
+                      cy={100 + (point.y - selectedCrack.coordinate.y) * 0.5}
+                      r="4"
+                      fill={i === 0 ? '#10b981' : i === interpolationResult.predictedPoints.length - 1 ? '#ef4444' : '#3b82f6'}
+                      opacity={0.3 + (i / interpolationResult.predictedPoints.length) * 0.7}
+                    />
+                  {/each}
+                {/if}
               {/if}
             </svg>
           </div>
@@ -251,16 +332,29 @@
     {#if activeSimulations.length > 0}
       <div class="simulation-list">
         {#each activeSimulations as sim}
-          <div class="simulation-item">
+          <div
+            class={`simulation-item ${selectedSimulation?.id === sim.id ? 'selected' : ''}`}
+            onclick={() => selectSimulation(sim)}
+          >
             <div class="simulation-header">
-              <span class="simulation-id">{sim.id}</span>
+              <div class="simulation-id-group">
+                <span class="simulation-id">{sim.id}</span>
+                <span class={`type-badge ${getSimulationTypeBadgeClass(sim.simulationType)}`}>
+                  {getSimulationTypeLabel(sim.simulationType)}
+                </span>
+              </div>
               <span class={`status-badge ${sim.status === 'completed' ? 'status-normal' : sim.status === 'running' ? 'status-warning' : 'status-danger'}`}>
                 {sim.status === 'running' ? '运行中' : sim.status === 'completed' ? '已完成' : '错误'}
               </span>
             </div>
             <div class="simulation-info">
               <span>裂缝: {sim.crackId}</span>
-              <span>期间: {formatDate(sim.startDate)} ~ {formatDate(sim.endDate)}</span>
+              <span>方法: {sim.method}</span>
+              {#if sim.simulationType === 'trend'}
+                <span>期间: {formatDate(sim.startDate)} ~ {formatDate(sim.endDate)}</span>
+              {:else}
+                <span>日期: {formatDate(sim.startDate)}</span>
+              {/if}
               <span>步骤: {sim.steps.length}</span>
             </div>
             <div class="progress-bar">
@@ -288,6 +382,18 @@
     font-weight: 600;
     margin-bottom: 16px;
     color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .step-indicator {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary-color);
+    background: #eff6ff;
+    padding: 4px 12px;
+    border-radius: 4px;
   }
 
   .form-group {
@@ -428,6 +534,25 @@
     margin-left: 4px;
   }
 
+  .time-slider {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .time-slider input[type="range"] {
+    width: 100%;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
   .visualization-area {
     background: #f8fafc;
     padding: 16px;
@@ -488,6 +613,18 @@
     background: #f8fafc;
     padding: 16px;
     border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .simulation-item:hover {
+    border-color: var(--primary-color);
+  }
+
+  .simulation-item.selected {
+    border-color: var(--primary-color);
+    background: #eff6ff;
   }
 
   .simulation-header {
@@ -497,9 +634,33 @@
     margin-bottom: 8px;
   }
 
+  .simulation-id-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .simulation-id {
     font-weight: 600;
     font-size: 14px;
+  }
+
+  .type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .type-trend {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .type-single {
+    background: #fef3c7;
+    color: #92400e;
   }
 
   .simulation-info {
@@ -508,6 +669,7 @@
     font-size: 12px;
     color: var(--text-secondary);
     margin-bottom: 12px;
+    flex-wrap: wrap;
   }
 
   .progress-bar {

@@ -12,6 +12,22 @@ interface InterpolationParameters {
 
 class SpatioTemporalInterpolationService {
   private activeSimulations: Map<string, TrendSimulation> = new Map();
+  private simulationCompletionCallbacks: Map<string, ((sim: TrendSimulation) => void)[]> = new Map();
+
+  onSimulationComplete(id: string, callback: (sim: TrendSimulation) => void): void {
+    if (!this.simulationCompletionCallbacks.has(id)) {
+      this.simulationCompletionCallbacks.set(id, []);
+    }
+    this.simulationCompletionCallbacks.get(id)!.push(callback);
+  }
+
+  private triggerCompletionCallbacks(id: string, simulation: TrendSimulation): void {
+    const callbacks = this.simulationCompletionCallbacks.get(id);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(simulation));
+      this.simulationCompletionCallbacks.delete(id);
+    }
+  }
 
   async interpolateCrack(
     crack: CrackPoint,
@@ -25,28 +41,45 @@ class SpatioTemporalInterpolationService {
     const detectionTime = new Date(crack.detectionDate).getTime();
     const timeDelta = (targetTime - detectionTime) / (24 * 60 * 60 * 1000);
 
+    let result: InterpolationResult;
     if (timeDelta <= 0) {
-      return this.createHistoricalResult(crack, targetDate, method, params);
+      result = this.createHistoricalResult(crack, targetDate, method, params);
+    } else {
+      const growthRate = this.calculateGrowthRate(crack.severity);
+      const predictedPoints = this.generatePredictedPoints(crack, timeDelta, growthRate);
+      const predictedWidth = crack.width * (1 + growthRate.width * timeDelta / 365);
+      const predictedLength = crack.length * (1 + growthRate.length * timeDelta / 365);
+      const confidence = Math.max(0.3, 0.95 - timeDelta * 0.001);
+
+      result = {
+        id: `INT-${Date.now()}`,
+        crackId: crack.id,
+        targetDate,
+        predictedPoints,
+        predictedWidth: Math.round(predictedWidth * 100) / 100,
+        predictedLength: Math.round(predictedLength * 100) / 100,
+        confidence: Math.round(confidence * 100) / 100,
+        method,
+        parameters: params,
+        generatedAt: new Date().toISOString()
+      };
     }
 
-    const growthRate = this.calculateGrowthRate(crack.severity);
-    const predictedPoints = this.generatePredictedPoints(crack, timeDelta, growthRate);
-    const predictedWidth = crack.width * (1 + growthRate.width * timeDelta / 365);
-    const predictedLength = crack.length * (1 + growthRate.length * timeDelta / 365);
-    const confidence = Math.max(0.3, 0.95 - timeDelta * 0.001);
-
-    return {
-      id: `INT-${Date.now()}`,
+    const simulation: TrendSimulation = {
+      id: `SIM-${Date.now()}`,
       crackId: crack.id,
-      targetDate,
-      predictedPoints,
-      predictedWidth: Math.round(predictedWidth * 100) / 100,
-      predictedLength: Math.round(predictedLength * 100) / 100,
-      confidence: Math.round(confidence * 100) / 100,
-      method,
-      parameters: params,
-      generatedAt: new Date().toISOString()
+      startDate: targetDate,
+      endDate: targetDate,
+      steps: [result],
+      status: 'completed',
+      progress: 100,
+      createdAt: new Date().toISOString(),
+      simulationType: 'single',
+      method
     };
+    this.activeSimulations.set(simulation.id, simulation);
+
+    return result;
   }
 
   private createHistoricalResult(
@@ -125,7 +158,9 @@ class SpatioTemporalInterpolationService {
       steps: [],
       status: 'running',
       progress: 0,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      simulationType: 'trend',
+      method
     };
 
     this.activeSimulations.set(simulationId, simulation);
@@ -149,7 +184,7 @@ class SpatioTemporalInterpolationService {
 
       for (let time = start; time <= end; time += interval) {
         const targetDate = new Date(time).toISOString().split('T')[0];
-        const result = await this.interpolateCrack(crack, targetDate, method);
+        const result = await this.interpolateCrackInternal(crack, targetDate, method);
 
         simulation.steps.push(result);
         completedSteps++;
@@ -163,10 +198,48 @@ class SpatioTemporalInterpolationService {
       simulation.status = 'completed';
       simulation.progress = 100;
       this.activeSimulations.set(simulation.id, { ...simulation });
+      this.triggerCompletionCallbacks(simulation.id, simulation);
     } catch (error) {
       simulation.status = 'error';
       this.activeSimulations.set(simulation.id, { ...simulation });
+      this.triggerCompletionCallbacks(simulation.id, simulation);
     }
+  }
+
+  private async interpolateCrackInternal(
+    crack: CrackPoint,
+    targetDate: string,
+    method: InterpolationMethod,
+    params: InterpolationParameters = {}
+  ): Promise<InterpolationResult> {
+    await this.simulateAsyncDelay();
+
+    const targetTime = new Date(targetDate).getTime();
+    const detectionTime = new Date(crack.detectionDate).getTime();
+    const timeDelta = (targetTime - detectionTime) / (24 * 60 * 60 * 1000);
+
+    if (timeDelta <= 0) {
+      return this.createHistoricalResult(crack, targetDate, method, params);
+    }
+
+    const growthRate = this.calculateGrowthRate(crack.severity);
+    const predictedPoints = this.generatePredictedPoints(crack, timeDelta, growthRate);
+    const predictedWidth = crack.width * (1 + growthRate.width * timeDelta / 365);
+    const predictedLength = crack.length * (1 + growthRate.length * timeDelta / 365);
+    const confidence = Math.max(0.3, 0.95 - timeDelta * 0.001);
+
+    return {
+      id: `INT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      crackId: crack.id,
+      targetDate,
+      predictedPoints,
+      predictedWidth: Math.round(predictedWidth * 100) / 100,
+      predictedLength: Math.round(predictedLength * 100) / 100,
+      confidence: Math.round(confidence * 100) / 100,
+      method,
+      parameters: params,
+      generatedAt: new Date().toISOString()
+    };
   }
 
   getSimulation(id: string): TrendSimulation | undefined {
@@ -174,7 +247,9 @@ class SpatioTemporalInterpolationService {
   }
 
   getAllSimulations(): TrendSimulation[] {
-    return Array.from(this.activeSimulations.values());
+    return Array.from(this.activeSimulations.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   getAvailableMethods(): InterpolationMethod[] {
