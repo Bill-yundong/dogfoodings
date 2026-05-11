@@ -248,12 +248,12 @@
                 <svg viewBox="0 0 400 200" class="heatmap-svg">
                   {#each Array.from({ length: 50 }, (_, i) => i) as row}
                     {#each Array.from({ length: 100 }, (_, j) => j) as col}
-                      {#const lat = 90 - (row / 50) * 60}
-                      {#const lon = (col / 100) * 360 - 180}
-                      {#const distFromPole = (90 - Math.abs(lat)) / 30}
-                      {#const yearFactor = (($currentYear - 1990) / 34) * 0.3}
-                      {#const seasonal = Math.sin(($currentYear % 1) * Math.PI * 2) * 0.1}
-                      {#const concentration = Math.max(0, Math.min(1, 
+                      {@const lat = 90 - (row / 50) * 60}
+                      {@const lon = (col / 100) * 360 - 180}
+                      {@const distFromPole = (90 - Math.abs(lat)) / 30}
+                      {@const yearFactor = (($currentYear - 1990) / 34) * 0.3}
+                      {@const seasonal = Math.sin(($currentYear % 1) * Math.PI * 2) * 0.1}
+                      {@const concentration = Math.max(0, Math.min(1, 
                         (1 - distFromPole * distFromPole) - yearFactor + seasonal
                       ))}
                       <rect
