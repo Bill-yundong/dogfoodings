@@ -1,0 +1,21 @@
+{
+  "name": "pyrolink",
+  "version": "1.0.0",
+  "description": "森林扑救响应底座 - 基于 SolidJS 的 3D 地形与火势蔓延系统",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.0",
+    "three": "^0.160.0",
+    "idb": "^8.0.0",
+    "comlink": "^4.4.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vite-plugin-solid": "^2.8.0",
+    "@types/three": "^0.160.0"
+  }
+}
