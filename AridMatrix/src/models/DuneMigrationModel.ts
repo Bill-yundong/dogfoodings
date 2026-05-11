@@ -24,7 +24,7 @@ export class DuneMigrationModel {
     const localCoverage = this.calculateLocalCoverage(dune.position, vegetationZones)
     const transportRate = this.calculateTransportRate(windSpeed, localCoverage)
     const directionAlignment = Math.cos((windDirection - dune.direction) * Math.PI / 180)
-    return transportRate * Math.max(0, directionAlignment) / dune.height
+    return transportRate * Math.max(0.1, directionAlignment) / dune.height
   }
 
   private calculateLocalCoverage(
