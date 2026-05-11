@@ -36,11 +36,11 @@ class SyncManager {
   }
 
   private async flushBuffer(): Promise<void> {
-    for (const [channel, messages] of this.buffer.entries()) {
+    for (const [channel, messages] of Array.from(this.buffer.entries())) {
       if (messages.length > 0) {
         const broadcastChannel = this.channels.get(channel);
         if (broadcastChannel) {
-          messages.forEach(msg => broadcastChannel.postMessage(msg));
+          messages.forEach((msg: SyncMessage) => broadcastChannel.postMessage(msg));
         }
         this.buffer.set(channel, []);
       }
