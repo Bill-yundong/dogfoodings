@@ -13,39 +13,53 @@ const poleStore = usePoleStore()
 const syncService = useSyncService()
 const energySavingService = useEnergySavingService()
 
-const selectedPoles = ref<Set<string>>(new Set())
+const selectedPoles = ref<Record<string, boolean>>({})
 const groupBrightness = ref(70)
 const commandReason = ref('')
 const commands = ref<DimmingCommand[]>([])
 const rules = ref<EnergySavingRule[]>([])
 const isSending = ref(false)
 const autoSavingEnabled = ref(false)
+const message = ref<string>('')
 
 const onlinePoles = computed(() => poleStore.poles.filter(p => p.status === 'online'))
 
+const selectedPoleCount = computed(() => {
+  return Object.values(selectedPoles.value).filter(Boolean).length
+})
+
+const selectedPoleIds = computed(() => {
+  return Object.entries(selectedPoles.value)
+    .filter(([_id, selected]) => selected)
+    .map(([id]) => id)
+})
+
 const totalSelectedPower = computed(() => {
-  return selectedPoles.value.size > 0
+  return selectedPoleIds.value.length > 0
     ? poleStore.poles
-        .filter(p => selectedPoles.value.has(p.id))
+        .filter(p => selectedPoles.value[p.id])
         .reduce((sum, p) => sum + p.power, 0)
     : 0
 })
 
 function togglePoleSelection(poleId: string): void {
-  if (selectedPoles.value.has(poleId)) {
-    selectedPoles.value.delete(poleId)
-  } else {
-    selectedPoles.value.add(poleId)
-  }
-  selectedPoles.value = new Set(selectedPoles.value)
+  selectedPoles.value[poleId] = !selectedPoles.value[poleId]
 }
 
 function selectAll(): void {
-  if (selectedPoles.value.size === onlinePoles.value.length) {
-    selectedPoles.value.clear()
-  } else {
-    selectedPoles.value = new Set(onlinePoles.value.map(p => p.id))
+  const onlineIds = onlinePoles.value.map(p => p.id)
+  const allSelected = onlineIds.every(id => selectedPoles.value[id])
+  
+  for (const id of onlineIds) {
+    selectedPoles.value[id] = !allSelected
   }
+}
+
+function showMessage(msg: string): void {
+  message.value = msg
+  setTimeout(() => {
+    message.value = ''
+  }, 3000)
 }
 
 function getStatusClass(status: string): string {
@@ -97,33 +111,39 @@ function getCommandStatusText(status: string): string {
 }
 
 async function sendDimmingCommand(): Promise<void> {
-  if (selectedPoles.value.size === 0) {
-    alert('请先选择至少一个灯杆')
+  if (selectedPoleIds.value.length === 0) {
+    showMessage('请先选择至少一个灯杆')
     return
   }
 
   isSending.value = true
   try {
     const command = await energySavingService.createDimmingCommand(
-      Array.from(selectedPoles.value),
+      selectedPoleIds.value,
       groupBrightness.value,
       'manual',
       commandReason.value || undefined
     )
     
+    showMessage(`正在发送调光指令到 ${command.poleIds.length} 个灯杆...`)
+    
     await energySavingService.sendCommand(command)
     await loadCommands()
     
-    selectedPoles.value.clear()
+    selectedPoles.value = {}
     commandReason.value = ''
+    showMessage(`调光指令发送完成！目标亮度: ${command.brightness}%`)
+  } catch (error) {
+    console.error('发送调光指令失败:', error)
+    showMessage('发送调光指令失败，请重试')
   } finally {
     isSending.value = false
   }
 }
 
 async function applyEnergySaving(): Promise<void> {
-  if (selectedPoles.value.size === 0) {
-    alert('请先选择至少一个灯杆')
+  if (selectedPoleIds.value.length === 0) {
+    showMessage('请先选择至少一个灯杆')
     return
   }
 
@@ -136,16 +156,22 @@ async function applyEnergySaving(): Promise<void> {
   isSending.value = true
   try {
     const command = await energySavingService.createDimmingCommand(
-      Array.from(selectedPoles.value),
+      selectedPoleIds.value,
       brightness,
       'energy_saving',
       '应用节能规则'
     )
     
+    showMessage(`正在应用节能模式，计算亮度: ${brightness}%...`)
+    
     await energySavingService.sendCommand(command)
     await loadCommands()
     
-    selectedPoles.value.clear()
+    selectedPoles.value = {}
+    showMessage(`节能模式应用完成！当前时间 ${hour}:00，亮度: ${brightness}%`)
+  } catch (error) {
+    console.error('应用节能模式失败:', error)
+    showMessage('应用节能模式失败，请重试')
   } finally {
     isSending.value = false
   }
@@ -155,8 +181,10 @@ function toggleAutoSaving(): void {
   autoSavingEnabled.value = !autoSavingEnabled.value
   if (autoSavingEnabled.value) {
     energySavingService.startEnergySavingModel(30000)
+    showMessage('自动节能模式已开启，每30秒检查一次')
   } else {
     energySavingService.stopEnergySavingModel()
+    showMessage('自动节能模式已关闭')
   }
 }
 
@@ -201,13 +229,17 @@ onUnmounted(() => {
     <AppHeader />
     
     <main class="content">
+      <div v-if="message" style="background: #1890ff; color: white; padding: 12px 24px; margin-bottom: 24px; border-radius: 4px">
+        {{ message }}
+      </div>
+
       <div class="grid grid-4">
         <div class="stat-card">
           <div class="value">{{ onlinePoles.length }}</div>
           <div class="label">可控制设备</div>
         </div>
         <div class="stat-card">
-          <div class="value" style="color: #1890ff">{{ selectedPoles.size }}</div>
+          <div class="value" style="color: #1890ff">{{ selectedPoleCount }}</div>
           <div class="label">已选择</div>
         </div>
         <div class="stat-card">
@@ -259,14 +291,14 @@ onUnmounted(() => {
             <div style="display: flex; gap: 12px">
               <button
                 class="btn btn-primary"
-                :disabled="selectedPoles.size === 0 || isSending"
+                :disabled="selectedPoleCount === 0 || isSending"
                 @click="sendDimmingCommand"
               >
                 {{ isSending ? '发送中...' : '发送调光指令' }}
               </button>
               <button
                 class="btn btn-success"
-                :disabled="selectedPoles.size === 0"
+                :disabled="selectedPoleCount === 0"
                 @click="applyEnergySaving"
               >
                 应用节能模式
@@ -279,7 +311,11 @@ onUnmounted(() => {
           <div class="card-header">
             <h3 class="card-title">自动节能</h3>
             <label class="switch">
-              <input type="checkbox" v-model="autoSavingEnabled" @change="toggleAutoSaving" />
+              <input
+                type="checkbox"
+                :checked="autoSavingEnabled"
+                @change="toggleAutoSaving"
+              />
               <span class="switch-slider"></span>
             </label>
           </div>
@@ -312,7 +348,7 @@ onUnmounted(() => {
             class="btn btn-sm btn-primary"
             @click="selectAll"
           >
-            {{ selectedPoles.size === onlinePoles.length ? '取消全选' : '全选在线' }}
+            {{ selectedPoleCount === onlinePoles.length ? '取消全选' : '全选在线' }}
           </button>
         </div>
         
@@ -335,9 +371,8 @@ onUnmounted(() => {
                 <td>
                   <input
                     type="checkbox"
-                    :checked="selectedPoles.has(pole.id)"
+                    v-model="selectedPoles[pole.id]"
                     :disabled="pole.status === 'offline'"
-                    @change="togglePoleSelection(pole.id)"
                   />
                 </td>
                 <td>{{ pole.name }}</td>
