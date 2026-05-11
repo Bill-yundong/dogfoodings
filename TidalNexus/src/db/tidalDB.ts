@@ -198,3 +198,64 @@ export const tidalDataToHistoricalRecord = (
   velocityDirection: tidalData.velocity.direction,
   createdAt: Date.now(),
 });
+
+export const clearAllHistoricalRecords = async (): Promise<number> => {
+  const db = await getDB();
+  const count = await db.count('historicalRecords');
+  if (count > 0) {
+    await db.clear('historicalRecords');
+  }
+  return count;
+};
+
+export const clearAllLocationAnalysis = async (): Promise<number> => {
+  const db = await getDB();
+  const count = await db.count('locationAnalysis');
+  if (count > 0) {
+    await db.clear('locationAnalysis');
+  }
+  return count;
+};
+
+export const clearMetadata = async (): Promise<void> => {
+  const db = await getDB();
+  await db.clear('metadata');
+};
+
+export const resetAllCache = async (): Promise<{
+  historicalRecords: number;
+  locationAnalysis: number;
+}> => {
+  const historicalCount = await clearAllHistoricalRecords();
+  const analysisCount = await clearAllLocationAnalysis();
+  await clearMetadata();
+  
+  return {
+    historicalRecords: historicalCount,
+    locationAnalysis: analysisCount,
+  };
+};
+
+export const deleteDatabase = async (): Promise<void> => {
+  closeDB();
+  const { deleteDB } = await import('idb');
+  await deleteDB(DB_NAME);
+};
+
+export const estimateDatabaseSize = async (): Promise<{
+  recordCount: number;
+  estimatedSizeKB: number;
+}> => {
+  const db = await getDB();
+  const recordCount = await db.count('historicalRecords');
+  const analysisCount = await db.count('locationAnalysis');
+  
+  const avgRecordSizeBytes = 150;
+  const avgAnalysisSizeBytes = 300;
+  const totalSizeBytes = (recordCount * avgRecordSizeBytes) + (analysisCount * avgAnalysisSizeBytes);
+  
+  return {
+    recordCount: recordCount + analysisCount,
+    estimatedSizeKB: Math.round(totalSizeBytes / 1024 * 100) / 100,
+  };
+};
