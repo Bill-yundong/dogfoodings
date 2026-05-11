@@ -138,7 +138,7 @@ export class WindSandSimulationEngine {
     this.state.vegetationZones = [...this.state.vegetationZones, zone]
   }
 
-  subscribe(listener: (state: SimulationState) => void {
+  subscribe(listener: (state: SimulationState) => void) {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   }
