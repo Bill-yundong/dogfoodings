@@ -178,28 +178,35 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
               <div style={{ marginBottom: '6px' }}>
                 <label style={{ fontSize: '11px', color: '#888', display: 'block', marginBottom: '4px' }}>
-                  声级: {source.baseDecibels} dB
+                  声级: {source.baseDecibels.toFixed(1)} dB
                 </label>
                 <input
                   type="range"
                   min="40"
                   max="120"
+                  step="0.1"
                   value={source.baseDecibels}
-                  onChange={(e) => onUpdateSource(source.id, { baseDecibels: Number(e.target.value) })}
+                  onChange={(e) => onUpdateSource(source.id, { baseDecibels: Number(Number(e.target.value).toFixed(1)) })}
                   style={{ width: '100%' }}
                 />
               </div>
 
               <div>
                 <label style={{ fontSize: '11px', color: '#888', display: 'block', marginBottom: '4px' }}>
-                  频率: {source.frequency} Hz
+                  频率: {source.frequency >= 1000 
+                    ? `${(source.frequency / 1000).toFixed(1)} kHz` 
+                    : `${Math.round(source.frequency)} Hz`}
                 </label>
                 <input
                   type="range"
                   min="20"
                   max="2000"
                   value={source.frequency}
-                  onChange={(e) => onUpdateSource(source.id, { frequency: Number(e.target.value) })}
+                  onChange={(e) => onUpdateSource(source.id, { 
+                    frequency: Number(e.target.value) >= 1000 
+                      ? Number(e.target.value) 
+                      : Math.round(Number(e.target.value)) 
+                  })}
                   style={{ width: '100%' }}
                 />
               </div>

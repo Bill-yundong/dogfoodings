@@ -17,7 +17,7 @@ const defaultSources: NoiseSource[] = [
     x: 150,
     y: 200,
     frequency: 500,
-    baseDecibels: 85,
+    baseDecibels: 85.5,
     type: 'traffic',
     active: true
   },
@@ -25,8 +25,8 @@ const defaultSources: NoiseSource[] = [
     id: generateId(),
     x: 600,
     y: 150,
-    frequency: 800,
-    baseDecibels: 90,
+    frequency: 1200,
+    baseDecibels: 90.2,
     type: 'industrial',
     active: true
   },
@@ -34,8 +34,8 @@ const defaultSources: NoiseSource[] = [
     id: generateId(),
     x: 400,
     y: 450,
-    frequency: 600,
-    baseDecibels: 75,
+    frequency: 750,
+    baseDecibels: 75.8,
     type: 'social',
     active: true
   }
@@ -107,12 +107,13 @@ export const App: React.FC = () => {
 
   const handleAddSource = useCallback(() => {
     const type = sourceTypes[Math.floor(Math.random() * sourceTypes.length)];
+    const rawFrequency = 200 + Math.random() * 1500;
     const newSource: NoiseSource = {
       id: generateId(),
       x: 100 + Math.random() * (CANVAS_WIDTH - 200),
       y: 100 + Math.random() * (CANVAS_HEIGHT - 200),
-      frequency: 200 + Math.random() * 1500,
-      baseDecibels: 60 + Math.random() * 50,
+      frequency: rawFrequency >= 1000 ? rawFrequency : Math.round(rawFrequency),
+      baseDecibels: Number((60 + Math.random() * 50).toFixed(1)),
       type,
       active: true
     };
