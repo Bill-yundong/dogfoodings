@@ -1,6 +1,8 @@
 import { Component, createSignal, onMount, onCleanup, createEffect } from 'solid-js'
 import { WindSandSimulationEngine } from './engine/WindSandSimulationEngine'
-import type { Dune, VegetationZone, SimulationConfig } from './types'
+import { SnapshotCacheManager } from './cache/SnapshotCacheManager'
+import { TimeSeriesEvaluationBus } from './evaluation/TimeSeriesEvaluationBus'
+import type { Dune, VegetationZone, SimulationConfig, SiteSnapshot } from './types'
 
 const generateInitialDunes = (): Dune[] => {
   const dunes: Dune[] = []
@@ -58,6 +60,8 @@ const defaultConfig: SimulationConfig = {
 
 const App: Component = () => {
   const [engine, setEngine] = createSignal<WindSandSimulationEngine | null>(null)
+  const [cacheManager, setCacheManager] = createSignal<SnapshotCacheManager | null>(null)
+  const [evaluationBus, setEvaluationBus] = createSignal<TimeSeriesEvaluationBus | null>(null)
   const [dunes, setDunes] = createSignal<Dune[]>([])
   const [vegetationZones, setVegetationZones] = createSignal<VegetationZone[]>([])
   const [coverageRate, setCoverageRate] = createSignal(0)
@@ -65,9 +69,19 @@ const App: Component = () => {
   const [status, setStatus] = createSignal<'idle' | 'running' | 'paused' | 'stopped'>('idle')
   const [windSpeed, setWindSpeed] = createSignal(8)
   const [timeScale, setTimeScale] = createSignal(10)
+  const [overallScore, setOverallScore] = createSignal(75)
+  const [recommendations, setRecommendations] = createSignal<string[]>([])
   let canvasRef: HTMLCanvasElement | undefined
+  let snapshotTimer: number | null = null
 
-  onMount(() => {
+  onMount(async () => {
+    const cache = new SnapshotCacheManager()
+    await cache.init()
+    setCacheManager(cache)
+
+    const evaluator = new TimeSeriesEvaluationBus(cache)
+    setEvaluationBus(evaluator)
+
     const newEngine = new WindSandSimulationEngine(
       generateInitialDunes(),
       generateInitialVegetation(),
@@ -88,6 +102,9 @@ const App: Component = () => {
 
   onCleanup(() => {
     engine()?.destroy()
+    cacheManager()?.close()
+    evaluationBus()?.stopAutoEvaluation()
+    if (snapshotTimer) clearInterval(snapshotTimer)
   })
 
   const drawCanvas = () => {
@@ -136,20 +153,47 @@ const App: Component = () => {
     }
   })
 
+  const takeSnapshot = async () => {
+    const state = engine()?.getState()
+    const cache = cacheManager()
+    const evaluator = evaluationBus()
+
+    if (state && cache && evaluator) {
+      const snapshot: SiteSnapshot = {
+        id: `snap-${Date.now()}`,
+        siteId: 'site-001',
+        timestamp: new Date(),
+        dunes: state.dunes,
+        vegetationZones: state.vegetationZones,
+        weatherData: state.weather,
+        coverageRate: state.coverageRate
+      }
+
+      await evaluator.recordSnapshot(snapshot)
+      const evaluation = await evaluator.evaluateSite('site-001')
+      setOverallScore(evaluation.overallScore)
+      setRecommendations(evaluation.recommendations)
+    }
+  }
+
   const startSimulation = async () => {
     await engine()?.prestart()
+    snapshotTimer = window.setInterval(takeSnapshot, 5000)
   }
 
   const pauseSimulation = () => {
     engine()?.pause()
+    if (snapshotTimer) clearInterval(snapshotTimer)
   }
 
   const resumeSimulation = () => {
     engine()?.resume()
+    snapshotTimer = window.setInterval(takeSnapshot, 5000)
   }
 
   const stopSimulation = () => {
     engine()?.stop()
+    if (snapshotTimer) clearInterval(snapshotTimer)
   }
 
   const handleWindSpeedChange = (value: number) => {
@@ -268,7 +312,25 @@ const App: Component = () => {
         </div>
 
         <aside class="sidebar right">
-          <h2 class="panel-title">📋 工程信息</h2>
+          <h2 class="panel-title">� 评估得分</h2>
+          <div class="stat-card">
+            <div class="stat-value">{overallScore()}</div>
+            <div class="stat-label">工程成效综合评分</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style={{ width: `${overallScore()}%` }}></div>
+            </div>
+          </div>
+
+          <h2 class="panel-title" style="margin-top: 1.5rem;">💡 治理建议</h2>
+          <div class="stat-card">
+            {recommendations().map((rec, i) => (
+              <div key={i} style="font-size: 0.8125rem; margin-bottom: 0.5rem; line-height: 1.5;">
+                • {rec}
+              </div>
+            ))}
+          </div>
+
+          <h2 class="panel-title" style="margin-top: 1.5rem;">�📋 工程信息</h2>
           
           <div class="timeline-container">
             <div class="timeline-item">
@@ -299,7 +361,7 @@ const App: Component = () => {
             </div>
           </div>
 
-          <h2 class="panel-title" style="margin-top: 2rem;">🔄 语义同步状态</h2>
+          <h2 class="panel-title" style="margin-top: 1.5rem;">🔄 语义同步状态</h2>
           
           <div class="stat-card">
             <div style="font-size: 0.875rem; margin-bottom: 0.5rem;">

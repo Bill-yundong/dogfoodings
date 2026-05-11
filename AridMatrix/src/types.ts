@@ -73,6 +73,7 @@ export interface SyncConflict {
 }
 
 export interface TimeSeriesPoint {
+  id?: string
   timestamp: number
   value: number
   siteId: string

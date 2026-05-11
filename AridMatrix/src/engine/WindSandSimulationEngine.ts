@@ -1,5 +1,5 @@
 import type { Dune, VegetationZone, WeatherData, SimulationConfig } from '../types'
-import { DuneMigrationModel } from './DuneMigrationModel'
+import { DuneMigrationModel } from '../models/DuneMigrationModel'
 
 type SimulationStatus = 'idle' | 'running' | 'paused' | 'stopped'
 
