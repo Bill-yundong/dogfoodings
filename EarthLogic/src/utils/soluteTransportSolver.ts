@@ -14,10 +14,17 @@ export class SoluteTransportSolver {
   }
 
   async solve(): Promise<SimulationResult[]> {
+    const results: SimulationResult[] = []
+    for await (const result of this.solveWithGenerator()) {
+      results.push(result)
+    }
+    return results
+  }
+
+  async *solveWithGenerator(): AsyncGenerator<SimulationResult, void, unknown> {
     this.isRunning = true
     this.abortController = new AbortController()
 
-    const results: SimulationResult[] = []
     const { timeStep, totalTime, diffusionCoefficient, advectionVelocity, retardationFactor, decayCoefficient, sourceConcentration, sourceDepth } = this.params
 
     const numSteps = Math.floor(totalTime / timeStep)
@@ -33,17 +40,16 @@ export class SoluteTransportSolver {
 
       concentrations = this.step(concentrations, depths, timeStep, diffusionCoefficient, advectionVelocity, retardationFactor, decayCoefficient)
 
-      results.push({
+      yield {
         time: (step + 1) * timeStep,
         depths: [...depths],
         concentrations: [...concentrations],
         maxConcentration: Math.max(...concentrations),
         plumeFront: this.calculatePlumeFront(depths, concentrations)
-      })
+      }
     }
 
     this.isRunning = false
-    return results
   }
 
   private step(

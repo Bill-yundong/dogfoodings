@@ -149,8 +149,13 @@ const updateChart = () => {
   chart.setOption(option, true)
 }
 
-watch(() => props.currentTimeIndex, updateChart)
-watch(() => props.simulationResults, updateChart, { deep: true })
+watch(
+  [() => props.currentTimeIndex, () => props.simulationResults.length],
+  () => {
+    updateChart()
+  },
+  { deep: true }
+)
 
 onMounted(() => {
   initChart()

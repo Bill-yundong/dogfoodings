@@ -34,19 +34,24 @@ const initSolver = () => {
 }
 
 const startSimulation = async () => {
-  if (!solver) return
+  if (!solver || isSimulating.value) return
   
+  resetSimulation()
   isSimulating.value = true
   solver.updateParams(simulationParams.value)
-  const results = await solver.solve()
   
-  if (!isSimulating.value) {
-    return
+  const generator = solver.solveWithGenerator()
+  
+  for await (const result of generator) {
+    if (!isSimulating.value) break
+    simulationResults.value.push(result)
   }
   
-  simulationResults.value = results
   isSimulating.value = false
-  animateResults()
+  
+  if (simulationResults.value.length > 0) {
+    animateResults()
+  }
 }
 
 const animateResults = () => {

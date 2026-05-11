@@ -228,9 +228,14 @@ const updateTrendChart = () => {
   trendChart.setOption(option, true)
 }
 
-watch(() => props.heavyMetals, updateRadarChart, { deep: true })
-watch(() => props.simulationResults, updateTrendChart, { deep: true })
-watch(() => props.currentTimeIndex, () => {})
+watch(
+  [() => props.heavyMetals, () => props.currentTimeIndex, () => props.simulationResults.length],
+  () => {
+    updateRadarChart()
+    updateTrendChart()
+  },
+  { deep: true }
+)
 
 onMounted(() => {
   initRadarChart()
