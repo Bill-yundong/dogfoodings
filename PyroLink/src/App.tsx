@@ -168,7 +168,7 @@ export function App() {
             <button class="btn btn-primary btn-full" onClick={dispatchCommand}>
               📡 分发指令
             </button>
-            <button class="btn btn-success btn-full" style={{ margin-top: '8px' }} onClick={saveCurrentPlan}>
+            <button class="btn btn-success btn-full" style={{ marginTop: '8px' }} onClick={saveCurrentPlan}>
               💾 保存方案
             </button>
           </section>
