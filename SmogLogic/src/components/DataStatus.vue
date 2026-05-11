@@ -22,13 +22,15 @@
     </div>
     
     <div class="action-buttons">
-      <button @click="loadSampleData" class="btn-sample">
-        加载示例数据
+      <button @click="loadSampleData" class="btn-sample" :disabled="isLoading || isClearing">
+        {{ isLoading ? '加载中...' : '加载示例数据' }}
       </button>
-      <button @click="clearData" class="btn-clear">
-        清空数据
+      <button @click="clearData" class="btn-clear" :disabled="isLoading || isClearing">
+        {{ isClearing ? '清空中...' : '清空数据' }}
       </button>
     </div>
+    
+    <div v-if="message" class="message">{{ message }}</div>
   </div>
 </template>
 
@@ -45,6 +47,9 @@ const emit = defineEmits<{
 const dbInitialized = ref(false)
 const stationCount = ref(0)
 const weatherCount = ref(0)
+const isLoading = ref(false)
+const isClearing = ref(false)
+const message = ref('')
 
 onMounted(async () => {
   try {
@@ -65,37 +70,78 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error('Failed to init database:', e)
+    message.value = '❌ 数据库初始化失败，请刷新页面重试'
   }
 })
 
 async function loadSampleData() {
-  const sampleStations: MonitoringStation[] = [
-    { id: '1', name: '北京奥体中心', lat: 39.9847, lng: 116.3958, pm25: 85, timestamp: Date.now() },
-    { id: '2', name: '北京顺义', lat: 40.1275, lng: 116.6548, pm25: 72, timestamp: Date.now() },
-    { id: '3', name: '北京昌平', lat: 40.2181, lng: 116.2357, pm25: 95, timestamp: Date.now() },
-    { id: '4', name: '天津塘沽', lat: 39.0146, lng: 117.6627, pm25: 110, timestamp: Date.now() },
-    { id: '5', name: '河北廊坊', lat: 39.5338, lng: 116.6983, pm25: 68, timestamp: Date.now() }
-  ]
+  if (!dbInitialized.value) {
+    message.value = '⏳ 数据库正在初始化，请稍候...'
+    setTimeout(() => { message.value = '' }, 2000)
+    return
+  }
   
-  const sampleWeather: WeatherData[] = [
-    { id: 'w1', lat: 39.9042, lng: 116.4074, timestamp: Date.now(), windSpeed: 3.2, windDirection: 180, temperature: 20, humidity: 45, pressure: 1013 },
-    { id: 'w2', lat: 39.0842, lng: 117.2010, timestamp: Date.now(), windSpeed: 2.8, windDirection: 200, temperature: 22, humidity: 40, pressure: 1015 }
-  ]
+  isLoading.value = true
+  message.value = ''
   
-  await dbManager.addStations(sampleStations)
-  await dbManager.addWeatherDatas(sampleWeather)
-  
-  stationCount.value = sampleStations.length
-  weatherCount.value = sampleWeather.length
-  
-  emit('stationsLoaded', sampleStations)
-  emit('weatherLoaded', sampleWeather)
+  try {
+    const sampleStations: MonitoringStation[] = [
+      { id: '1', name: '北京奥体中心', lat: 39.9847, lng: 116.3958, pm25: 85, timestamp: Date.now() },
+      { id: '2', name: '北京顺义', lat: 40.1275, lng: 116.6548, pm25: 72, timestamp: Date.now() },
+      { id: '3', name: '北京昌平', lat: 40.2181, lng: 116.2357, pm25: 95, timestamp: Date.now() },
+      { id: '4', name: '天津塘沽', lat: 39.0146, lng: 117.6627, pm25: 110, timestamp: Date.now() },
+      { id: '5', name: '河北廊坊', lat: 39.5338, lng: 116.6983, pm25: 68, timestamp: Date.now() }
+    ]
+    
+    const sampleWeather: WeatherData[] = [
+      { id: 'w1', lat: 39.9042, lng: 116.4074, timestamp: Date.now(), windSpeed: 3.2, windDirection: 180, temperature: 20, humidity: 45, pressure: 1013 },
+      { id: 'w2', lat: 39.0842, lng: 117.2010, timestamp: Date.now(), windSpeed: 2.8, windDirection: 200, temperature: 22, humidity: 40, pressure: 1015 }
+    ]
+    
+    await dbManager.addStations(sampleStations)
+    await dbManager.addWeatherDatas(sampleWeather)
+    
+    stationCount.value = sampleStations.length
+    weatherCount.value = sampleWeather.length
+    
+    emit('stationsLoaded', sampleStations)
+    emit('weatherLoaded', sampleWeather)
+    
+    message.value = '✅ 示例数据加载成功！'
+    setTimeout(() => { message.value = '' }, 3000)
+  } catch (error) {
+    message.value = '❌ 数据加载失败，请重试'
+    console.error('Load sample data error:', error)
+    setTimeout(() => { message.value = '' }, 3000)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function clearData() {
-  await dbManager.clearOldData(Date.now() + 1000000)
-  stationCount.value = 0
-  weatherCount.value = 0
+  if (!dbInitialized.value) {
+    message.value = '⏳ 数据库正在初始化，请稍候...'
+    setTimeout(() => { message.value = '' }, 2000)
+    return
+  }
+  
+  isClearing.value = true
+  message.value = ''
+  
+  try {
+    await dbManager.clearOldData(Date.now() + 1000000)
+    stationCount.value = 0
+    weatherCount.value = 0
+    
+    message.value = '🗑️ 数据已清空'
+    setTimeout(() => { message.value = '' }, 2000)
+  } catch (error) {
+    message.value = '❌ 清空失败，请重试'
+    console.error('Clear data error:', error)
+    setTimeout(() => { message.value = '' }, 3000)
+  } finally {
+    isClearing.value = false
+  }
 }
 </script>
 
@@ -177,5 +223,21 @@ async function clearData() {
 
 .btn-clear:hover {
   background: #ffccc7;
+}
+
+.btn-sample:disabled,
+.btn-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #52c41a;
 }
 </style>

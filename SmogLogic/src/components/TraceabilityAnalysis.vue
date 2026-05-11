@@ -16,9 +16,11 @@
       <span class="value">{{ radius.toFixed(1) }} km</span>
     </div>
     
-    <button @click="runTrace" class="btn-analyze">
-      开始溯源分析
+    <button @click="runTrace" class="btn-analyze" :disabled="isAnalyzing">
+      {{ isAnalyzing ? '分析中...' : '开始溯源分析' }}
     </button>
+    
+    <div v-if="message" class="message">{{ message }}</div>
     
     <div v-if="traceResults.length > 0" class="results">
       <h4>潜在污染源贡献</h4>
@@ -53,36 +55,62 @@ const targetLat = ref(39.9042)
 const targetLng = ref(116.4074)
 const radius = ref(1)
 const traceResults = ref<TraceResult[]>([])
+const isAnalyzing = ref(false)
+const message = ref('')
 
-function runTrace() {
-  if (!props.particles) return
-  
-  const nearbyParticles = props.particles.filter(p => {
-    const dx = (p.lng - targetLng.value) * 111 * Math.cos((p.lat * Math.PI) / 180)
-    const dy = (p.lat - targetLat.value) * 111
-    return Math.sqrt(dx * dx + dy * dy) < radius.value
-  })
-  
-  const sourceContributions: Map<string, number> = new Map()
-  let totalPM25 = 0
-  
-  for (const particle of nearbyParticles) {
-    const current = sourceContributions.get(particle.sourceId) || 0
-    sourceContributions.set(particle.sourceId, current + particle.pm25)
-    totalPM25 += particle.pm25
+async function runTrace() {
+  if (!props.particles || props.particles.length === 0) {
+    message.value = '⚠️ 请先运行模拟生成粒子数据后再进行溯源分析'
+    setTimeout(() => { message.value = '' }, 3000)
+    return
   }
   
-  traceResults.value = Array.from(sourceContributions.entries())
-    .map(([sourceId, pm25]) => ({
-      sourceId,
-      contribution: totalPM25 > 0 ? pm25 / totalPM25 : 0,
-      path: [],
-      startTime: Date.now() - 86400000,
-      endTime: Date.now()
-    }))
-    .sort((a, b) => b.contribution - a.contribution)
+  isAnalyzing.value = true
+  message.value = ''
   
-  emit('trace', targetLat.value, targetLng.value, radius.value)
+  try {
+    const nearbyParticles = props.particles.filter(p => {
+      const dx = (p.lng - targetLng.value) * 111 * Math.cos((p.lat * Math.PI) / 180)
+      const dy = (p.lat - targetLat.value) * 111
+      return Math.sqrt(dx * dx + dy * dy) < radius.value
+    })
+    
+    if (nearbyParticles.length === 0) {
+      message.value = '🔍 当前半径范围内没有找到粒子，请尝试增大搜索半径'
+      setTimeout(() => { message.value = '' }, 3000)
+      return
+    }
+    
+    const sourceContributions: Map<string, number> = new Map()
+    let totalPM25 = 0
+    
+    for (const particle of nearbyParticles) {
+      const current = sourceContributions.get(particle.sourceId) || 0
+      sourceContributions.set(particle.sourceId, current + particle.pm25)
+      totalPM25 += particle.pm25
+    }
+    
+    traceResults.value = Array.from(sourceContributions.entries())
+      .map(([sourceId, pm25]) => ({
+        sourceId,
+        contribution: totalPM25 > 0 ? pm25 / totalPM25 : 0,
+        path: [],
+        startTime: Date.now() - 86400000,
+        endTime: Date.now()
+      }))
+      .sort((a, b) => b.contribution - a.contribution)
+    
+    message.value = `✅ 溯源分析完成，共分析 ${nearbyParticles.length} 个粒子`
+    setTimeout(() => { message.value = '' }, 3000)
+    
+    emit('trace', targetLat.value, targetLng.value, radius.value)
+  } catch (error) {
+    message.value = '❌ 溯源分析失败，请重试'
+    console.error('Trace error:', error)
+    setTimeout(() => { message.value = '' }, 3000)
+  } finally {
+    isAnalyzing.value = false
+  }
 }
 
 defineExpose({ setResults: (results: TraceResult[]) => {
@@ -208,5 +236,20 @@ defineExpose({ setResults: (results: TraceResult[]) => {
   background: linear-gradient(90deg, #f093fb, #f5576c);
   border-radius: 3px;
   transition: width 0.3s;
+}
+
+.message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #d48806;
+}
+
+.btn-analyze:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
