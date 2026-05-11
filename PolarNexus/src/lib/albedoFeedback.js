@@ -4,9 +4,13 @@ export class AlbedoFeedbackRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
+    
+    const width = canvas.clientWidth || 400;
+    const height = canvas.clientHeight || 300;
+    
     this.camera = new THREE.PerspectiveCamera(
       60,
-      canvas.clientWidth / canvas.clientHeight,
+      width / height,
       0.1,
       1000
     );
@@ -15,7 +19,7 @@ export class AlbedoFeedbackRenderer {
       antialias: true,
       alpha: true 
     });
-    this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     
     this.iceMesh = null;
@@ -88,7 +92,7 @@ export class AlbedoFeedbackRenderer {
         
         void main() {
           float lat = (vUv.y - 0.5) * 3.14159;
-          float polarFactor = pow(abs(lat) / 1.57);
+          float polarFactor = pow(abs(lat) / 1.57, 2.0);
           
           vec3 iceColor = vec3(0.85, 0.92, 1.0);
           vec3 waterColor = vec3(0.1, 0.2, 0.4);

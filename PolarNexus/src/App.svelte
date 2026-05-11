@@ -337,7 +337,7 @@
           <h2>海平面上升趋势分析</h2>
           
           <div class="chart-container" bind={chartEl}>
-            <svg viewBox="0 0 800 400" class="trend-chart">
+            <svg viewBox="0 0 850 420" class="trend-chart">
               <defs>
                 <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#4da6ff" stop-opacity="0.3"/>
@@ -346,23 +346,23 @@
               </defs>
               
               <g class="axes">
-                <line x1="50" y1="350" x2="750" y2="350" stroke="#4a5568" stroke-width="1"/>
-                <line x1="50" y1="50" x2="50" y2="350" stroke="#4a5568" stroke-width="1"/>
+                <line x1="80" y1="370" x2="800" y2="370" stroke="#4a5568" stroke-width="1"/>
+                <line x1="80" y1="40" x2="80" y2="370" stroke="#4a5568" stroke-width="1"/>
                 
                 {#each [0, 25, 50, 75, 100, 125, 150] as tick}
-                  <text x="45" y={350 - tick * 2} text-anchor="end" fill="#a0aec0">{tick} mm</text>
-                  <line x1="50" y1={350 - tick * 2} x2="55" y2={350 - tick * 2} stroke="#4a5568"/>
+                  <text x="70" y={370 - tick * 2 + 4} text-anchor="end" fill="#a0aec0" font-size="12" dominant-baseline="middle">{tick} mm</text>
+                  <line x1="80" y1={370 - tick * 2} x2="85" y2={370 - tick * 2} stroke="#4a5568"/>
                 {/each}
                 
                 {#each [1990, 2000, 2010, 2020] as year}
-                  <text x={50 + ((year - 1990) / 34) * 700} y="370" text-anchor="middle" fill="#a0aec0">{year}</text>
+                  <text x={80 + ((year - 1990) / 34) * 700} y="390" text-anchor="middle" fill="#a0aec0" font-size="12">{year}</text>
                 {/each}
               </g>
               
               <path 
                 d={
                   'M' + $seaLevelTrend.years.map((year, i) => 
-                    `${50 + ((year - 1990) / 34) * 700},${350 - $seaLevelTrend.levels[i] * 2}`
+                    `${80 + ((year - 1990) / 34) * 700},${Math.max(40, Math.min(370, 370 - $seaLevelTrend.levels[i] * 2))}`
                   ).join(' L')
                 }
                 fill="url(#areaGradient)"
@@ -372,8 +372,8 @@
               
               {#each $seaLevelTrend.years.filter((_, i) => i % 5 === 0) as year, i}
                 <circle 
-                  cx={50 + ((year - 1990) / 34) * 700}
-                  cy={350 - $seaLevelTrend.levels[i * 5] * 2}
+                  cx={80 + ((year - 1990) / 34) * 700}
+                  cy={Math.max(40, Math.min(370, 370 - $seaLevelTrend.levels[i * 5] * 2))}
                   r="4"
                   fill="#4da6ff"
                 />
