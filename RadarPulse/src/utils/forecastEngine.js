@@ -80,7 +80,10 @@ export class ForecastEngine {
     
     this.worker.postMessage({
       type: 'computeForecast',
-      data: { radarFrames, forecastMinutes }
+      data: { 
+        radarFrames: radarFrames.map(frame => [...frame]), 
+        forecastMinutes 
+      }
     })
   }
 

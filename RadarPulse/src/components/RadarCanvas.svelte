@@ -1,12 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
 
-  export let radarData = []
-  export let forecastData = []
-  export let width = 800
-  export let height = 600
-  export let currentFrame = 0
-  export let isPlaying = false
+  let { radarData = [], forecastData = [], width = 800, height = 600, currentFrame = 0, isPlaying = false } = $props()
 
   let canvas
   let ctx
@@ -153,6 +148,12 @@
     } else if (animationId) {
       cancelAnimationFrame(animationId)
     }
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+      }
+    }
   })
 
   onMount(() => {
@@ -169,4 +170,4 @@
   })
 </script>
 
-<canvas bind:this={canvas} {width} {height} style="border: 1px solid #333; border-radius: 8px; background: #0a0a20;" />
+<canvas bind:this={canvas} {width} {height} style="border: 1px solid #333; border-radius: 8px; background: #0a0a20;"></canvas>
