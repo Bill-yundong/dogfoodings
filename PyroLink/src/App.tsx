@@ -7,6 +7,11 @@ import { OfflineStorage } from './services/OfflineStorage';
 import { TerrainPoint, FirePoint, Command, RescueUnit } from './types';
 import './App.css';
 
+const elevationService = new ElevationService(100);
+const simulationService = new SimulationService();
+const commandDispatcher = new CommandDispatcher();
+const offlineStorage = new OfflineStorage();
+
 export function App() {
   const [terrain, setTerrain] = createSignal<TerrainPoint[][]>([]);
   const [fires, setFires] = createSignal<FirePoint[]>([]);
@@ -16,13 +21,11 @@ export function App() {
   const [isSimulating, setIsSimulating] = createSignal(false);
   const [selectedCommandType, setSelectedCommandType] = createSignal<Command['type']>('contain');
   const [selectedPriority, setSelectedPriority] = createSignal<Command['priority']>('high');
-
-  const elevationService = new ElevationService(100);
-  const simulationService = new SimulationService();
-  const commandDispatcher = new CommandDispatcher();
-  const offlineStorage = new OfflineStorage();
+  const [initialized, setInitialized] = createSignal(false);
 
   createEffect(async () => {
+    if (initialized()) return;
+    
     const terrainData = await elevationService.fetchElevationData(35, 110);
     setTerrain(terrainData);
 
@@ -59,12 +62,17 @@ export function App() {
     const offlineData = await offlineStorage.syncOfflineData();
     console.log('离线数据:', offlineData);
 
+    setInitialized(true);
+
     onCleanup(() => {
       simulationService.destroy();
     });
   });
 
   const toggleSimulation = () => {
+    console.log('点击开始/暂停', initialized(), isSimulating());
+    if (!initialized()) return;
+    
     if (isSimulating()) {
       simulationService.stop();
     } else {
@@ -74,17 +82,26 @@ export function App() {
   };
 
   const addFire = () => {
+    console.log('点击添加火点', initialized());
+    if (!initialized()) return;
+    
     const x = 300 + Math.random() * 400;
     const y = 300 + Math.random() * 400;
     simulationService.addFire(x, y, 0.8);
   };
 
   const clearFires = () => {
+    console.log('点击清除火点', initialized());
+    if (!initialized()) return;
+    
     simulationService.clearFires();
     setFires([]);
   };
 
   const dispatchCommand = () => {
+    console.log('点击分发指令', initialized(), selectedCommandType(), selectedPriority());
+    if (!initialized()) return;
+    
     const fire = fires()[0];
     if (!fire) return;
 
@@ -98,6 +115,8 @@ export function App() {
   };
 
   const saveCurrentPlan = async () => {
+    if (!initialized()) return;
+    
     await offlineStorage.savePlan({
       id: `plan-${Date.now()}`,
       name: `救援方案 ${new Date().toLocaleString()}`,
@@ -145,7 +164,7 @@ export function App() {
               <label>指令类型:</label>
               <select 
                 value={selectedCommandType()} 
-                onInput={(e) => setSelectedCommandType(e.currentTarget.value as Command['type'])}
+                onChange={(e) => setSelectedCommandType(e.currentTarget.value as Command['type'])}
               >
                 <option value="contain">围控火势</option>
                 <option value="deploy">部署力量</option>
@@ -157,7 +176,7 @@ export function App() {
               <label>优先级:</label>
               <select 
                 value={selectedPriority()} 
-                onInput={(e) => setSelectedPriority(e.currentTarget.value as Command['priority'])}
+                onChange={(e) => setSelectedPriority(e.currentTarget.value as Command['priority'])}
               >
                 <option value="critical">紧急</option>
                 <option value="high">高</option>
