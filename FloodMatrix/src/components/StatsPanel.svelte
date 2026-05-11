@@ -3,8 +3,16 @@
   export let grid = [];
   export let nodes = [];
 
-  $: totalWaterDepth = grid.flat().reduce((sum, cell) => sum + cell.waterDepth, 0);
-  $: avgWaterDepth = grid.length > 0 ? totalWaterDepth / (grid.length * grid[0].length) : 0;
+  function getWaterDepth(cell) {
+    return cell && typeof cell.waterDepth === 'number' ? cell.waterDepth : 0;
+  }
+
+  $: totalWaterDepth = grid.length > 0 && grid[0] 
+    ? grid.flat().reduce((sum, cell) => sum + getWaterDepth(cell), 0)
+    : 0;
+  $: avgWaterDepth = grid.length > 0 && grid[0] 
+    ? totalWaterDepth / (grid.length * grid[0].length) 
+    : 0;
   $: criticalCount = floodAreas.filter(a => a.severity === 'critical').length;
   $: highCount = floodAreas.filter(a => a.severity === 'high').length;
   $: mediumCount = floodAreas.filter(a => a.severity === 'medium').length;

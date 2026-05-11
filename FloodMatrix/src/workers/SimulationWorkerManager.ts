@@ -23,6 +23,16 @@ interface WorkerCallbacks {
     nodes: PipeNode[];
     connections: PipeConnection[];
   }) => void;
+  onPaused?: (data: {
+    currentStep: number;
+    totalSteps: number;
+  }) => void;
+  onStopped?: (data: {
+    grid: GridCell[][];
+    nodes: PipeNode[];
+    connections: PipeConnection[];
+    floodAreas: FloodArea[];
+  }) => void;
   onError?: (error: string) => void;
 }
 
@@ -83,6 +93,28 @@ export class SimulationWorkerManager {
             floodAreas: data.floodAreas,
             currentStep: data.currentStep,
             totalSteps: data.totalSteps
+          });
+        }
+        break;
+
+      case 'paused':
+        this.status = 'paused';
+        if (this.callbacks.onPaused) {
+          this.callbacks.onPaused({
+            currentStep: data.currentStep,
+            totalSteps: data.totalSteps
+          });
+        }
+        break;
+
+      case 'stopped':
+        this.status = 'idle';
+        if (this.callbacks.onStopped) {
+          this.callbacks.onStopped({
+            grid: data.grid,
+            nodes: data.nodes,
+            connections: data.connections,
+            floodAreas: data.floodAreas
           });
         }
         break;

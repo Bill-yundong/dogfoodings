@@ -3,15 +3,19 @@
   export let nodes = [];
   export let connections = [];
   export let floodAreas = [];
-  export let cellSize = 25;
+  export let cellSize = 22;
+
+  function getWaterDepth(cell) {
+    return cell && typeof cell.waterDepth === 'number' ? cell.waterDepth : 0;
+  }
 
   function getWaterColor(depth) {
     if (depth <= 0) return 'rgba(100, 150, 100, 0.3)';
-    if (depth < 0.3) return 'rgba(100, 180, 255, 0.4)';
-    if (depth < 0.6) return 'rgba(60, 140, 255, 0.6)';
-    if (depth < 1.0) return 'rgba(40, 100, 255, 0.7)';
-    if (depth < 1.5) return 'rgba(20, 60, 200, 0.8)';
-    return 'rgba(10, 30, 150, 0.9)';
+    if (depth < 0.2) return 'rgba(100, 180, 255, 0.4)';
+    if (depth < 0.4) return 'rgba(60, 140, 255, 0.6)';
+    if (depth < 0.7) return 'rgba(40, 100, 255, 0.8)';
+    if (depth < 1.2) return 'rgba(20, 60, 200, 0.9)';
+    return 'rgba(10, 30, 150, 1)';
   }
 
   function getSeverityColor(severity) {
@@ -24,8 +28,8 @@
     }
   }
 
-  $: width = grid.length > 0 ? grid[0].length * cellSize : 0;
-  $: height = grid.length * cellSize;
+  $: width = grid.length > 0 && grid[0] ? grid[0].length * cellSize : 500;
+  $: height = grid.length > 0 ? grid.length * cellSize : 500;
 </script>
 
 <div class="grid-container" style="width: {width}px; height: {height}px;">
@@ -65,9 +69,9 @@
             top: {y * cellSize}px;
             width: {cellSize}px;
             height: {cellSize}px;
-            background-color: {getWaterColor(cell.waterDepth)};
+            background-color: {getWaterColor(getWaterDepth(cell))};
           "
-          title="深度: {cell.waterDepth.toFixed(2)}m | 海拔: {cell.elevation.toFixed(1)}m"
+          title="深度: {getWaterDepth(cell).toFixed(2)}m | 海拔: {(cell?.elevation || 0).toFixed(1)}m"
         />
       {/each}
     {/each}
@@ -82,7 +86,7 @@
           top: {area.centerY * cellSize + cellSize / 2}px;
           background-color: {getSeverityColor(area.severity)};
         "
-        title="积水深度: {area.maxDepth.toFixed(2)}m | 等级: {area.severity}"
+        title="积水深度: {(area.maxDepth || 0).toFixed(2)}m | 等级: {area.severity}"
       />
     {/each}
   </div>

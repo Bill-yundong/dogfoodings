@@ -36,22 +36,38 @@
         grid = data.grid;
         nodes = data.nodes;
         connections = data.connections;
+        floodAreas = [];
       },
       onProgress: (data) => {
         progress = data.progress;
         grid = data.grid;
         nodes = data.nodes;
         connections = data.connections;
-        floodAreas = data.floodAreas;
+        floodAreas = data.floodAreas || [];
         currentStep = data.currentStep;
         totalSteps = data.totalSteps;
+      },
+      onPaused: (data) => {
+        isRunning = false;
+        currentStep = data.currentStep;
+        totalSteps = data.totalSteps;
+      },
+      onStopped: (data) => {
+        isRunning = false;
+        progress = 0;
+        currentStep = 0;
+        totalSteps = 0;
+        grid = data.grid;
+        nodes = data.nodes;
+        connections = data.connections;
+        floodAreas = data.floodAreas || [];
       },
       onComplete: (data) => {
         isRunning = false;
         grid = data.grid;
         nodes = data.nodes;
         connections = data.connections;
-        floodAreas = data.floodAreas;
+        floodAreas = data.floodAreas || [];
       },
       onError: (error) => {
         console.error('Simulation error:', error);

@@ -8,7 +8,7 @@ interface WorkerMessage {
 }
 
 interface WorkerResponse {
-  type: 'progress' | 'complete' | 'error' | 'initialized';
+  type: 'progress' | 'complete' | 'error' | 'initialized' | 'paused' | 'stopped';
   progress?: number;
   grid?: GridCell[][];
   nodes?: PipeNode[];
@@ -23,6 +23,7 @@ let model: RainfallRunoffModel | null = null;
 let isRunning = false;
 let currentStep = 0;
 let totalSteps = 0;
+let currentConfig: SimulationConfig | null = null;
 
 self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   const { type, config, steps } = e.data;
@@ -30,9 +31,11 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   switch (type) {
     case 'init':
       if (config) {
+        currentConfig = config;
         model = new RainfallRunoffModel(config);
         currentStep = 0;
         totalSteps = 0;
+        isRunning = false;
         self.postMessage({
           type: 'initialized',
           grid: model.getGrid(),
@@ -46,17 +49,17 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       if (model && steps) {
         isRunning = true;
         totalSteps = steps;
-        currentStep = 0;
         runSimulation();
       }
       break;
 
     case 'step':
-      if (model) {
-        const intensity = config?.rainfallIntensity || 50;
+      if (model && currentConfig) {
+        const intensity = currentConfig.rainfallIntensity || 50;
         for (let i = 0; i < 10; i++) {
           model.step(intensity);
         }
+        currentStep++;
         self.postMessage({
           type: 'progress',
           progress: 100,
@@ -64,21 +67,35 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
           nodes: model.getNodes(),
           connections: model.getConnections(),
           floodAreas: convertFloodAreas(model.getFloodAreas()),
-          currentStep: 1,
-          totalSteps: 1
+          currentStep: currentStep,
+          totalSteps: totalSteps || 1
         } as WorkerResponse);
       }
       break;
 
     case 'pause':
       isRunning = false;
+      self.postMessage({
+        type: 'paused',
+        currentStep,
+        totalSteps
+      } as WorkerResponse);
       break;
 
     case 'stop':
       isRunning = false;
-      model = null;
       currentStep = 0;
       totalSteps = 0;
+      if (currentConfig) {
+        model = new RainfallRunoffModel(currentConfig);
+      }
+      self.postMessage({
+        type: 'stopped',
+        grid: model?.getGrid() || [],
+        nodes: model?.getNodes() || [],
+        connections: model?.getConnections() || [],
+        floodAreas: []
+      } as WorkerResponse);
       break;
   }
 };
