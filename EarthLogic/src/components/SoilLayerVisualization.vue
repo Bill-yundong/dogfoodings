@@ -150,7 +150,14 @@ const updateChart = () => {
 }
 
 watch(
-  [() => props.currentTimeIndex, () => props.simulationResults.length],
+  () => props.currentTimeIndex,
+  () => {
+    updateChart()
+  }
+)
+
+watch(
+  () => props.simulationResults,
   () => {
     updateChart()
   },

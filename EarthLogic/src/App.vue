@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import type { SoilLayer, HeavyMetal, SimulationParams, SimulationResult, MountConfig } from './types'
 import { SoluteTransportSolver, createDefaultSimulationParams } from './utils/soluteTransportSolver'
 import SoilLayerVisualization from './components/SoilLayerVisualization.vue'
@@ -41,17 +41,16 @@ const startSimulation = async () => {
   solver.updateParams(simulationParams.value)
   
   const generator = solver.solveWithGenerator()
+  const results: SimulationResult[] = []
   
   for await (const result of generator) {
     if (!isSimulating.value) break
-    simulationResults.value.push(result)
+    results.push(result)
+    simulationResults.value = [...results]
+    currentTimeIndex.value = results.length - 1
   }
   
   isSimulating.value = false
-  
-  if (simulationResults.value.length > 0) {
-    animateResults()
-  }
 }
 
 const animateResults = () => {
@@ -87,6 +86,9 @@ const resetSimulation = () => {
   simulationResults.value = []
   currentTimeIndex.value = 0
   initSolver()
+  nextTick(() => {
+    currentTimeIndex.value = 0
+  })
 }
 
 const handleTimeChange = (time: number) => {

@@ -229,7 +229,15 @@ const updateTrendChart = () => {
 }
 
 watch(
-  [() => props.heavyMetals, () => props.currentTimeIndex, () => props.simulationResults.length],
+  () => props.currentTimeIndex,
+  () => {
+    updateRadarChart()
+    updateTrendChart()
+  }
+)
+
+watch(
+  () => props.simulationResults,
   () => {
     updateRadarChart()
     updateTrendChart()
