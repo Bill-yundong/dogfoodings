@@ -38,7 +38,13 @@ const startSimulation = async () => {
   
   isSimulating.value = true
   solver.updateParams(simulationParams.value)
-  simulationResults.value = await solver.solve()
+  const results = await solver.solve()
+  
+  if (!isSimulating.value) {
+    return
+  }
+  
+  simulationResults.value = results
   isSimulating.value = false
   animateResults()
 }
@@ -66,6 +72,7 @@ const stopSimulation = () => {
   }
   if (animationFrame) {
     cancelAnimationFrame(animationFrame)
+    animationFrame = null
   }
   isSimulating.value = false
 }

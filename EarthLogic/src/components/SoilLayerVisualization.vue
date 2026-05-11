@@ -20,11 +20,23 @@ const initChart = () => {
   updateChart()
 }
 
+const getInitialData = () => {
+  const maxDepth = 3
+  const numLayers = 50
+  const depths = []
+  const concentrations = []
+  for (let i = 0; i < numLayers; i++) {
+    depths.push((i / (numLayers - 1)) * maxDepth)
+    concentrations.push(0)
+  }
+  return { depths, concentrations }
+}
+
 const updateChart = () => {
   if (!chart) return
 
   const currentResult = props.simulationResults[props.currentTimeIndex]
-  if (!currentResult) return
+  const data = currentResult || getInitialData()
 
   const option: echarts.EChartsOption = {
     backgroundColor: 'transparent',
@@ -60,7 +72,9 @@ const updateChart = () => {
       },
       axisLabel: {
         color: 'rgba(255,255,255,0.7)'
-      }
+      },
+      min: 0,
+      max: Math.max(100, ...data.concentrations) * 1.1
     },
     yAxis: {
       type: 'value',
@@ -85,7 +99,7 @@ const updateChart = () => {
         smooth: true,
         symbol: 'circle',
         symbolSize: 6,
-        data: currentResult.concentrations.map((c, i) => [c, currentResult.depths[i]]),
+        data: data.concentrations.map((c, i) => [c, data.depths[i]]),
         lineStyle: {
           width: 3,
           color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
@@ -105,7 +119,7 @@ const updateChart = () => {
           color: '#3b82f6'
         }
       },
-      ...props.layers.map((layer, index) => ({
+      ...props.layers.map((layer) => ({
         name: layer.name,
         type: 'line',
         markLine: {
