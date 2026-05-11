@@ -20,8 +20,8 @@ export const albedoData = writable({
 
 export const stats = derived(
   [iceConcentrationData, currentYear],
-  ([$iceConcentrationData, $currentYear]) => {
-    const yearData = $iceConcentrationData.filter(d => d.year === $currentYear);
+  ([iceData, year]) => {
+    const yearData = iceData.filter(d => Math.floor(d.year) === Math.floor(year));
     if (yearData.length === 0) return { avgConcentration: 0, totalArea: 0, minConcentration: 0, maxConcentration: 0 };
     
     const concentrations = yearData.map(d => d.concentration);

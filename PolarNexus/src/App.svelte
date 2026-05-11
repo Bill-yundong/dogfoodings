@@ -16,16 +16,16 @@
   import { AlbedoFeedbackRenderer, calculateAlbedoFeedback } from './lib/albedoFeedback.js';
   import { SeaLevelAnalyzer } from './lib/seaLevelAnalysis.js';
   
-  let canvasEl;
-  let chartEl;
-  let albedoRenderer = null;
-  let seaLevelAnalyzer = null;
-  let interpolationEngine = null;
-  let animationInterval = null;
+  let canvasEl = $state();
+  let chartEl = $state();
+  let albedoRenderer = $state(null);
+  let seaLevelAnalyzer = $state(null);
+  let interpolationEngine = $state(null);
+  let animationInterval = $state(null);
   
-  let dbStats = { iceConcentration: 0, seaLevel: 0, albedo: 0, satelliteImages: 0 };
-  let loading = true;
-  let activeTab = 'visualization';
+  let dbStats = $state({ iceConcentration: 0, seaLevel: 0, albedo: 0, satelliteImages: 0 });
+  let loading = $state(true);
+  let activeTab = $state('visualization');
   
   const years = Array.from({ length: 35 }, (_, i) => 1990 + i);
   
@@ -52,13 +52,21 @@
     
     dbStats = await climateDB.getStats();
     
-    if (canvasEl) {
+    startAnimation();
+  }
+
+  $effect(() => {
+    if (canvasEl && !albedoRenderer) {
       albedoRenderer = new AlbedoFeedbackRenderer(canvasEl);
       albedoRenderer.start();
     }
     
-    startAnimation();
-  }
+    return () => {
+      if (albedoRenderer) {
+        albedoRenderer.dispose();
+      }
+    };
+  });
   
   async function loadOrGenerateData() {
     const savedData = await climateDB.getIceConcentrationRange(1990, 2024, 'arctic');
@@ -143,6 +151,14 @@
     dbStats = await climateDB.getStats();
     loading = false;
   }
+
+  function handleClearData() {
+    climateDB.clearAllData().then(() => {
+      climateDB.getStats().then(stats => {
+        dbStats = stats;
+      });
+    });
+  }
 </script>
 
 <div class="app">
@@ -208,7 +224,7 @@
                 min="1990" 
                 max="2024" 
                 step="0.1"
-                bind:value={$currentYear}
+                value={$currentYear}
                 on:input={(e) => setYear(parseFloat(e.target.value))}
                 class="year-slider"
               />
@@ -219,7 +235,8 @@
                   min="0.1" 
                   max="5" 
                   step="0.1"
-                  bind:value={$playbackSpeed}
+                  value={$playbackSpeed}
+                  on:input={(e) => $playbackSpeed = parseFloat(e.target.value)}
                 />
                 <span>{$playbackSpeed.toFixed(1)}x</span>
               </div>
@@ -229,7 +246,7 @@
           <div class="visualization-grid">
             <div class="viz-card">
               <h3>反照率动能反馈模拟</h3>
-              <canvas bind:this={canvasEl} class="three-canvas"></canvas>
+              <canvas bind={canvasEl} class="three-canvas"></canvas>
               <div class="viz-stats">
                 <div class="stat-item">
                   <span class="label">当前反照率:</span>
@@ -319,7 +336,7 @@
         <div class="analysis-panel">
           <h2>海平面上升趋势分析</h2>
           
-          <div class="chart-container" bind:this={chartEl}>
+          <div class="chart-container" bind={chartEl}>
             <svg viewBox="0 0 800 400" class="trend-chart">
               <defs>
                 <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -439,10 +456,7 @@
             <button class="btn btn-primary" on:click={regenerateData}>
               重新生成模拟数据
             </button>
-            <button class="btn btn-secondary" on:click={async () => {
-              await climateDB.clearAllData();
-              dbStats = await climateDB.getStats();
-            }}>
+            <button class="btn btn-secondary" on:click={handleClearData}>
               清空所有数据
             </button>
           </div>
