@@ -22,7 +22,7 @@ export interface StagedResult<T> {
 
 class LCAEngine {
   private isRunning = false
-  private jobQueue: LCAJob[] = []
+  private jobQueue: Array<{ jobId: string; job: LCAJob }> = []
   private listeners: Map<string, (update: StagedResult<any>) => void> = new Map()
 
   private emissionFactors = {
@@ -56,7 +56,7 @@ class LCAEngine {
 
   addJob(job: LCAJob): string {
     const jobId = crypto.randomUUID()
-    this.jobQueue.push(job)
+    this.jobQueue.push({ jobId, job })
     this.processQueue()
     return jobId
   }
@@ -74,15 +74,15 @@ class LCAEngine {
     this.isRunning = true
 
     while (this.jobQueue.length > 0) {
-      const job = this.jobQueue.shift()!
-      await this.executeJob(job)
+      const { jobId, job } = this.jobQueue.shift()!
+      await this.executeJob(jobId, job)
     }
 
     this.isRunning = false
   }
 
-  private async executeJob(job: LCAJob): Promise<void> {
-    const calcId = await LCARepository.create({
+  private async executeJob(jobId: string, job: LCAJob): Promise<void> {
+    await LCARepository.create({
       productId: job.productId,
       productName: job.productName,
       status: 'calculating',
@@ -110,7 +110,7 @@ class LCAEngine {
       const materialResult = await this.calculateStage(
         '原材料获取',
         () => this.calculateRawMaterials(job),
-        calcId
+        jobId
       )
       stages.push(materialResult.stageData)
       breakdown.rawMaterials = materialResult.emissions
@@ -118,7 +118,7 @@ class LCAEngine {
       const manufacturingResult = await this.calculateStage(
         '生产制造',
         () => this.calculateManufacturing(job),
-        calcId
+        jobId
       )
       stages.push(manufacturingResult.stageData)
       breakdown.manufacturing = manufacturingResult.emissions
@@ -126,7 +126,7 @@ class LCAEngine {
       const transportResult = await this.calculateStage(
         '运输配送',
         () => this.calculateTransport(job),
-        calcId
+        jobId
       )
       stages.push(transportResult.stageData)
       breakdown.transport = transportResult.emissions
@@ -134,7 +134,7 @@ class LCAEngine {
       const useResult = await this.calculateStage(
         '使用阶段',
         () => this.calculateUsePhase(job),
-        calcId
+        jobId
       )
       stages.push(useResult.stageData)
       breakdown.use = useResult.emissions
@@ -142,7 +142,7 @@ class LCAEngine {
       const eolResult = await this.calculateStage(
         '生命周期末期',
         () => this.calculateEndOfLife(job),
-        calcId
+        jobId
       )
       stages.push(eolResult.stageData)
       breakdown.endOfLife = eolResult.emissions
@@ -154,22 +154,22 @@ class LCAEngine {
         percentage: (s.emissions / totalEmissions) * 100
       }))
 
-      await LCARepository.updateResult(calcId, {
+      await LCARepository.updateResult(jobId, {
         status: 'completed',
         stages: finalStages,
         totalEmissions,
         breakdown
       })
 
-      this.notifyUpdate(calcId, {
+      this.notifyUpdate(jobId, {
         stage: 'complete',
         progress: 100,
         result: { totalEmissions, breakdown, stages: finalStages }
       })
 
     } catch (error) {
-      await LCARepository.updateStatus(calcId, 'failed')
-      this.notifyUpdate(calcId, {
+      await LCARepository.updateStatus(jobId, 'failed')
+      this.notifyUpdate(jobId, {
         stage: 'error',
         progress: 0,
         error: error instanceof Error ? error.message : 'Unknown error'

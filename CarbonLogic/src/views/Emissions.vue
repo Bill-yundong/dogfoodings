@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useCarbonStore } from '@/stores/carbon'
+import { storeToRefs } from 'pinia'
 import type { CarbonRecord } from '@/types/carbon'
 
 const carbonStore = useCarbonStore()
+const { records } = storeToRefs(carbonStore)
 
 const formVisible = ref(false)
 const formData = ref({
@@ -15,6 +17,10 @@ const formData = ref({
   department: '',
   scope: 2 as 1 | 2 | 3,
   factor: undefined as number | undefined
+})
+
+onMounted(() => {
+  carbonStore.loadAggregatedData()
 })
 
 const emissionTypes = [
@@ -70,7 +76,7 @@ function resetForm() {
         </div>
       </template>
 
-      <el-table :data="[]" style="width: 100%">
+      <el-table :data="records" style="width: 100%">
         <el-table-column prop="timestamp" label="时间" width="180" />
         <el-table-column prop="sourceName" label="来源" />
         <el-table-column prop="type" label="类型">
@@ -99,13 +105,13 @@ function resetForm() {
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 'verified' ? 'success' : 'info'">
-              {{ row.status }}
+              {{ row.status === 'verified' ? '已验证' : '待处理' }}
             </el-tag>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="true" description="暂无排放数据，请添加新记录" />
+      <el-empty v-if="records.length === 0" description="暂无排放数据，请添加新记录" />
     </el-card>
 
     <el-dialog v-model="formVisible" title="添加排放记录" width="600px">

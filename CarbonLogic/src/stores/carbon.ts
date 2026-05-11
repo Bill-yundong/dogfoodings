@@ -50,7 +50,22 @@ export const useCarbonStore = defineStore('carbon', () => {
     factor?: number
   }) {
     try {
-      await carbonCalculator.calculateAndRecord(input)
+      const emission = input.factor ? input.quantity * input.factor : input.quantity * 0.5
+      const newRecord: CarbonRecord = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: input.type,
+        sourceId: input.sourceId,
+        sourceName: input.sourceName,
+        quantity: input.quantity,
+        unit: input.unit,
+        emissions: emission,
+        scope: input.scope,
+        department: input.department,
+        status: 'pending',
+        syncStatus: 'local'
+      }
+      records.value.unshift(newRecord)
       await loadAggregatedData()
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to add record'

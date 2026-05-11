@@ -66,6 +66,31 @@ function getStatusText(status: string) {
   }
   return map[status] || status
 }
+
+function exportAll() {
+  const headers = ['时间', '操作', '用户', '部门', '状态', '详情']
+  const rows = auditLogs.value.map(log => [
+    log.timestamp,
+    log.action,
+    log.user,
+    log.department,
+    getStatusText(log.status),
+    log.details
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n')
+
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `审计日志_${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -115,7 +140,7 @@ function getStatusText(status: string) {
           <template #header>
             <div class="card-header">
               <span>审计日志</span>
-              <el-button link type="primary">导出全部</el-button>
+              <el-button link type="primary" @click="exportAll">导出全部</el-button>
             </div>
           </template>
 
