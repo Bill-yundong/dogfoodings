@@ -21,7 +21,6 @@ export interface TidalForecast {
 export interface PowerDensityResult {
   timestamp: number;
   powerDensity: number;
-  powerDensity: number;
   location: GeoLocation;
 }
 

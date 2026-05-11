@@ -37,9 +37,13 @@ const App: React.FC = () => {
     state: workerState,
     progress,
     result: workerResult,
-    calculatePowerDensity: calcPowerDensity,
     optimizeLayout: runOptimizeLayout,
   } = useTidalWorker();
+
+  const updateCacheSize = useCallback(async () => {
+    const size = await estimateDatabaseSize();
+    setCacheSize(size);
+  }, []);
 
   useEffect(() => {
     initDB();
@@ -65,7 +69,7 @@ const App: React.FC = () => {
       };
       
       const capacityFactor = calculateCapacityFactor(tidalData, sampleTurbine);
-      const annualEnergyProduction = calculateAnnualEnergyProduction(tidalData, sampleTurbine, 72);
+      const annualEnergyProduction = calculateAnnualEnergyProduction(tidalData, sampleTurbine);
 
       const newAnalysis: LocationAnalysis = {
         locationId: locationToId(location),
@@ -84,8 +88,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (workerResult && workerState === 'completed') {
-      if ('bestLayout' in workerResult) {
-        setLayout(workerResult.bestLayout);
+      const result = workerResult as { bestLayout?: ArrayLayout };
+      if (result.bestLayout) {
+        setLayout(result.bestLayout);
       }
     }
   }, [workerResult, workerState]);
@@ -105,11 +110,6 @@ const App: React.FC = () => {
     const count = await getRecordCount();
     setRecordCount(count);
   };
-
-  const updateCacheSize = useCallback(async () => {
-    const size = await estimateDatabaseSize();
-    setCacheSize(size);
-  }, []);
 
   const handleResetCache = async () => {
     setIsClearingCache(true);

@@ -5,7 +5,6 @@ import {
   PowerDensityPayload,
   ArrayOutputPayload,
   LayoutOptimizationPayload,
-  TidalData,
   PowerDensityResult,
   ArrayLayout,
   Turbine,
@@ -117,8 +116,6 @@ const optimizeLayout = (
   const { siteLocation, tidalData, turbineCount, constraints } = payload;
   const convergenceHistory: number[] = [];
   const iterations = 100;
-  
-  const avgVelocity = tidalData.reduce((sum, d) => sum + d.velocity.magnitude, 0) / tidalData.length;
   
   const baseTurbine: Omit<Turbine, 'id' | 'location'> = {
     ratedPower: 1000,

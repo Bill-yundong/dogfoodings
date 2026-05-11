@@ -135,7 +135,7 @@ export const VectorField: React.FC<VectorFieldProps> = ({
 
     legend.append('g')
       .attr('transform', `translate(${legendWidth}, 0)`)
-      .call(d3.axisRight(legendScale).ticks(5).tickFormat((d) => `${d.toFixed(1)}`))
+      .call(d3.axisRight(legendScale).ticks(5).tickFormat((d) => `${Number(d).toFixed(1)}`))
       .selectAll('text')
       .style('font-size', '10px');
 

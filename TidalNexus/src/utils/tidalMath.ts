@@ -1,4 +1,4 @@
-import { TidalData, GeoLocation, PowerDensityResult, Turbine } from '../types/tidal';
+import { TidalData, GeoLocation, Turbine } from '../types/tidal';
 
 const WATER_DENSITY = 1025;
 
@@ -96,8 +96,7 @@ export const calculateCapacityFactor = (
 
 export const calculateAnnualEnergyProduction = (
   tidalData: TidalData[],
-  turbine: Turbine,
-  dataDurationHours: number
+  turbine: Turbine
 ): number => {
   const capacityFactor = calculateCapacityFactor(tidalData, turbine);
   const hoursInYear = 8760;
