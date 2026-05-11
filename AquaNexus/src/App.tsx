@@ -116,9 +116,14 @@ function App() {
         const success = await alignmentService.executeCommand(command);
 
         if (success) {
-          const snapshot = MockDataGenerator.generateSystemSnapshot(monitoringPoints, trajectories);
-          await snapshotDB.saveSnapshot(snapshot);
-          setLastSnapshotTime(snapshot.metadata.timestamp);
+          try {
+            await snapshotDB.init();
+            const snapshot = MockDataGenerator.generateSystemSnapshot(monitoringPoints, trajectories);
+            await snapshotDB.saveSnapshot(snapshot);
+            setLastSnapshotTime(snapshot.metadata.timestamp);
+          } catch (snapshotError) {
+            console.warn('Failed to save snapshot, but command executed:', snapshotError);
+          }
         }
 
         return success;

@@ -103,6 +103,8 @@ export class AlignmentService {
 
   async executeCommand(command: DispatchCommand): Promise<boolean> {
     try {
+      await snapshotDB.init();
+      
       if (this.isOnline) {
         await this.executeOnlineCommand(command);
       } else {

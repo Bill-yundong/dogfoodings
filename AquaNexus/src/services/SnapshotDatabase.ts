@@ -107,31 +107,36 @@ export class SnapshotDatabase {
   async saveSnapshot(snapshot: SystemSnapshot): Promise<void> {
     if (!this.db) await this.init();
 
-    const tx = this.db!.transaction(
-      ['snapshots', 'monitoringPoints', 'systemState'],
-      'readwrite'
-    );
+    try {
+      const tx = this.db!.transaction(
+        ['snapshots', 'monitoringPoints', 'systemState'],
+        'readwrite'
+      );
 
-    await tx.store.put(snapshot);
+      await tx.store.put(snapshot);
 
-    for (const point of snapshot.monitoringPoints) {
-      await tx.objectStore('monitoringPoints').put({
-        ...point,
-        snapshotId: snapshot.metadata.id,
+      for (const point of snapshot.monitoringPoints) {
+        await tx.objectStore('monitoringPoints').put({
+          ...point,
+          snapshotId: snapshot.metadata.id,
+        });
+      }
+
+      await tx.objectStore('systemState').put({
+        id: 'current',
+        lastSyncTimestamp: Date.now(),
+        isOffline: snapshot.metadata.isOffline,
+        pendingSyncCount: snapshot.metadata.synchronizationStatus === 'pending' ? 1 : 0,
+        currentSnapshotId: snapshot.metadata.id,
       });
+
+      await tx.done;
+
+      await this.cleanupOldSnapshots();
+    } catch (error) {
+      console.error('Failed to save snapshot:', error);
+      throw error;
     }
-
-    await tx.objectStore('systemState').put({
-      id: 'current',
-      lastSyncTimestamp: Date.now(),
-      isOffline: snapshot.metadata.isOffline,
-      pendingSyncCount: snapshot.metadata.synchronizationStatus === 'pending' ? 1 : 0,
-      currentSnapshotId: snapshot.metadata.id,
-    });
-
-    await tx.done;
-
-    await this.cleanupOldSnapshots();
   }
 
   async getSnapshot(id: string): Promise<SystemSnapshot | undefined> {
@@ -275,30 +280,35 @@ export class SnapshotDatabase {
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.db) return;
 
-    const count = await this.getSnapshotCount();
-    if (count > MAX_SNAPSHOTS) {
-      const excess = count - MAX_SNAPSHOTS;
-      const oldestSnapshots = await this.db!.getAllFromIndex(
-        'snapshots',
-        'byTimestamp',
-        undefined,
-        excess
-      );
+    try {
+      const count = await this.getSnapshotCount();
+      if (count > MAX_SNAPSHOTS) {
+        const excess = count - MAX_SNAPSHOTS;
+        const oldestSnapshots = await this.db!.getAllFromIndex(
+          'snapshots',
+          'byTimestamp',
+          undefined,
+          excess
+        );
 
-      const tx = this.db!.transaction(
-        ['snapshots', 'monitoringPoints'],
-        'readwrite'
-      );
-
-      for (const snapshot of oldestSnapshots) {
-        await tx.objectStore('snapshots').delete(snapshot.metadata.id);
-        const points = await this.getMonitoringPointsBySnapshot(snapshot.metadata.id);
-        for (const point of points) {
-          await tx.objectStore('monitoringPoints').delete(point.id);
+        for (const snapshot of oldestSnapshots) {
+          const points = await this.getMonitoringPointsBySnapshot(snapshot.metadata.id);
+          
+          const tx = this.db!.transaction(
+            ['snapshots', 'monitoringPoints'],
+            'readwrite'
+          );
+          
+          await tx.objectStore('snapshots').delete(snapshot.metadata.id);
+          for (const point of points) {
+            await tx.objectStore('monitoringPoints').delete(point.id);
+          }
+          
+          await tx.done;
         }
       }
-
-      await tx.done;
+    } catch (error) {
+      console.warn('Cleanup old snapshots failed:', error);
     }
   }
 
