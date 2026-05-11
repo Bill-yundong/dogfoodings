@@ -97,7 +97,7 @@ export class RainfallRunoffModel {
   private applyRainfall(intensity: number): void {
     for (let y = 0; y < this.config.gridSize; y++) {
       for (let x = 0; x < this.config.gridSize; x++) {
-        this.grid[y][x].waterDepth += intensity * this.config.timeStep * 0.001;
+        this.grid[y][x].waterDepth += intensity * this.config.timeStep * 0.01;
       }
     }
   }

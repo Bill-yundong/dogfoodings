@@ -99,38 +99,44 @@
   .stats-panel {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px;
     color: #e2e8f0;
     border: 1px solid #334155;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   h3 {
-    margin: 0 0 15px 0;
-    font-size: 1.2rem;
+    margin: 0 0 12px 0;
+    font-size: 1rem;
     color: #60a5fa;
   }
 
   h4 {
-    margin: 20px 0 10px 0;
-    font-size: 0.9rem;
+    margin: 16px 0 8px 0;
+    font-size: 0.85rem;
     color: #94a3b8;
   }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .stat-card {
     background: rgba(30, 41, 59, 0.8);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: 6px;
+    padding: 8px 10px;
     border: 1px solid #334155;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.2s ease;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .stat-card:hover {
@@ -159,43 +165,57 @@
   }
 
   .stat-icon {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .stat-content {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .stat-value {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stat-label {
     margin: 2px 0 0 0;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .legend-section {
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .legend-items {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
   }
 
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
+    gap: 6px;
+    font-size: 0.7rem;
     color: #94a3b8;
+    white-space: nowrap;
   }
 
   .legend-color {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 2px;
+    flex-shrink: 0;
   }
 </style>
