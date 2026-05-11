@@ -14,6 +14,9 @@ const carbonStore = useCarbonStore()
 const { lcaCalculations, currentLcaJob, lcaProgress, lcaCurrentStage } = storeToRefs(carbonStore)
 
 const formVisible = ref(false)
+const detailVisible = ref(false)
+const currentDetail = ref<any>(null)
+
 const formData = ref({
   productId: '',
   productName: '',
@@ -23,6 +26,11 @@ const formData = ref({
   lifespan: 10,
   recyclability: 0.3
 })
+
+function openDetail(row: any) {
+  currentDetail.value = row
+  detailVisible.value = true
+}
 
 const breakdownChartOption = ref({
   tooltip: { trigger: 'axis' },
@@ -156,7 +164,9 @@ async function submitLCA() {
               </template>
             </el-table-column>
             <el-table-column label="操作" width="100">
-              <el-button link type="primary">查看详情</el-button>
+              <template #default="{ row }">
+                <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+              </template>
             </el-table-column>
           </el-table>
 
@@ -215,6 +225,67 @@ async function submitLCA() {
       <template #footer>
         <el-button @click="formVisible = false">取消</el-button>
         <el-button type="primary" @click="submitLCA">开始计算</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="detailVisible" title="LCA分析详情" width="900px">
+      <el-descriptions :column="2" border v-if="currentDetail">
+        <el-descriptions-item label="产品ID">
+          {{ currentDetail.productId }}
+        </el-descriptions-item>
+        <el-descriptions-item label="产品名称">
+          {{ currentDetail.productName }}
+        </el-descriptions-item>
+        <el-descriptions-item label="分析时间">
+          {{ currentDetail.timestamp }}
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="currentDetail.status === 'completed' ? 'success' : 'warning'">
+            {{ currentDetail.status === 'completed' ? '已完成' : '计算中' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="总排放量" :span="2">
+          <span style="font-size: 20px; font-weight: 700; color: #409eff">
+            {{ currentDetail.totalEmissions?.toFixed(2) }} t CO₂e
+          </span>
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <h4 style="margin: 20px 0 12px 0">生命周期各阶段排放</h4>
+      <el-table :data="currentDetail?.stages || []" style="width: 100%">
+        <el-table-column prop="name" label="阶段" />
+        <el-table-column prop="emissions" label="排放量 (t CO₂e)" width="180">
+          <template #default="{ row }">{{ row.emissions?.toFixed(2) }}</template>
+        </el-table-column>
+        <el-table-column prop="percentage" label="占比" width="120">
+          <template #default="{ row }">
+            <el-progress :percentage="row.percentage" :stroke-width="10" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="duration" label="耗时 (ms)" width="120" />
+      </el-table>
+
+      <h4 style="margin: 20px 0 12px 0">排放明细</h4>
+      <el-descriptions :column="3" border v-if="currentDetail?.breakdown">
+        <el-descriptions-item label="原材料获取">
+          <span class="breakdown-value">{{ currentDetail.breakdown.rawMaterials?.toFixed(2) }} t</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="生产制造">
+          <span class="breakdown-value">{{ currentDetail.breakdown.manufacturing?.toFixed(2) }} t</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="运输配送">
+          <span class="breakdown-value">{{ currentDetail.breakdown.transport?.toFixed(2) }} t</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="使用阶段">
+          <span class="breakdown-value">{{ currentDetail.breakdown.use?.toFixed(2) }} t</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="生命周期末期">
+          <span class="breakdown-value">{{ currentDetail.breakdown.endOfLife?.toFixed(2) }} t</span>
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
