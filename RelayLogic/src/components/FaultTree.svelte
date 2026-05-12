@@ -26,9 +26,15 @@
     simulationResult = null
   }
 
+  let predictionResult = $state(null)
+
   function predictRisk() {
-    const prediction = faultTreeSimulator.predictCascadingRisk(['BASIC-001'])
-    selectedNode = { prediction }
+    const initialNode = selectedNode?.id || 'BASIC-001'
+    predictionResult = faultTreeSimulator.predictCascadingRisk([initialNode])
+  }
+
+  function clearPrediction() {
+    predictionResult = null
   }
 
   function getNodeColor(node) {
@@ -180,17 +186,43 @@
           </div>
         {/if}
 
-        {#if selectedNode?.prediction}
-          <div class="info-section">
-            <h4>风险预测</h4>
+        {#if predictionResult}
+          <div class="info-section prediction-section">
+            <div class="section-header">
+              <h4>🎯 风险预测结果</h4>
+              <button class="btn-clear" onclick={clearPrediction}>×</button>
+            </div>
             <div class="stat-row">
               <span>总风险值</span>
-              <span class="critical">{(selectedNode.prediction.totalRisk * 100).toFixed(2)}%</span>
+              <span class="critical">{(predictionResult.totalRisk * 100).toFixed(2)}%</span>
             </div>
             <div class="stat-row">
               <span>影响节点数</span>
-              <span>{selectedNode.prediction.affectedNodes.length}</span>
+              <span>{predictionResult.affectedNodes.length}</span>
             </div>
+            <div class="risk-path-list">
+              <h5>风险传播路径：</h5>
+              {#each predictionResult.riskPath as path, index}
+                <div class="path-item">
+                  <span class="path-index">{index + 1}</span>
+                  <span class="path-text">{path.fromName} → {path.toName}</span>
+                  <span class="path-risk">{(path.risk * 100).toFixed(2)}%</span>
+                </div>
+              {/each}
+            </div>
+            <div class="affected-nodes">
+              <h5>影响的节点：</h5>
+              <div class="nodes-tags">
+                {#each predictionResult.affectedNodes as nodeId}
+                  <span class="node-tag">{nodeId}</span>
+                {/each}
+              </div>
+            </div>
+          </div>
+        {:else}
+          <div class="info-section prediction-hint">
+            <h4>💡 提示</h4>
+            <p class="hint-text">点击"风险预测"按钮查看连锁故障风险分析</p>
           </div>
         {/if}
       </div>
@@ -386,5 +418,133 @@
     text-align: center;
     padding: 40px;
     color: #64748b;
+  }
+
+  .prediction-section {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .section-header h4 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 14px;
+    text-transform: none;
+  }
+
+  .btn-clear {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-clear:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+  }
+
+  .risk-path-list {
+    margin-top: 16px;
+  }
+
+  .risk-path-list h5,
+  .affected-nodes h5 {
+    margin: 0 0 10px 0;
+    color: #94a3b8;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  .path-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  .path-index {
+    background: #8b5cf6;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+  }
+
+  .path-text {
+    flex: 1;
+  }
+
+  .path-risk {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .nodes-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .node-tag {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .prediction-hint {
+    text-align: center;
+    padding: 20px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 10px;
+    border: 1px dashed rgba(59, 130, 246, 0.2);
+  }
+
+  .prediction-hint h4 {
+    margin-bottom: 8px;
+    color: #e2e8f0;
+    text-transform: none;
+    font-size: 14px;
+  }
+
+  .hint-text {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .affected-nodes {
+    margin-top: 16px;
   }
 </style>
