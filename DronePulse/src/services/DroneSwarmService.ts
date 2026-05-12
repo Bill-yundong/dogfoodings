@@ -9,6 +9,7 @@ export class DroneSwarmService {
   private voronoiSolver: AsyncVoronoiSolver;
   private cells: Map<string, VoronoiCell> = new Map();
   private waypoints: Map<string, Point[]> = new Map();
+  private visitedWaypoints: Map<string, Point[]> = new Map();
   private animationFrame: number | null = null;
   private coverageRadius: number = 50;
 
@@ -17,6 +18,11 @@ export class DroneSwarmService {
   }
 
   initializeDrones(count: number, width: number, height: number): void {
+    this.drones.clear();
+    this.cells.clear();
+    this.waypoints.clear();
+    this.visitedWaypoints = new Map();
+    
     const margin = 80;
     
     for (let i = 0; i < count; i++) {
@@ -33,6 +39,7 @@ export class DroneSwarmService {
         lastUpdate: Date.now(),
       };
       this.drones.set(drone.id, drone);
+      this.visitedWaypoints.set(drone.id, []);
       dbStore.saveDrone(drone);
     }
   }
@@ -103,7 +110,9 @@ export class DroneSwarmService {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < 5) {
-          waypoints.shift();
+          const visited = this.visitedWaypoints.get(id) || [];
+          visited.push(waypoints.shift()!);
+          this.visitedWaypoints.set(id, visited);
           this.createCoverageSnapshot(drone);
         } else {
           const speed = 2;
@@ -132,9 +141,9 @@ export class DroneSwarmService {
 
   private createCoverageSnapshot(drone: Drone): void {
     const cell = this.cells.get(drone.id);
-    const wp = this.waypoints.get(drone.id) || [];
+    const visited = this.visitedWaypoints.get(drone.id) || [];
 
-    const waypoints: Waypoint[] = wp.map(p => ({
+    const waypoints: Waypoint[] = visited.map(p => ({
       ...p,
       altitude: 100,
       timestamp: Date.now(),
@@ -147,7 +156,7 @@ export class DroneSwarmService {
       coverageArea: cell?.area || 0,
       position: { ...drone.position },
       waypoints,
-      coveragePercentage: calculateCoveragePercentage(wp, cell?.area || 0, this.coverageRadius),
+      coveragePercentage: calculateCoveragePercentage(visited, cell?.area || 0, this.coverageRadius),
     };
 
     dbStore.saveCoverageSnapshot(snapshot);
@@ -177,10 +186,10 @@ export class DroneSwarmService {
     
     let coveredArea = 0;
     this.drones.forEach(drone => {
-      const wp = this.waypoints.get(drone.id) || [];
+      const visited = this.visitedWaypoints.get(drone.id) || [];
       const cell = this.cells.get(drone.id);
       if (cell) {
-        coveredArea += wp.length * Math.PI * this.coverageRadius ** 2;
+        coveredArea += visited.length * Math.PI * this.coverageRadius ** 2;
       }
     });
 
@@ -193,5 +202,9 @@ export class DroneSwarmService {
 
   destroy(): void {
     this.stopSimulation();
+    this.drones.clear();
+    this.cells.clear();
+    this.waypoints.clear();
+    this.visitedWaypoints.clear();
   }
 }

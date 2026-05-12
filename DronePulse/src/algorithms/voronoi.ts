@@ -24,7 +24,7 @@ export class AsyncVoronoiSolver {
         ]);
 
         const cells: VoronoiCell[] = drones.map((drone, index) => {
-          const polygon = Array.from(voronoi.cellPolygon(index)) as Point[];
+          const polygon = Array.from(voronoi.cellPolygon(index)) as unknown as Point[];
           const centroid = this.computeCentroid(polygon);
           const area = this.computePolygonArea(polygon);
 

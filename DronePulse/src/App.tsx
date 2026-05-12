@@ -5,15 +5,15 @@ import { DroneList } from './components/DroneList';
 import { DroneSwarmService } from './services/DroneSwarmService';
 import { dbStore } from './store/indexedDB';
 import { syncService } from './services/SemanticSyncService';
-import { Point } from './types';
+import { Point, Drone, VoronoiCell } from './types';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
 export const App: React.FC = () => {
   const [droneCount, setDroneCount] = useState(5);
-  const [drones, setDrones] = useState([]);
-  const [cells, setCells] = useState([]);
+  const [drones, setDrones] = useState<Drone[]>([]);
+  const [cells, setCells] = useState<VoronoiCell[]>([]);
   const [waypoints, setWaypoints] = useState<Map<string, Point[]>>(new Map());
   const [isRunning, setIsRunning] = useState(false);
   const [isPatrolling, setIsPatrolling] = useState(false);
@@ -58,19 +58,22 @@ export const App: React.FC = () => {
   }, []);
 
   const handleStartSimulation = async () => {
-    if (!swarmServiceRef.current) return;
+    if (!swarmServiceRef.current || isRunning) return;
     
     swarmServiceRef.current.initializeDrones(droneCount, CANVAS_WIDTH, CANVAS_HEIGHT);
     await swarmServiceRef.current.updateVoronoi();
     swarmServiceRef.current.startSimulation();
     syncService.startAutoSync();
     setIsRunning(true);
+    updateState();
 
-    const animate = () => {
-      updateState();
-      animationFrameRef.current = requestAnimationFrame(animate);
-    };
-    animate();
+    if (!animationFrameRef.current) {
+      const animate = () => {
+        updateState();
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+      animate();
+    }
   };
 
   const handleStopSimulation = () => {
@@ -85,18 +88,21 @@ export const App: React.FC = () => {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    updateState();
   };
 
   const handleStartPatrolling = () => {
     if (!swarmServiceRef.current) return;
     swarmServiceRef.current.startPatrolling();
     setIsPatrolling(true);
+    updateState();
   };
 
   const handleStopPatrolling = () => {
     if (!swarmServiceRef.current) return;
     swarmServiceRef.current.stopPatrolling();
     setIsPatrolling(false);
+    updateState();
   };
 
   const handleRecalculateVoronoi = async () => {
