@@ -1,5 +1,5 @@
-import type { SecurityStore } from '../store/useSecurityStore';
 import { For } from 'solid-js';
+import type { SecurityStore } from '../state/useSecurityStore';
 
 interface Props {
   store: SecurityStore;
@@ -7,12 +7,6 @@ interface Props {
 
 export function Dashboard(props: Props) {
   const { statistics, alerts } = props.store;
-
-  const getRiskColor = (level: number) => {
-    if (level >= 70) return 'bg-red-600';
-    if (level >= 40) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
 
   return (
     <div class="p-6 space-y-6">
@@ -60,13 +54,7 @@ export function Dashboard(props: Props) {
               <span class="text-2xl">⚠️</span>
             </div>
           </div>
-          <div class="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
-            <div
-              class={`h-full ${getRiskColor(statistics().highRiskCount)} transition-all`}
-              style={{ width: `${Math.min(statistics().highRiskCount * 2, 100)}%` }}
-            />
-          </div>
-          <p class="text-xs text-gray-500 mt-1">风险评分 ≥ 50</p>
+          <p class="text-xs text-gray-500 mt-2">风险评分 ≥ 40</p>
         </div>
 
         <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">

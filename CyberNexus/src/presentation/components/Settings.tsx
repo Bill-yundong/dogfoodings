@@ -1,5 +1,5 @@
-import type { SecurityStore } from '../store/useSecurityStore';
 import { createSignal } from 'solid-js';
+import type { SecurityStore } from '../state/useSecurityStore';
 
 interface Props {
   store: SecurityStore;

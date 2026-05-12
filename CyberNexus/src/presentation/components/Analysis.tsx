@@ -1,5 +1,5 @@
-import type { SecurityStore } from '../store/useSecurityStore';
 import { For, createEffect, createSignal } from 'solid-js';
+import type { SecurityStore } from '../state/useSecurityStore';
 
 interface Props {
   store: SecurityStore;
@@ -30,27 +30,19 @@ export function Analysis(props: Props) {
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
-      case 'malicious':
-        return 'text-red-400 bg-red-900/30';
-      case 'suspicious':
-        return 'text-yellow-400 bg-yellow-900/30';
-      case 'unknown':
-        return 'text-blue-400 bg-blue-900/30';
-      default:
-        return 'text-green-400 bg-green-900/30';
+      case 'malicious': return 'text-red-400 bg-red-900/30';
+      case 'suspicious': return 'text-yellow-400 bg-yellow-900/30';
+      case 'unknown': return 'text-blue-400 bg-blue-900/30';
+      default: return 'text-green-400 bg-green-900/30';
     }
   };
 
   const getClassificationLabel = (classification: string) => {
     switch (classification) {
-      case 'malicious':
-        return '恶意';
-      case 'suspicious':
-        return '可疑';
-      case 'unknown':
-        return '未知';
-      default:
-        return '正常';
+      case 'malicious': return '恶意';
+      case 'suspicious': return '可疑';
+      case 'unknown': return '未知';
+      default: return '正常';
     }
   };
 
@@ -129,9 +121,7 @@ export function Analysis(props: Props) {
                 <For each={filteredFeatures()}>
                   {(feature) => (
                     <tr class="border-t border-gray-700 hover:bg-gray-700/50">
-                      <td class="py-2 px-3 text-gray-300">
-                        {new Date(feature.timestamp).toLocaleTimeString()}
-                      </td>
+                      <td class="py-2 px-3 text-gray-300">{new Date(feature.timestamp).toLocaleTimeString()}</td>
                       <td class="py-2 px-3 text-gray-300 font-mono">{feature.sourceIP}</td>
                       <td class="py-2 px-3 text-gray-300 font-mono">{feature.destinationIP}</td>
                       <td class="py-2 px-3">
@@ -148,9 +138,7 @@ export function Analysis(props: Props) {
                   )}
                 </For>
                 {filteredFeatures().length === 0 && (
-                  <tr>
-                    <td colspan="5" class="py-8 text-center text-gray-500">暂无流量数据</td>
-                  </tr>
+                  <tr><td colspan="5" class="py-8 text-center text-gray-500">暂无流量数据</td></tr>
                 )}
               </tbody>
             </table>
@@ -173,20 +161,12 @@ export function Analysis(props: Props) {
                 <For each={filteredNormalized()}>
                   {(normalized) => (
                     <tr class="border-t border-gray-700 hover:bg-gray-700/50">
-                      <td class="py-2 px-3 text-gray-300 font-mono text-xs">
-                        {normalized.featureId.slice(0, 12)}...
-                      </td>
+                      <td class="py-2 px-3 text-gray-300 font-mono text-xs">{normalized.featureId.slice(0, 16)}...</td>
                       <td class="py-2 px-3">
                         <div class="flex items-center gap-2">
                           <div class="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
                             <div
-                              class={`h-full ${
-                                normalized.riskScore >= 70
-                                  ? 'bg-red-500'
-                                  : normalized.riskScore >= 40
-                                  ? 'bg-yellow-500'
-                                  : 'bg-green-500'
-                              }`}
+                              class={`h-full ${normalized.riskScore >= 70 ? 'bg-red-500' : normalized.riskScore >= 40 ? 'bg-yellow-500' : 'bg-green-500'}`}
                               style={{ width: `${normalized.riskScore}%` }}
                             />
                           </div>
@@ -203,9 +183,7 @@ export function Analysis(props: Props) {
                   )}
                 </For>
                 {filteredNormalized().length === 0 && (
-                  <tr>
-                    <td colspan="4" class="py-8 text-center text-gray-500">暂无标准化数据</td>
-                  </tr>
+                  <tr><td colspan="4" class="py-8 text-center text-gray-500">暂无标准化数据</td></tr>
                 )}
               </tbody>
             </table>
@@ -228,13 +206,9 @@ export function Analysis(props: Props) {
                 }`}
               >
                 <div class="flex items-center justify-between mb-3">
-                  <span class="text-sm font-mono text-gray-400">
-                    {cluster.clusterId.slice(0, 16)}
-                  </span>
+                  <span class="text-sm font-mono text-gray-400">{cluster.clusterId.slice(0, 16)}</span>
                   {cluster.isAPT && (
-                    <span class="px-2 py-1 bg-red-600 text-white text-xs rounded-full animate-pulse">
-                      APT 可疑
-                    </span>
+                    <span class="px-2 py-1 bg-red-600 text-white text-xs rounded-full animate-pulse">APT 可疑</span>
                   )}
                 </div>
                 <div class="space-y-2 text-sm">
@@ -255,9 +229,7 @@ export function Analysis(props: Props) {
             )}
           </For>
           {clusters().length === 0 && (
-            <div class="col-span-full py-8 text-center text-gray-500">
-              暂无聚类结果，请先执行聚类分析
-            </div>
+            <div class="col-span-full py-8 text-center text-gray-500">暂无聚类结果，请先执行聚类分析</div>
           )}
         </div>
       </div>

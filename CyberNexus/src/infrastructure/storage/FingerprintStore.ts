@@ -1,12 +1,24 @@
-import type { TrafficFingerprint, TrafficFeature, NormalizedTraffic, ClusterResult } from '../types';
-import { TrafficNormalizer } from './TrafficNormalizer';
+import { STORAGE_CONFIG, RISK_THRESHOLDS } from '../../shared/constants/app.constants';
+import { generateFeatureHash } from '../../shared/utils/traffic.utils';
+import type {
+  TrafficFeature,
+  NormalizedTraffic,
+  TrafficFingerprint,
+  ClusterResult,
+  Statistics,
+} from '../../domain/entities/traffic.entity';
+
+export type ObjectStoreName = 'trafficFeatures' | 'normalizedTraffic' | 'fingerprints' | 'clusterResults' | 'syncEvents';
 
 export class FingerprintStore {
   private dbName: string;
   private dbVersion: number;
   private db: IDBDatabase | null = null;
 
-  constructor(dbName = 'CyberNexusFingerprints', dbVersion = 1) {
+  constructor(
+    dbName = STORAGE_CONFIG.DB_NAME,
+    dbVersion = STORAGE_CONFIG.DB_VERSION
+  ) {
     this.dbName = dbName;
     this.dbVersion = dbVersion;
   }
@@ -68,7 +80,10 @@ export class FingerprintStore {
     }
   }
 
-  private async getStore(storeName: string, mode: IDBTransactionMode): Promise<IDBObjectStore> {
+  private async getStore(
+    storeName: ObjectStoreName,
+    mode: IDBTransactionMode
+  ): Promise<IDBObjectStore> {
     if (!this.db) {
       await this.init();
     }
@@ -97,7 +112,7 @@ export class FingerprintStore {
   }
 
   async updateOrCreateFingerprint(feature: TrafficFeature, normalized: NormalizedTraffic): Promise<void> {
-    const featureHash = TrafficNormalizer.generateFeatureHash(feature);
+    const featureHash = generateFeatureHash(feature);
     const existing = await this.getFingerprintByHash(featureHash);
 
     if (existing) {
@@ -110,7 +125,7 @@ export class FingerprintStore {
       await this.updateFingerprint(existing);
     } else {
       const fingerprint: TrafficFingerprint = {
-        id: 'fp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        id: `fp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         featureHash,
         firstSeen: Date.now(),
         lastSeen: Date.now(),
@@ -184,7 +199,7 @@ export class FingerprintStore {
     });
   }
 
-  async getHighRiskFingerprints(threshold: number = 50): Promise<TrafficFingerprint[]> {
+  async getHighRiskFingerprints(threshold: number = RISK_THRESHOLDS.MEDIUM): Promise<TrafficFingerprint[]> {
     const store = await this.getStore('fingerprints', 'readonly');
     const index = store.index('avgRiskScore');
     const range = IDBKeyRange.lowerBound(threshold);
@@ -212,7 +227,7 @@ export class FingerprintStore {
     type: 'features' | 'fingerprints' | 'clusters';
     payload: unknown[];
   }): Promise<{ success: boolean; syncedCount: number }> {
-    const eventId = 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const eventId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const syncEvent = {
       eventId,
@@ -236,12 +251,7 @@ export class FingerprintStore {
     };
   }
 
-  async getStatistics(): Promise<{
-    totalFeatures: number;
-    totalFingerprints: number;
-    highRiskCount: number;
-    aptClusterCount: number;
-  }> {
+  async getStatistics(): Promise<Statistics> {
     const [features, fingerprints, highRisk, aptClusters] = await Promise.all([
       this.countRecords('trafficFeatures'),
       this.countRecords('fingerprints'),
@@ -257,7 +267,7 @@ export class FingerprintStore {
     };
   }
 
-  private async countRecords(storeName: string): Promise<number> {
+  private async countRecords(storeName: ObjectStoreName): Promise<number> {
     const store = await this.getStore(storeName, 'readonly');
     return new Promise((resolve, reject) => {
       const request = store.count();
@@ -298,7 +308,7 @@ export class FingerprintStore {
   }
 
   async clearAll(): Promise<void> {
-    const stores = ['trafficFeatures', 'normalizedTraffic', 'fingerprints', 'clusterResults', 'syncEvents'];
+    const stores: ObjectStoreName[] = ['trafficFeatures', 'normalizedTraffic', 'fingerprints', 'clusterResults', 'syncEvents'];
     for (const storeName of stores) {
       const store = await this.getStore(storeName, 'readwrite');
       await new Promise<void>((resolve, reject) => {

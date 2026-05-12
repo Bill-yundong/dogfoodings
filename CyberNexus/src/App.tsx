@@ -1,9 +1,9 @@
-import { createEffect } from 'solid-js';
-import { useSecurityStore } from './store/useSecurityStore';
-import { Dashboard } from './components/Dashboard';
-import { Analysis } from './components/Analysis';
-import { Fingerprints } from './components/Fingerprints';
-import { Settings } from './components/Settings';
+import { createEffect, For } from 'solid-js';
+import { useSecurityStore } from './presentation/state/useSecurityStore';
+import { Dashboard } from './presentation/components/Dashboard';
+import { Analysis } from './presentation/components/Analysis';
+import { Fingerprints } from './presentation/components/Fingerprints';
+import { Settings } from './presentation/components/Settings';
 
 function App() {
   const store = useSecurityStore();
@@ -17,7 +17,7 @@ function App() {
     { id: 'analysis', label: '流量分析', icon: '🔍' },
     { id: 'fingerprints', label: '指纹库', icon: '🔐' },
     { id: 'settings', label: '设置', icon: '⚙️' },
-  ];
+  ] as const;
 
   const renderContent = () => {
     switch (store.activeTab()) {
@@ -48,7 +48,9 @@ function App() {
 
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 text-sm">
-              <span class={`w-2 h-2 rounded-full ${store.isProcessing() ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
+              <span
+                class={`w-2 h-2 rounded-full animate-pulse ${store.isProcessing() ? 'bg-yellow-400' : 'bg-green-400'}`}
+              />
               <span class="text-gray-400">{store.isProcessing() ? '处理中...' : '系统正常'}</span>
             </div>
             <div class="flex items-center gap-3 text-sm">
@@ -71,37 +73,41 @@ function App() {
       <div class="flex">
         <nav class="w-56 min-h-screen bg-gray-800 border-r border-gray-700 p-4">
           <div class="space-y-2">
-            {navItems.map((item) => (
-              <button
-                onClick={() => store.setActiveTab(item.id as any)}
-                class={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                  store.activeTab() === item.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                }`}
-              >
-                <span class="text-xl">{item.icon}</span>
-                <span class="font-medium">{item.label}</span>
-              </button>
-            ))}
+            <For each={navItems}>
+              {(item) => (
+                <button
+                  onClick={() => store.setActiveTab(item.id)}
+                  class={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                    store.activeTab() === item.id
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                  }`}
+                >
+                  <span class="text-xl">{item.icon}</span>
+                  <span class="font-medium">{item.label}</span>
+                </button>
+              )}
+            </For>
           </div>
 
           <div class="mt-8 p-4 bg-gray-900/50 rounded-lg">
             <p class="text-xs text-gray-500 mb-2">实时告警</p>
             <div class="space-y-2 max-h-40 overflow-y-auto">
-              {store.alerts().slice(0, 5).map((alert) => (
-                <div
-                  class={`text-xs p-2 rounded ${
-                    alert.type === 'danger'
-                      ? 'bg-red-900/50 text-red-300'
-                      : alert.type === 'warning'
-                      ? 'bg-yellow-900/50 text-yellow-300'
-                      : 'bg-blue-900/50 text-blue-300'
-                  }`}
-                >
-                  {alert.message}
-                </div>
-              ))}
+              <For each={store.alerts().slice(0, 5)}>
+                {(alert) => (
+                  <div
+                    class={`text-xs p-2 rounded ${
+                      alert.type === 'danger'
+                        ? 'bg-red-900/30 text-red-300'
+                        : alert.type === 'warning'
+                        ? 'bg-yellow-900/30 text-yellow-300'
+                        : 'bg-blue-900/30 text-blue-300'
+                    }`}
+                  >
+                    {alert.message}
+                  </div>
+                )}
+              </For>
               {store.alerts().length === 0 && (
                 <p class="text-xs text-gray-600">暂无告警</p>
               )}

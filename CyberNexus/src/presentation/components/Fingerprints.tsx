@@ -1,6 +1,6 @@
-import type { SecurityStore } from '../store/useSecurityStore';
 import { For, createEffect } from 'solid-js';
-import type { TrafficFingerprint } from '../types';
+import type { SecurityStore } from '../state/useSecurityStore';
+import type { TrafficFingerprint } from '../../domain/entities/traffic.entity';
 
 interface Props {
   store: SecurityStore;
@@ -25,9 +25,7 @@ export function Fingerprints(props: Props) {
     return 'text-green-400';
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
-  };
+  const formatDate = (timestamp: number) => new Date(timestamp).toLocaleString();
 
   return (
     <div class="p-6 space-y-6">
@@ -53,21 +51,15 @@ export function Fingerprints(props: Props) {
           </div>
           <div class="p-4 bg-gray-900 rounded-lg">
             <p class="text-gray-400 text-sm">高风险</p>
-            <p class="text-2xl font-bold text-red-400">
-              {fingerprints().filter(f => f.avgRiskScore >= 70).length}
-            </p>
+            <p class="text-2xl font-bold text-red-400">{fingerprints().filter(f => f.avgRiskScore >= 70).length}</p>
           </div>
           <div class="p-4 bg-gray-900 rounded-lg">
             <p class="text-gray-400 text-sm">中风险</p>
-            <p class="text-2xl font-bold text-yellow-400">
-              {fingerprints().filter(f => f.avgRiskScore >= 40 && f.avgRiskScore < 70).length}
-            </p>
+            <p class="text-2xl font-bold text-yellow-400">{fingerprints().filter(f => f.avgRiskScore >= 40 && f.avgRiskScore < 70).length}</p>
           </div>
           <div class="p-4 bg-gray-900 rounded-lg">
             <p class="text-gray-400 text-sm">低风险</p>
-            <p class="text-2xl font-bold text-green-400">
-              {fingerprints().filter(f => f.avgRiskScore < 40).length}
-            </p>
+            <p class="text-2xl font-bold text-green-400">{fingerprints().filter(f => f.avgRiskScore < 40).length}</p>
           </div>
         </div>
       </div>
@@ -77,17 +69,11 @@ export function Fingerprints(props: Props) {
         <div class="space-y-4 max-h-[600px] overflow-y-auto">
           <For each={fingerprints()}>
             {(fingerprint: TrafficFingerprint) => (
-              <div
-                class={`p-4 rounded-lg border-l-4 ${getRiskColor(fingerprint.avgRiskScore)}`}
-              >
+              <div class={`p-4 rounded-lg border-l-4 ${getRiskColor(fingerprint.avgRiskScore)}`}>
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <p class="font-mono text-sm text-gray-300">
-                      特征哈希: {fingerprint.featureHash}
-                    </p>
-                    <p class="font-mono text-xs text-gray-500 mt-1">
-                      指纹 ID: {fingerprint.id}
-                    </p>
+                    <p class="font-mono text-sm text-gray-300">特征哈希: {fingerprint.featureHash}</p>
+                    <p class="font-mono text-xs text-gray-500 mt-1">指纹 ID: {fingerprint.id}</p>
                   </div>
                   <div class="text-right">
                     <p class={`text-lg font-bold ${getRiskTextColor(fingerprint.avgRiskScore)}`}>
@@ -121,9 +107,7 @@ export function Fingerprints(props: Props) {
                   <div class="flex flex-wrap gap-2">
                     <For each={fingerprint.associatedIPs.slice(0, 5)}>
                       {(ip) => (
-                        <span class="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded font-mono">
-                          {ip}
-                        </span>
+                        <span class="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded font-mono">{ip}</span>
                       )}
                     </For>
                     {fingerprint.associatedIPs.length > 5 && (

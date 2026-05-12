@@ -1,11 +1,30 @@
-import type { TimeSeriesData, ClusterResult, NormalizedTraffic } from '../types';
+import {
+  CLUSTER_CONFIG,
+  APT_DETECTION_CONFIG,
+} from '../../shared/constants/app.constants';
+import {
+  calculateVariance,
+  calculateDTWDistance,
+  calculateCentroid,
+  euclideanDistance,
+} from '../../shared/utils/math.utils';
+import { generateId } from '../../shared/utils/traffic.utils';
+import type {
+  TimeSeriesData,
+  ClusterResult,
+  NormalizedTraffic,
+} from '../entities/traffic.entity';
 
-export class TimeSeriesClusterEngine {
+export class TimeSeriesClusterService {
   private epsilon: number;
   private minSamples: number;
   private windowSize: number;
 
-  constructor(epsilon = 0.3, minSamples = 5, windowSize = 100) {
+  constructor(
+    epsilon = CLUSTER_CONFIG.EPSILON,
+    minSamples = CLUSTER_CONFIG.MIN_SAMPLES,
+    windowSize = CLUSTER_CONFIG.WINDOW_SIZE
+  ) {
     this.epsilon = epsilon;
     this.minSamples = minSamples;
     this.windowSize = windowSize;
@@ -44,7 +63,7 @@ export class TimeSeriesClusterEngine {
 
     for (let i = 0; i < points.length; i++) {
       if (i === index) continue;
-      const distance = this.calculateDTWDistance(target.values, points[i].values);
+      const distance = calculateDTWDistance(target.values, points[i].values);
       if (distance <= this.epsilon) {
         neighbors.push(i);
       }
@@ -84,60 +103,6 @@ export class TimeSeriesClusterEngine {
     return cluster;
   }
 
-  private calculateDTWDistance(seq1: number[], seq2: number[]): number {
-    const n = seq1.length;
-    const m = seq2.length;
-    const dtw: number[][] = Array(n + 1).fill(null).map(() => Array(m + 1).fill(Infinity));
-    dtw[0][0] = 0;
-
-    for (let i = 1; i <= n; i++) {
-      for (let j = 1; j <= m; j++) {
-        const cost = Math.abs(seq1[i - 1] - seq2[j - 1]);
-        dtw[i][j] = cost + Math.min(
-          dtw[i - 1][j],
-          dtw[i][j - 1],
-          dtw[i - 1][j - 1]
-        );
-      }
-    }
-
-    return dtw[n][m] / Math.max(n, m);
-  }
-
-  private calculateCentroid(cluster: TimeSeriesData[]): number[] {
-    if (cluster.length === 0) return [];
-    const dimensions = cluster[0].values.length;
-    const centroid = new Array(dimensions).fill(0);
-
-    for (const point of cluster) {
-      for (let i = 0; i < dimensions; i++) {
-        centroid[i] += point.values[i];
-      }
-    }
-
-    return centroid.map(v => v / cluster.length);
-  }
-
-  private calculateAnomalyScore(cluster: TimeSeriesData[], centroid: number[]): number {
-    if (cluster.length === 0) return 0;
-
-    let totalDistance = 0;
-    for (const point of cluster) {
-      totalDistance += this.euclideanDistance(point.values, centroid);
-    }
-
-    return totalDistance / cluster.length;
-  }
-
-  private euclideanDistance(v1: number[], v2: number[]): number {
-    if (v1.length !== v2.length) return Infinity;
-    let sum = 0;
-    for (let i = 0; i < v1.length; i++) {
-      sum += Math.pow(v1[i] - v2[i], 2);
-    }
-    return Math.sqrt(sum);
-  }
-
   private detectAPTIndicators(cluster: TimeSeriesData[]): { isAPT: boolean; confidence: number } {
     if (cluster.length < this.minSamples * 2) {
       return { isAPT: false, confidence: 0 };
@@ -147,37 +112,30 @@ export class TimeSeriesClusterEngine {
     const timestamps = cluster.map(p => p.timestamp);
     const timeIntervals = timestamps.slice(1).map((t, i) => t - timestamps[i]);
 
-    const intervalVariance = this.calculateVariance(timeIntervals);
-    if (intervalVariance < 1000) {
+    const intervalVariance = calculateVariance(timeIntervals);
+    if (intervalVariance < APT_DETECTION_CONFIG.INTERVAL_VARIANCE_THRESHOLD) {
       aptScore += 25;
     }
 
     const frequency = this.calculateFrequency(cluster);
-    if (frequency > 0.7) {
+    if (frequency > APT_DETECTION_CONFIG.FREQUENCY_THRESHOLD) {
       aptScore += 20;
     }
 
     const avgRisk = cluster.reduce((sum, p) => sum + (p.values[0] || 0), 0) / cluster.length;
-    if (avgRisk > 0.5) {
+    if (avgRisk > APT_DETECTION_CONFIG.AVG_RISK_THRESHOLD) {
       aptScore += 30;
     }
 
     const duration = timestamps[timestamps.length - 1] - timestamps[0];
-    if (duration > 3600000) {
+    if (duration > APT_DETECTION_CONFIG.DURATION_THRESHOLD) {
       aptScore += 25;
     }
 
     return {
-      isAPT: aptScore >= 60,
+      isAPT: aptScore >= APT_DETECTION_CONFIG.APT_SCORE_THRESHOLD,
       confidence: Math.min(aptScore, 100),
     };
-  }
-
-  private calculateVariance(values: number[]): number {
-    if (values.length === 0) return 0;
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
-    return squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
   }
 
   private calculateFrequency(cluster: TimeSeriesData[]): number {
@@ -188,12 +146,12 @@ export class TimeSeriesClusterEngine {
   }
 
   private analyzeCluster(cluster: TimeSeriesData[]): ClusterResult {
-    const center = this.calculateCentroid(cluster);
+    const center = calculateCentroid(cluster.map(p => p.values));
     const anomalyScore = this.calculateAnomalyScore(cluster, center);
     const { isAPT, confidence } = this.detectAPTIndicators(cluster);
 
     return {
-      clusterId: this.generateClusterId(),
+      clusterId: generateId('cluster'),
       center,
       points: cluster,
       anomalyScore,
@@ -202,8 +160,15 @@ export class TimeSeriesClusterEngine {
     };
   }
 
-  private generateClusterId(): string {
-    return 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  private calculateAnomalyScore(cluster: TimeSeriesData[], centroid: number[]): number {
+    if (cluster.length === 0) return 0;
+
+    let totalDistance = 0;
+    for (const point of cluster) {
+      totalDistance += euclideanDistance(point.values, centroid);
+    }
+
+    return totalDistance / cluster.length;
   }
 
   convertToTimeSeries(normalizedTraffic: NormalizedTraffic[]): TimeSeriesData[] {
