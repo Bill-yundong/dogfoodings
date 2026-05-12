@@ -10,6 +10,7 @@ export class DroneSwarmService {
   private cells: Map<string, VoronoiCell> = new Map();
   private waypoints: Map<string, Point[]> = new Map();
   private visitedWaypoints: Map<string, Point[]> = new Map();
+  private totalWaypoints: Map<string, number> = new Map();
   private animationFrame: number | null = null;
   private coverageRadius: number = 50;
 
@@ -21,7 +22,8 @@ export class DroneSwarmService {
     this.drones.clear();
     this.cells.clear();
     this.waypoints.clear();
-    this.visitedWaypoints = new Map();
+    this.visitedWaypoints.clear();
+    this.totalWaypoints.clear();
     
     const margin = 80;
     
@@ -40,6 +42,7 @@ export class DroneSwarmService {
       };
       this.drones.set(drone.id, drone);
       this.visitedWaypoints.set(drone.id, []);
+      this.totalWaypoints.set(drone.id, 0);
       dbStore.saveDrone(drone);
     }
   }
@@ -60,6 +63,10 @@ export class DroneSwarmService {
     return this.waypoints.get(droneId) || [];
   }
 
+  getVisitedWaypoints(droneId: string): Point[] {
+    return this.visitedWaypoints.get(droneId) || [];
+  }
+
   async updateVoronoi(): Promise<void> {
     const drones = this.getAllDrones();
     const newCells = await this.voronoiSolver.compute(drones);
@@ -78,6 +85,7 @@ export class DroneSwarmService {
           this.coverageRadius
         );
         this.waypoints.set(drone.id, wp);
+        this.totalWaypoints.set(drone.id, wp.length);
       }
     }
   }
@@ -181,19 +189,15 @@ export class DroneSwarmService {
   }
 
   getTotalCoverage(): number {
-    const cells = this.getCells();
-    const totalArea = cells.reduce((sum, cell) => sum + cell.area, 0);
+    let totalWp = 0;
+    let visitedWp = 0;
     
-    let coveredArea = 0;
     this.drones.forEach(drone => {
-      const visited = this.visitedWaypoints.get(drone.id) || [];
-      const cell = this.cells.get(drone.id);
-      if (cell) {
-        coveredArea += visited.length * Math.PI * this.coverageRadius ** 2;
-      }
+      totalWp += this.totalWaypoints.get(drone.id) || 0;
+      visitedWp += (this.visitedWaypoints.get(drone.id) || []).length;
     });
 
-    return totalArea > 0 ? Math.min(100, (coveredArea / totalArea) * 100) : 0;
+    return totalWp > 0 ? Math.min(100, (visitedWp / totalWp) * 100) : 0;
   }
 
   setCoverageRadius(radius: number): void {
@@ -206,5 +210,6 @@ export class DroneSwarmService {
     this.cells.clear();
     this.waypoints.clear();
     this.visitedWaypoints.clear();
+    this.totalWaypoints.clear();
   }
 }

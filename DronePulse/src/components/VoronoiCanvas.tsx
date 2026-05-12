@@ -7,6 +7,7 @@ interface VoronoiCanvasProps {
   drones: Drone[];
   cells: VoronoiCell[];
   waypoints: Map<string, Point[]>;
+  visitedWaypoints: Map<string, Point[]>;
 }
 
 const COLORS = [
@@ -20,6 +21,7 @@ export const VoronoiCanvas: React.FC<VoronoiCanvasProps> = ({
   drones,
   cells,
   waypoints,
+  visitedWaypoints,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -74,6 +76,7 @@ export const VoronoiCanvas: React.FC<VoronoiCanvasProps> = ({
     drones.forEach((drone, index) => {
       const color = COLORS[index % COLORS.length];
       const wp = waypoints.get(drone.id) || [];
+      const visited = visitedWaypoints.get(drone.id) || [];
 
       if (wp.length > 1) {
         ctx.beginPath();
@@ -88,10 +91,10 @@ export const VoronoiCanvas: React.FC<VoronoiCanvasProps> = ({
         ctx.setLineDash([]);
       }
 
-      wp.forEach(point => {
+      visited.forEach(point => {
         ctx.beginPath();
         ctx.arc(point.x, point.y, 50, 0, Math.PI * 2);
-        ctx.fillStyle = color + '10';
+        ctx.fillStyle = '#10B981' + '30';
         ctx.fill();
       });
 
@@ -99,6 +102,13 @@ export const VoronoiCanvas: React.FC<VoronoiCanvasProps> = ({
         ctx.beginPath();
         ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
         ctx.fillStyle = i === 0 ? color : color + '60';
+        ctx.fill();
+      });
+
+      visited.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#10B981';
         ctx.fill();
       });
 
@@ -140,7 +150,7 @@ export const VoronoiCanvas: React.FC<VoronoiCanvasProps> = ({
       ctx.arc(drone.position.x + 18, drone.position.y - 23, 3, 0, Math.PI * 2);
       ctx.fill();
     });
-  }, [width, height, drones, cells, waypoints]);
+  }, [width, height, drones, cells, waypoints, visitedWaypoints]);
 
   useEffect(() => {
     draw();

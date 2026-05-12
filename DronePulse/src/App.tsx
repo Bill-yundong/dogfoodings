@@ -15,10 +15,12 @@ export const App: React.FC = () => {
   const [drones, setDrones] = useState<Drone[]>([]);
   const [cells, setCells] = useState<VoronoiCell[]>([]);
   const [waypoints, setWaypoints] = useState<Map<string, Point[]>>(new Map());
+  const [visitedWaypoints, setVisitedWaypoints] = useState<Map<string, Point[]>>(new Map());
   const [isRunning, setIsRunning] = useState(false);
   const [isPatrolling, setIsPatrolling] = useState(false);
   const [totalCoverage, setTotalCoverage] = useState(0);
   const [selectedDrone, setSelectedDrone] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<string>('');
 
   const swarmServiceRef = useRef<DroneSwarmService | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -48,11 +50,15 @@ export const App: React.FC = () => {
     setCells([...swarmServiceRef.current.getCells()]);
     
     const newWaypoints = new Map<string, Point[]>();
+    const newVisitedWaypoints = new Map<string, Point[]>();
     swarmServiceRef.current.getAllDrones().forEach(drone => {
       const wp = swarmServiceRef.current?.getWaypoints(drone.id) || [];
+      const visited = swarmServiceRef.current?.getVisitedWaypoints(drone.id) || [];
       newWaypoints.set(drone.id, [...wp]);
+      newVisitedWaypoints.set(drone.id, [...visited]);
     });
     setWaypoints(newWaypoints);
+    setVisitedWaypoints(newVisitedWaypoints);
     
     setTotalCoverage(swarmServiceRef.current.getTotalCoverage());
   }, []);
@@ -107,13 +113,19 @@ export const App: React.FC = () => {
 
   const handleRecalculateVoronoi = async () => {
     if (!swarmServiceRef.current) return;
+    setLastAction('正在重算Voronoi...');
     await swarmServiceRef.current.updateVoronoi();
     updateState();
+    setLastAction('Voronoi重算完成！');
+    setTimeout(() => setLastAction(''), 1500);
   };
 
   const handleSyncNow = async () => {
+    setLastAction('正在同步数据...');
     await syncService.createSyncSnapshot();
     updateState();
+    setLastAction('数据同步完成！');
+    setTimeout(() => setLastAction(''), 1500);
   };
 
   return (
@@ -142,13 +154,29 @@ export const App: React.FC = () => {
           justifyContent: 'center',
           flexWrap: 'wrap',
         }}>
-          <VoronoiCanvas
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            drones={drones}
-            cells={cells}
-            waypoints={waypoints}
-          />
+          <div>
+            <VoronoiCanvas
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              drones={drones}
+              cells={cells}
+              waypoints={waypoints}
+              visitedWaypoints={visitedWaypoints}
+            />
+            {lastAction && (
+              <div style={{
+                marginTop: '10px',
+                padding: '10px',
+                backgroundColor: '#10B981',
+                color: 'white',
+                borderRadius: '6px',
+                textAlign: 'center',
+                fontWeight: 'bold',
+              }}>
+                {lastAction}
+              </div>
+            )}
+          </div>
 
           <div>
             <ControlPanel
