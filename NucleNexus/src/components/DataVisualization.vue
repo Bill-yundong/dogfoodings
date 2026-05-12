@@ -139,9 +139,9 @@ const updateChart = () => {
   
   dataHistory.value.push({
     time: timeLabel,
-    plankton: props.ecologicalData.planktonDensity,
+    plankton: Number(props.ecologicalData.planktonDensity.toFixed(2)),
     jellyfish: props.ecologicalData.jellyfishCount,
-    algae: props.ecologicalData.algaeConcentration
+    algae: Number(props.ecologicalData.algaeConcentration.toFixed(2))
   })
   
   if (dataHistory.value.length > 20) {

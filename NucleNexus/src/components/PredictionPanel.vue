@@ -13,7 +13,7 @@
       </div>
       <div class="data-item">
         <div class="data-label">浮游生物密度</div>
-        <div class="data-value">{{ Math.round(ecologicalData.planktonDensity) }}<span class="data-unit">ind/m³</span></div>
+        <div class="data-value">{{ ecologicalData.planktonDensity.toFixed(2) }}<span class="data-unit">ind/m³</span></div>
       </div>
       <div class="data-item">
         <div class="data-label">海流速度</div>
