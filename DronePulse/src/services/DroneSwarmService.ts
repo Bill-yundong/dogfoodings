@@ -84,8 +84,23 @@ export class DroneSwarmService {
           drone.position,
           this.coverageRadius
         );
-        this.waypoints.set(drone.id, wp);
-        this.totalWaypoints.set(drone.id, wp.length);
+        
+        if (wp.length === 0) {
+          const cx = drone.position.x;
+          const cy = drone.position.y;
+          const defaultWaypoints: Point[] = [
+            { x: cx - 30, y: cy - 30 },
+            { x: cx + 30, y: cy - 30 },
+            { x: cx + 30, y: cy + 30 },
+            { x: cx - 30, y: cy + 30 },
+            { x: cx, y: cy },
+          ];
+          this.waypoints.set(drone.id, defaultWaypoints);
+          this.totalWaypoints.set(drone.id, defaultWaypoints.length);
+        } else {
+          this.waypoints.set(drone.id, wp);
+          this.totalWaypoints.set(drone.id, wp.length);
+        }
       }
     }
   }

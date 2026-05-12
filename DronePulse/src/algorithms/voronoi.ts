@@ -24,7 +24,29 @@ export class AsyncVoronoiSolver {
         ]);
 
         const cells: VoronoiCell[] = drones.map((drone, index) => {
-          const polygon = Array.from(voronoi.cellPolygon(index)) as unknown as Point[];
+          const rawPolygon = Array.from(voronoi.cellPolygon(index)) as [number, number][];
+          let polygon: Point[] = rawPolygon
+            .filter(p => p && isFinite(p[0]) && isFinite(p[1]))
+            .map(p => ({ x: p[0], y: p[1] }));
+
+          if (polygon.length >= 2 && 
+              polygon[0].x === polygon[polygon.length - 1].x && 
+              polygon[0].y === polygon[polygon.length - 1].y) {
+            polygon = polygon.slice(0, -1);
+          }
+
+          if (polygon.length < 3) {
+            const cx = drone.position.x;
+            const cy = drone.position.y;
+            const size = 80;
+            polygon = [
+              { x: cx - size, y: cy - size },
+              { x: cx + size, y: cy - size },
+              { x: cx + size, y: cy + size },
+              { x: cx - size, y: cy + size }
+            ];
+          }
+
           const centroid = this.computeCentroid(polygon);
           const area = this.computePolygonArea(polygon);
 
@@ -49,6 +71,13 @@ export class AsyncVoronoiSolver {
     return new Promise((resolve) => {
       setTimeout(() => {
         const waypoints: Point[] = [];
+        
+        if (!cell.polygon || cell.polygon.length < 3) {
+          console.warn('Invalid polygon for cell:', cell.droneId, cell.polygon);
+          resolve([]);
+          return;
+        }
+
         const boundingBox = this.getBoundingBox(cell.polygon);
         
         const step = coverageRadius * 1.5;
@@ -105,8 +134,17 @@ export class AsyncVoronoiSolver {
   }
 
   private getBoundingBox(polygon: Point[]): { minX: number; maxX: number; minY: number; maxY: number } {
-    const xs = polygon.map(p => p.x);
-    const ys = polygon.map(p => p.y);
+    if (!polygon || polygon.length === 0) {
+      return { minX: 0, maxX: 100, minY: 0, maxY: 100 };
+    }
+    
+    const xs = polygon.map(p => p.x).filter(x => isFinite(x));
+    const ys = polygon.map(p => p.y).filter(y => isFinite(y));
+    
+    if (xs.length === 0 || ys.length === 0) {
+      return { minX: 0, maxX: 100, minY: 0, maxY: 100 };
+    }
+    
     return {
       minX: Math.min(...xs),
       maxX: Math.max(...xs),
@@ -116,13 +154,20 @@ export class AsyncVoronoiSolver {
   }
 
   private isPointInPolygon(point: Point, polygon: Point[]): boolean {
+    if (!polygon || polygon.length < 3) return false;
+    
     let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const n = polygon.length;
+    
+    for (let i = 0, j = n - 1; i < n; j = i++) {
       const xi = polygon[i].x, yi = polygon[i].y;
       const xj = polygon[j].x, yj = polygon[j].y;
 
+      if (xi === xj && yi === yj) continue;
+      if (!isFinite(xi) || !isFinite(yi) || !isFinite(xj) || !isFinite(yj)) continue;
+
       const intersect = ((yi > point.y) !== (yj > point.y)) &&
-        (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+        (point.x < (xj - xi) * (point.y - yi) / (yj - yi + 1e-10) + xi);
       if (intersect) inside = !inside;
     }
     return inside;
