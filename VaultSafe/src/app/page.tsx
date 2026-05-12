@@ -6,8 +6,8 @@ import { NodeStatusCard } from '@/components/NodeStatusCard';
 import { AccessEventLog } from '@/components/AccessEventLog';
 import { SystemStats } from '@/components/SystemStats';
 import { AccessControlPanel } from '@/components/AccessControlPanel';
-import { SecurityNode, AccessEvent } from '@/types/security';
-import { generateMockNodes, generateMockUsers, MockUser } from '@/lib/mockData';
+import { SecurityNode, AccessEvent, MockUser } from '@/types/security';
+import { generateMockNodes, generateMockUsers } from '@/lib/mockData';
 import { securityHub } from '@/lib/securityHub';
 
 export default function Home() {

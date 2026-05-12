@@ -62,3 +62,12 @@ export interface SpaceConsistencyCheck {
 
 export type NodeStatus = SecurityNode['status'];
 export type BiometricType = BiometricHash['hashType'];
+
+export interface MockUser {
+  id: string;
+  name: string;
+  level: number;
+  fingerprint: string;
+  facial: string;
+  iris: string;
+}

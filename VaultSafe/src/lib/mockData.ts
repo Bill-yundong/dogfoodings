@@ -1,4 +1,4 @@
-import { SecurityNode, BiometricHash } from '@/types/security';
+import { SecurityNode, BiometricHash, MockUser } from '@/types/security';
 import { BiometricHasher } from './biometricHash';
 
 export const generateMockNodes = (): SecurityNode[] => [
