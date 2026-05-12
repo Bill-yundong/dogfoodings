@@ -2,10 +2,10 @@
   import { onMount } from 'svelte'
   import { waveformStorage } from '../services/WaveformStorage.js'
 
-  let waveforms = []
-  let selectedWaveform = null
-  let isLoading = false
-  let stats = null
+  let waveforms = $state([])
+  let selectedWaveform = $state(null)
+  let isLoading = $state(false)
+  let stats = $state(null)
 
   async function loadWaveforms() {
     isLoading = true

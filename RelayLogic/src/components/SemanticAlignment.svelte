@@ -3,11 +3,11 @@
   import { alignmentService } from '../services/SemanticAlignment.js'
   import { FaultSlice } from '../models/FaultSlice.js'
 
-  let alignmentStats = null
-  let deviceOpsData = ''
-  let realTimeData = ''
-  let alignmentResult = null
-  let isAligning = false
+  let alignmentStats = $state(null)
+  let deviceOpsData = $state('')
+  let realTimeData = $state('')
+  let alignmentResult = $state(null)
+  let isAligning = $state(false)
 
   function generateSampleData() {
     const timestamp = Date.now()
@@ -92,7 +92,7 @@
         class="data-textarea" 
         bind:value={deviceOpsData}
         placeholder="输入设备运维系统的故障数据 JSON..."
-      />
+      ></textarea>
     </div>
 
     <div class="panel source-panel">
@@ -101,7 +101,7 @@
         class="data-textarea" 
         bind:value={realTimeData}
         placeholder="输入实时监控系统的故障数据 JSON..."
-      />
+      ></textarea>
     </div>
   </div>
 

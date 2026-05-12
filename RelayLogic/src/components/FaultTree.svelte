@@ -3,9 +3,9 @@
   import { faultTreeData } from '../store.js'
   import { faultTreeSimulator } from '../services/FaultTreeSimulator.js'
 
-  let isSimulating = false
-  let simulationResult = null
-  let selectedNode = null
+  let isSimulating = $state(false)
+  let simulationResult = $state(null)
+  let selectedNode = $state(null)
 
   onMount(() => {
     const data = faultTreeSimulator.createStandardFaultTree()
@@ -47,6 +47,30 @@
       case 'critical': return '#dc2626'
       default: return '#64748b'
     }
+  }
+
+  function getNodeX(node) {
+    const xMap = {
+      'TOP-001': 400,
+      'AND-001': 250, 'AND-002': 550,
+      'OR-001': 150, 'OR-002': 350,
+      'BASIC-001': 50, 'BASIC-002': 130, 'BASIC-007': 210,
+      'BASIC-003': 290, 'BASIC-004': 370, 'BASIC-008': 450,
+      'BASIC-005': 490, 'BASIC-006': 610
+    }
+    return xMap[node.id] || 400
+  }
+
+  function getNodeY(node) {
+    const yMap = {
+      'TOP-001': 50,
+      'AND-001': 150, 'AND-002': 150,
+      'OR-001': 250, 'OR-002': 250,
+      'BASIC-001': 350, 'BASIC-002': 350, 'BASIC-007': 350,
+      'BASIC-003': 350, 'BASIC-004': 350, 'BASIC-008': 350,
+      'BASIC-005': 350, 'BASIC-006': 350
+    }
+    return yMap[node.id] || 200
   }
 </script>
 
@@ -190,32 +214,6 @@
     </div>
   </div>
 </div>
-
-<script>
-  function getNodeX(node) {
-    const xMap = {
-      'TOP-001': 400,
-      'AND-001': 250, 'AND-002': 550,
-      'OR-001': 150, 'OR-002': 350,
-      'BASIC-001': 50, 'BASIC-002': 130, 'BASIC-007': 210,
-      'BASIC-003': 290, 'BASIC-004': 370, 'BASIC-008': 450,
-      'BASIC-005': 490, 'BASIC-006': 610
-    }
-    return xMap[node.id] || 400
-  }
-
-  function getNodeY(node) {
-    const yMap = {
-      'TOP-001': 50,
-      'AND-001': 150, 'AND-002': 150,
-      'OR-001': 250, 'OR-002': 250,
-      'BASIC-001': 350, 'BASIC-002': 350, 'BASIC-007': 350,
-      'BASIC-003': 350, 'BASIC-004': 350, 'BASIC-008': 350,
-      'BASIC-005': 350, 'BASIC-006': 350
-    }
-    return yMap[node.id] || 200
-  }
-</script>
 
 <style>
   .faulttree-container {

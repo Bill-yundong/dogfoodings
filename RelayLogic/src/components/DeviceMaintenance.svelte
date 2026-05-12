@@ -1,8 +1,8 @@
 <script>
   import { deviceList } from '../store.js'
 
-  let selectedDevice = null
-  let maintenanceLog = []
+  let selectedDevice = $state(null)
+  let maintenanceLog = $state([])
 
   function selectDevice(device) {
     selectedDevice = device

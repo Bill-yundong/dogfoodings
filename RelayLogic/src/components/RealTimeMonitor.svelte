@@ -3,8 +3,8 @@
   import { systemStatus, faultRecords, deviceList } from '../store.js'
   import { FaultSlice } from '../models/FaultSlice.js'
 
-  let alarms = []
-  let logEntries = []
+  let alarms = $state([])
+  let logEntries = $state([])
   let updateInterval
 
   function addAlarm(type, message) {
