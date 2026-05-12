@@ -220,7 +220,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-sm text-gray-400">Depleted ({`<`}250 DU)</span>
+                <span className="text-sm text-gray-400">Depleted (below 250 DU)</span>
               </div>
             </div>
           </div>
