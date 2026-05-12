@@ -1,9 +1,7 @@
 <template>
   <div class="chart-container">
     <h3>结冰趋势预测</h3>
-    <div class="chart-wrapper">
-      <v-chart :option="chartOption" autoresize />
-    </div>
+    <v-chart :option="chartOption" autoresize class="chart" />
   </div>
 </template>
 
@@ -72,9 +70,9 @@ const chartOption = computed(() => {
       top: 0
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
+      left: '5%',
+      right: '10%',
+      bottom: '5%',
       top: '15%',
       containLabel: true
     },
@@ -196,8 +194,8 @@ const chartOption = computed(() => {
   margin-bottom: 16px;
 }
 
-.chart-wrapper {
+.chart {
   width: 100%;
-  min-height: 350px;
+  height: 350px;
 }
 </style>
