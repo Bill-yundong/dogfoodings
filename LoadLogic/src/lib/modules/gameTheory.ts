@@ -1,4 +1,5 @@
-import type { GameTheoryResult, GameStrategy, ScenarioType } from '../types';
+import type { GameTheoryResult, GameStrategy } from '../types';
+import { ScenarioType } from '../types';
 
 export class AsyncGameTheory {
 	private maxIterations = 1000;
@@ -181,7 +182,13 @@ export class AsyncGameTheory {
 	}
 
 	async analyzeAllScenarios(householdCount: number): Promise<Record<ScenarioType, GameTheoryResult>> {
-		const scenarios: ScenarioType[] = ['emergency', 'renewable_shortage', 'peak_shaving', 'market_price', 'maintenance'];
+		const scenarios: ScenarioType[] = [
+			ScenarioType.EMERGENCY,
+			ScenarioType.RENEWABLE_SHORTAGE,
+			ScenarioType.PEAK_SHAVING,
+			ScenarioType.MARKET_PRICE,
+			ScenarioType.MAINTENANCE
+		];
 
 		const results: Partial<Record<ScenarioType, GameTheoryResult>> = {};
 

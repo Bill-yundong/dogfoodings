@@ -1,5 +1,5 @@
 import type { Household, EnergySavingCommand, VPPStatus, ResponseSnapshot, ScenarioType } from '../types';
-import { CommandStatus, CommandSeverity } from '../types';
+import { CommandStatus, CommandSeverity, ApplianceType } from '../types';
 
 export class VirtualPowerPlant {
 	private households: Household[] = [];
@@ -200,10 +200,10 @@ export function generateHouseholds(count: number): Household[] {
 
 function generateAppliances(): Household['appliances'] {
 	return [
-		{ id: 'ac-1', name: '空调', type: 'air_conditioner' as const, power: 1.5, isOn: true, canShift: true },
-		{ id: 'fridge-1', name: '冰箱', type: 'refrigerator' as const, power: 0.2, isOn: true, canShift: false },
-		{ id: 'water-1', name: '热水器', type: 'water_heater' as const, power: 2.0, isOn: true, canShift: true },
-		{ id: 'ev-1', name: '电动车', type: 'electric_vehicle' as const, power: 3.0, isOn: false, canShift: true },
-		{ id: 'light-1', name: '照明', type: 'lighting' as const, power: 0.3, isOn: true, canShift: false }
+		{ id: 'ac-1', name: '空调', type: ApplianceType.AIR_CONDITIONER, power: 1.5, isOn: true, canShift: true },
+		{ id: 'fridge-1', name: '冰箱', type: ApplianceType.REFRIGERATOR, power: 0.2, isOn: true, canShift: false },
+		{ id: 'water-1', name: '热水器', type: ApplianceType.WATER_HEATER, power: 2.0, isOn: true, canShift: true },
+		{ id: 'ev-1', name: '电动车', type: ApplianceType.ELECTRIC_VEHICLE, power: 3.0, isOn: false, canShift: true },
+		{ id: 'light-1', name: '照明', type: ApplianceType.LIGHTING, power: 0.3, isOn: true, canShift: false }
 	];
 }
