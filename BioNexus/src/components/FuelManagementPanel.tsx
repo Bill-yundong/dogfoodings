@@ -211,7 +211,7 @@ export const FuelManagementPanel: React.FC = () => {
             </h3>
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={feedingChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="name" stroke="#9CA3AF" />
@@ -224,15 +224,16 @@ export const FuelManagementPanel: React.FC = () => {
                 </ResponsiveContainer>
               </div>
               <div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
                     <Pie
                       data={factorChartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
+                      innerRadius={40}
+                      outerRadius={70}
                       dataKey="value"
+                      labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                       label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}
                     >
                       {factorChartData.map((_, index) => (
@@ -339,14 +340,15 @@ export const FuelManagementPanel: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-xl font-semibold mb-4">成分构成分析</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
                 <Pie
                   data={compositionChartData}
                   cx="50%"
-                  cy="50%"
-                  outerRadius={100}
+                  cy="45%"
+                  outerRadius={80}
                   dataKey="value"
+                  labelLine={{ stroke: '#9CA3AF', strokeWidth: 1, length: 15 }}
                   label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
                 >
                   {compositionChartData.map((_, index) => (
@@ -356,7 +358,7 @@ export const FuelManagementPanel: React.FC = () => {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
                 />
-                <Legend />
+                <Legend verticalAlign="bottom" height={36} />
               </PieChart>
             </ResponsiveContainer>
           </div>
