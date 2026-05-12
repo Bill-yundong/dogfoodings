@@ -38,7 +38,7 @@ export function OzoneGlobe({
   };
 
   const getOzoneColor = (concentration: number): THREE.Color => {
-    const normalized = Math.min(Math.max((concentration - 200) / 150, 0, 1);
+    const normalized = Math.min(Math.max((concentration - 200) / 150, 0), 1);
 
     if (normalized < 0.33) {
       return new THREE.Color().lerpColors(
@@ -255,7 +255,7 @@ export function OzoneGlobe({
 
       const rect = container.getBoundingClientRect();
       const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / width * 2 - 1,
+        ((e.clientX - rect.left) / width) * 2 - 1,
         -((e.clientY - rect.top) / height) * 2 + 1
       );
 
