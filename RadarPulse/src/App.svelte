@@ -15,6 +15,9 @@
   let width = 800
   let height = 600
   
+  let animationId = null
+  let frameCount = 0
+  
   const db = new RadarHistoryDB()
   const forecastEngine = new ForecastEngine()
 
@@ -66,9 +69,34 @@
     }
   }
 
+  function animate() {
+    if (!isPlaying) return
+    
+    frameCount++
+    if (frameCount % 30 === 0) {
+      currentFrame = (currentFrame + 1) % radarData.length
+    }
+    
+    animationId = requestAnimationFrame(animate)
+  }
+  
   function togglePlay() {
     isPlaying = !isPlaying
   }
+  
+  $effect(() => {
+    if (isPlaying) {
+      animate()
+    } else if (animationId) {
+      cancelAnimationFrame(animationId)
+    }
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+      }
+    }
+  })
 
   function prevFrame() {
     currentFrame = Math.max(0, currentFrame - 1)
@@ -140,7 +168,6 @@
         {radarData} 
         {forecastData} 
         {currentFrame} 
-        {isPlaying} 
         {width} 
         {height} 
       />

@@ -1,12 +1,10 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
 
-  let { radarData = [], forecastData = [], width = 800, height = 600, currentFrame = 0, isPlaying = false } = $props()
+  let { radarData = [], forecastData = [], width = 800, height = 600, currentFrame = 0 } = $props()
 
   let canvas
   let ctx
-  let animationId
-  let frameCount = 0
 
   const colorMap = [
     { dbz: 0, r: 0, g: 0, b: 0, a: 0 },
@@ -117,18 +115,6 @@
     }
   }
 
-  function animate() {
-    if (!isPlaying) return
-    
-    frameCount++
-    if (frameCount % 30 === 0) {
-      currentFrame = (currentFrame + 1) % radarData.length
-    }
-    
-    drawRadar(radarData[currentFrame] || radarData[0])
-    animationId = requestAnimationFrame(animate)
-  }
-
   $effect(() => {
     if (canvas) {
       ctx = canvas.getContext('2d')
@@ -142,30 +128,10 @@
     }
   })
 
-  $effect(() => {
-    if (isPlaying) {
-      animate()
-    } else if (animationId) {
-      cancelAnimationFrame(animationId)
-    }
-    
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId)
-      }
-    }
-  })
-
   onMount(() => {
     ctx = canvas.getContext('2d')
     if (radarData.length > 0) {
       drawRadar(radarData[currentFrame])
-    }
-  })
-
-  onDestroy(() => {
-    if (animationId) {
-      cancelAnimationFrame(animationId)
     }
   })
 </script>
