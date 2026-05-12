@@ -8,10 +8,12 @@ node_modules/
 .vite/
 .turbo/
 dist/
-
+coverage/
+:
 # 忽略 IDE 配置文件
 .vscode/
 .idea/
+.svelte-kit/
 
 # 忽略某些特定工具的文件夹
 .claude/
