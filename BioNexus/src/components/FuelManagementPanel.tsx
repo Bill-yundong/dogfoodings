@@ -224,16 +224,16 @@ export const FuelManagementPanel: React.FC = () => {
                 </ResponsiveContainer>
               </div>
               <div>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart margin={{ top: 30, right: 40, left: 40, bottom: 20 }}>
                     <Pie
                       data={factorChartData}
                       cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
+                      cy="55%"
+                      innerRadius={35}
+                      outerRadius={65}
                       dataKey="value"
-                      labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
+                      labelLine={{ stroke: '#9CA3AF', strokeWidth: 1, length: 20, length2: 10 }}
                       label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}
                     >
                       {factorChartData.map((_, index) => (
