@@ -1,7 +1,9 @@
 <template>
   <div class="chart-container">
     <h3>结冰趋势预测</h3>
-    <v-chart :option="chartOption" autoresize />
+    <div class="chart-wrapper">
+      <v-chart :option="chartOption" autoresize />
+    </div>
   </div>
 </template>
 
@@ -51,6 +53,15 @@ const chartOption = computed(() => {
       borderColor: 'rgba(255, 255, 255, 0.1)',
       textStyle: {
         color: '#fff'
+      },
+      formatter: function(params: any) {
+        let result = params[0].axisValue + '<br/>'
+        params.forEach((item: any) => {
+          const unit = item.seriesName === '覆冰质量' ? ' kg/m²' : '°C'
+          result += `<span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;background-color:${item.color};"></span>`
+          result += `${item.seriesName}: <strong>${item.value.toFixed(2)}</strong>${unit}<br/>`
+        })
+        return result
       }
     },
     legend: {
@@ -85,39 +96,44 @@ const chartOption = computed(() => {
         type: 'value',
         name: '覆冰质量 (kg/m²)',
         nameTextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: '#8b5cf6'
         },
         axisLine: {
           lineStyle: {
-            color: 'rgba(255, 255, 255, 0.2)'
+            color: '#8b5cf6'
           }
         },
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: '#8b5cf6',
+          formatter: '{value}'
         },
         splitLine: {
           lineStyle: {
             color: 'rgba(255, 255, 255, 0.1)'
           }
-        }
+        },
+        position: 'left'
       },
       {
         type: 'value',
         name: '温度 (°C)',
         nameTextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: '#3b82f6'
         },
         axisLine: {
           lineStyle: {
-            color: 'rgba(255, 255, 255, 0.2)'
-          }
+            color: '#3b82f6'
+          },
+          show: true
         },
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: '#3b82f6',
+          formatter: '{value}°C'
         },
         splitLine: {
           show: false
-        }
+        },
+        position: 'right'
       }
     ],
     series: [
@@ -178,5 +194,10 @@ const chartOption = computed(() => {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 16px;
+}
+
+.chart-wrapper {
+  width: 100%;
+  min-height: 350px;
 }
 </style>
