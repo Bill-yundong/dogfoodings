@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SecurityNode, MockUser } from '@/types/security';
 import { Fingerprint, ScanFace, Eye, Hand, Shield, Loader2 } from 'lucide-react';
 
@@ -23,10 +23,23 @@ const biometricTypes = [
 ];
 
 export function AccessControlPanel({ nodes, users, onAccessRequest }: AccessControlPanelProps) {
-  const [selectedUser, setSelectedUser] = useState<string>(users[0]?.id || '');
-  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]?.id || '');
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [selectedNode, setSelectedNode] = useState<string>('');
   const [selectedType, setSelectedType] = useState<'fingerprint' | 'facial' | 'iris' | 'palm'>('fingerprint');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    if (users.length > 0 && !selectedUser) {
+      setSelectedUser(users[0].id);
+    }
+  }, [users, selectedUser]);
+
+  useEffect(() => {
+    const onlineNodes = nodes.filter(n => n.status === 'online' || n.status === 'warning');
+    if (onlineNodes.length > 0 && !selectedNode) {
+      setSelectedNode(onlineNodes[0].id);
+    }
+  }, [nodes, selectedNode]);
 
   const handleSubmit = async () => {
     if (!selectedUser || !selectedNode) return;
@@ -37,6 +50,8 @@ export function AccessControlPanel({ nodes, users, onAccessRequest }: AccessCont
       const biometricData = user ? user[selectedType] : `test-data-${Date.now()}`;
       
       await onAccessRequest(biometricData, selectedType, selectedUser, selectedNode);
+    } catch (error) {
+      console.error('Access request failed:', error);
     } finally {
       setIsProcessing(false);
     }

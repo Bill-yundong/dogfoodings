@@ -73,8 +73,12 @@ export default function Home() {
   }, [isInitialized]);
 
   const updateStats = async () => {
-    const newStats = await securityHub.getSystemStats();
-    setStats(newStats);
+    try {
+      const newStats = await securityHub.getSystemStats();
+      setStats(newStats);
+    } catch (error) {
+      console.error('Failed to update stats:', error);
+    }
   };
 
   const handleAccessRequest = async (
@@ -83,20 +87,34 @@ export default function Home() {
     userId: string,
     nodeId: string
   ) => {
-    const event = await securityHub.processAccessRequest(biometricData, hashType, userId, nodeId);
-    setEvents(securityHub.getRecentAccessEvents(50));
-    updateStats();
+    try {
+      const event = await securityHub.processAccessRequest(biometricData, hashType, userId, nodeId);
+      setEvents([...securityHub.getRecentAccessEvents(50)]);
+      await updateStats();
+      return event;
+    } catch (error) {
+      console.error('Access request failed:', error);
+      throw error;
+    }
   };
 
   const handleRefresh = async () => {
-    setNodes([...securityHub.getAllNodes()]);
-    setEvents(securityHub.getRecentAccessEvents(50));
-    updateStats();
+    try {
+      setNodes([...securityHub.getAllNodes()]);
+      setEvents([...securityHub.getRecentAccessEvents(50)]);
+      await updateStats();
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    }
   };
 
   const handleCreateSnapshot = async () => {
-    await securityHub.createManualSnapshot();
-    updateStats();
+    try {
+      await securityHub.createManualSnapshot();
+      await updateStats();
+    } catch (error) {
+      console.error('Create snapshot failed:', error);
+    }
   };
 
   if (!isInitialized) {
