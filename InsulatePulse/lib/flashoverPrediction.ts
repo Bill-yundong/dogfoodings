@@ -41,31 +41,38 @@ export class FlashoverPredictor {
   ): FlashoverPrediction {
     const scores: { factor: string; score: number }[] = [];
 
-    const thdScore = this.normalizeTHD(features.frequencyDomain.totalHarmonicDistortion);
+    const thd = features?.frequencyDomain?.totalHarmonicDistortion;
+    const rms = features?.timeDomain?.rmsValue;
+    const harmonicRatios = features?.frequencyDomain?.harmonicRatios;
+    const entropy = features?.frequencyDomain?.spectralEntropy;
+    const humidity = environmentalData?.humidity;
+    const pollution = environmentalData?.pollutionLevel;
+
+    const thdScore = this.normalizeTHD(thd);
     scores.push({ factor: '总谐波畸变率', score: thdScore * this.modelParameters.thdWeight });
 
-    const rmsScore = this.normalizeRMS(features.timeDomain.rmsValue);
+    const rmsScore = this.normalizeRMS(rms);
     scores.push({ factor: '电流有效值', score: rmsScore * this.modelParameters.rmsWeight });
 
-    const harmonicScore = this.normalizeHarmonicRatios(features.frequencyDomain.harmonicRatios);
+    const harmonicScore = this.normalizeHarmonicRatios(harmonicRatios);
     scores.push({ factor: '谐波含量', score: harmonicScore * this.modelParameters.harmonicWeight });
 
-    const entropyScore = this.normalizeSpectralEntropy(features.frequencyDomain.spectralEntropy);
+    const entropyScore = this.normalizeSpectralEntropy(entropy);
     scores.push({ factor: '频谱熵', score: entropyScore * this.modelParameters.spectralEntropyWeight });
 
-    const humidityScore = this.normalizeHumidity(environmentalData.humidity);
+    const humidityScore = this.normalizeHumidity(humidity);
     scores.push({ factor: '环境湿度', score: humidityScore * this.modelParameters.humidityWeight });
 
-    const pollutionScore = this.normalizePollution(environmentalData.pollutionLevel);
+    const pollutionScore = this.normalizePollution(pollution);
     scores.push({ factor: '污秽程度', score: pollutionScore * this.modelParameters.pollutionWeight });
 
-    const totalProbability = Math.min(1, scores.reduce((sum, s) => sum + s.score, 0));
+    const totalProbability = Math.min(1, Math.max(0, scores.reduce((sum, s) => sum + (isFinite(s.score) ? s.score : 0), 0)));
 
     const riskLevel = this.determineRiskLevel(totalProbability);
 
     const contributingFactors = scores
-      .filter(s => s.score > 0.05)
-      .sort((a, b) => b.score - a.score)
+      .filter(s => isFinite(s.score) && s.score > 0.05)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 3)
       .map(s => s.factor);
 
@@ -74,7 +81,7 @@ export class FlashoverPredictor {
     const predictedTime = this.calculatePredictedTime(totalProbability);
 
     return {
-      probability: totalProbability,
+      probability: isFinite(totalProbability) ? totalProbability : 0,
       riskLevel,
       confidence,
       predictedTime,
@@ -83,32 +90,40 @@ export class FlashoverPredictor {
   }
 
   private normalizeTHD(thd: number): number {
+    if (!isFinite(thd) || thd < 0) return 0;
     return Math.min(1, thd / 0.5);
   }
 
   private normalizeRMS(rms: number): number {
+    if (!isFinite(rms) || rms < 0) return 0;
     return Math.min(1, rms / 2);
   }
 
   private normalizeHarmonicRatios(ratios: number[]): number {
-    if (ratios.length === 0) return 0;
-    const avgRatio = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+    if (!ratios || ratios.length === 0) return 0;
+    const validRatios = ratios.filter(r => isFinite(r) && r >= 0);
+    if (validRatios.length === 0) return 0;
+    const avgRatio = validRatios.reduce((a, b) => a + b, 0) / validRatios.length;
     return Math.min(1, avgRatio * 2);
   }
 
   private normalizeSpectralEntropy(entropy: number): number {
+    if (!isFinite(entropy) || entropy < 0) return 0;
     return Math.max(0, 1 - entropy / 8);
   }
 
   private normalizeHumidity(humidity: number): number {
-    return humidity / 100;
+    if (!isFinite(humidity) || humidity < 0) return 0;
+    return Math.max(0, Math.min(1, humidity / 100));
   }
 
   private normalizePollution(pollution: number): number {
-    return pollution / 10;
+    if (!isFinite(pollution) || pollution < 0) return 0;
+    return Math.max(0, Math.min(1, pollution / 10));
   }
 
   private determineRiskLevel(probability: number): FlashoverPrediction['riskLevel'] {
+    if (!isFinite(probability) || probability < 0.3) return 'low';
     if (probability >= 0.8) return 'critical';
     if (probability >= 0.5) return 'high';
     if (probability >= 0.3) return 'medium';
@@ -116,9 +131,12 @@ export class FlashoverPredictor {
   }
 
   private calculateConfidence(features: CombinedFeatures): number {
-    const dataQuality = Math.min(1, features.timeDomain.rmsValue / 0.5);
-    const signalStability = Math.max(0, 1 - features.timeDomain.variance);
-    return (dataQuality + signalStability) / 2;
+    const rmsValue = features?.timeDomain?.rmsValue || 0;
+    const variance = features?.timeDomain?.variance || 0;
+    const dataQuality = Math.min(1, (isFinite(rmsValue) ? rmsValue : 0) / 0.5);
+    const signalStability = Math.max(0, 1 - (isFinite(variance) ? variance : 0));
+    const confidence = (dataQuality + signalStability) / 2;
+    return isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.5;
   }
 
   private calculatePredictedTime(probability: number): number {
