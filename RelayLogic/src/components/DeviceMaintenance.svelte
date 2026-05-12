@@ -3,9 +3,17 @@
 
   let selectedDevice = $state(null)
   let maintenanceLog = $state([])
+  let showHistoryModal = $state(false)
+  let showReportModal = $state(false)
+  let maintenanceMessage = $state('')
 
   function selectDevice(device) {
     selectedDevice = device
+  }
+
+  function showMessage(msg) {
+    maintenanceMessage = msg
+    setTimeout(() => maintenanceMessage = '', 3000)
   }
 
   function performMaintenance(device) {
@@ -27,6 +35,16 @@
           : d
       )
     )
+    showMessage(`已对 ${device.name} 执行预防性维护，健康度提升至 ${Math.min(100, device.health + 15)}%`)
+  }
+
+  function viewHistory() {
+    showHistoryModal = true
+  }
+
+  function generateReport(device) {
+    showReportModal = true
+    showMessage(`已生成 ${device.name} 的运维报告`)
   }
 
   function getHealthColor(health) {
@@ -128,14 +146,20 @@
             </div>
           </div>
 
+          {#if maintenanceMessage}
+            <div class="message-toast">
+              <span class="message-text">{maintenanceMessage}</span>
+            </div>
+          {/if}
+
           <div class="detail-section">
             <h4>运维操作</h4>
             <div class="action-buttons">
               <button class="btn btn-primary" onclick={() => performMaintenance(selectedDevice)}>
                 🛠️ 执行预防性维护
               </button>
-              <button class="btn btn-secondary">📋 查看维护历史</button>
-              <button class="btn btn-secondary">📊 生成运维报告</button>
+              <button class="btn btn-secondary" onclick={viewHistory}>📋 查看维护历史</button>
+              <button class="btn btn-secondary" onclick={() => generateReport(selectedDevice)}>📊 生成运维报告</button>
             </div>
           </div>
 
@@ -183,6 +207,92 @@
             <span class="log-result">{log.result}</span>
           </div>
         {/each}
+      </div>
+    </div>
+  {/if}
+
+  {#if showHistoryModal}
+    <div class="modal-overlay" onclick={() => showHistoryModal = false}>
+      <div class="modal-content" onclick={e => e.stopPropagation()}>
+        <div class="modal-header">
+          <h3>📋 维护历史记录</h3>
+          <button class="close-btn" onclick={() => showHistoryModal = false}>×</button>
+        </div>
+        <div class="modal-body">
+          {#if maintenanceLog.length === 0}
+            <div class="empty-state">暂无维护记录</div>
+          {:else}
+            <div class="history-list">
+              {#each maintenanceLog as log}
+                <div class="history-item">
+                  <div class="history-header">
+                    <span class="history-device">{log.deviceName}</span>
+                    <span class="history-time">{log.timestamp}</span>
+                  </div>
+                  <div class="history-detail">
+                    <span>类型: {log.type}</span>
+                    <span>操作员: {log.operator}</span>
+                    <span class="history-result">结果: {log.result}</span>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if showReportModal}
+    <div class="modal-overlay" onclick={() => showReportModal = false}>
+      <div class="modal-content" onclick={e => e.stopPropagation()}>
+        <div class="modal-header">
+          <h3>📊 运维报告</h3>
+          <button class="close-btn" onclick={() => showReportModal = false}>×</button>
+        </div>
+        <div class="modal-body">
+          {#if selectedDevice}
+            <div class="report-content">
+              <div class="report-section">
+                <h4>设备基本信息</h4>
+                <div class="report-row">
+                  <span class="report-label">设备名称</span>
+                  <span class="report-value">{selectedDevice.name}</span>
+                </div>
+                <div class="report-row">
+                  <span class="report-label">设备ID</span>
+                  <span class="report-value">{selectedDevice.id}</span>
+                </div>
+                <div class="report-row">
+                  <span class="report-label">当前状态</span>
+                  <span class="report-value">{selectedDevice.status}</span>
+                </div>
+                <div class="report-row">
+                  <span class="report-label">健康度</span>
+                  <span class="report-value" style="color: {getHealthColor(selectedDevice.health)}">{selectedDevice.health}%</span>
+                </div>
+                <div class="report-row">
+                  <span class="report-label">上次维护</span>
+                  <span class="report-value">{selectedDevice.lastMaintenance}</span>
+                </div>
+              </div>
+              <div class="report-section">
+                <h4>维护统计</h4>
+                <div class="report-row">
+                  <span class="report-label">总维护次数</span>
+                  <span class="report-value">{maintenanceLog.filter(l => l.deviceId === selectedDevice.id).length}</span>
+                </div>
+                <div class="report-row">
+                  <span class="report-label">报告生成时间</span>
+                  <span class="report-value">{new Date().toLocaleString()}</span>
+                </div>
+              </div>
+              <div class="report-footer">
+                <p>✅ 报告已生成，可导出存档</p>
+              </div>
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}
@@ -518,5 +628,196 @@
     text-align: center;
     padding: 60px 20px;
     color: #64748b;
+  }
+
+  .message-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+  }
+
+  .message-text {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: #1e293b;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    animation: scaleIn 0.2s ease;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 18px;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 8px;
+    line-height: 1;
+  }
+
+  .close-btn:hover {
+    color: #e2e8f0;
+  }
+
+  .modal-body {
+    padding: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .history-item {
+    padding: 16px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .history-device {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 14px;
+  }
+
+  .history-time {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .history-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  .history-result {
+    color: #22c55e;
+    font-weight: 500;
+  }
+
+  .report-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .report-section {
+    background: rgba(59, 130, 246, 0.05);
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .report-section h4 {
+    margin: 0 0 12px 0;
+    color: #94a3b8;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  .report-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: #e2e8f0;
+    font-size: 14px;
+  }
+
+  .report-label {
+    color: #94a3b8;
+  }
+
+  .report-value {
+    font-weight: 500;
+  }
+
+  .report-footer {
+    text-align: center;
+    padding: 16px;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 10px;
+    color: #22c55e;
+    font-weight: 500;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>
