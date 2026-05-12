@@ -55,15 +55,36 @@
     startAnimation();
   }
 
+  let canvasReady = $state(false);
+  
   $effect(() => {
+    console.log('Canvas element:', canvasEl);
+    console.log('Canvas ready:', canvasReady);
+    
     if (canvasEl && !albedoRenderer) {
-      albedoRenderer = new AlbedoFeedbackRenderer(canvasEl);
-      albedoRenderer.start();
+      console.log('Initializing AlbedoFeedbackRenderer...');
+      try {
+        albedoRenderer = new AlbedoFeedbackRenderer(canvasEl);
+        albedoRenderer.start();
+        console.log('Renderer started successfully');
+      } catch (e) {
+        console.error('Error initializing renderer:', e);
+      }
     }
     
+    const handleResize = () => {
+      if (albedoRenderer) {
+        albedoRenderer.resize();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (albedoRenderer) {
         albedoRenderer.dispose();
+        albedoRenderer = null;
       }
     };
   });
