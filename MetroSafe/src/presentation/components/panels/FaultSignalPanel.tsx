@@ -1,123 +1,112 @@
-import { Component, createEffect, createSignal, For } from 'solid-js';
-import { appState, actions, getSyncStats } from '../../store';
-import { SEMANTIC_LEVEL_COLORS } from '../../../core/constants/app.constants';
-import type { FaultSignal } from '../../../core/domain';
-
-const sourceLabels: Record<string, string> = {
-  maintenance: '维保系统',
-  operation_control: '运行控制',
-  sensor: '传感器'
-};
+import { Component, For } from 'solid-js';
+import { appState, actions } from '../../store';
+import { FaultTypeLabel, SemanticLevelLabel, SemanticLevelColor } from '../../../domain';
 
 export const FaultSignalPanel: Component = () => {
-  const [faults, setFaults] = createSignal<FaultSignal[]>([]);
-
-  createEffect(() => {
-    const interval = setInterval(() => {
-      setFaults([...appState.faultSignals]);
-    }, 200);
-
-    return () => clearInterval(interval);
-  });
-
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('zh-CN');
-  };
+  const faults = () => appState.faults;
+  const maintenanceStatus = () => appState.maintenanceSyncStatus;
+  const operationStatus = () => appState.operationSyncStatus;
 
   return (
-    <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-white">故障信号监控</h2>
-        <button 
-          onClick={actions.clearFaults}
-          class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+    <div style={{ background: '#fff', 'border-radius': '8px', padding: '16px', 'box-shadow': '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '16px' }}>
+        <h3 style={{ margin: 0, 'font-size': '18px', 'font-weight': 600, color: '#333' }}>故障信号监控</h3>
+        <button
+          onClick={() => actions.clearFaults()}
+          style={{ padding: '6px 12px', border: 'none', 'border-radius': '4px', background: '#f44336', color: '#fff', cursor: 'pointer' }}
         >
-          清除全部
+          清空
         </button>
       </div>
-      
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="bg-gray-700 rounded p-3">
-          <div class="text-gray-400 text-sm">维保系统同步</div>
-          <div class="flex items-center justify-between">
-            <span class="text-2xl font-bold text-green-400">{getSyncStats().maintenance.syncedCount}</span>
-            <span class="text-sm text-gray-400">
-              待处理: <span class="text-yellow-400">{getSyncStats().maintenance.pendingCount}</span>
-            </span>
-          </div>
+
+      <div style={{ display: 'flex', gap: '16px', 'margin-bottom': '16px', 'font-size': '12px' }}>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '6px' }}>
+          <span style={{ width: '12px', height: '12px', 'border-radius': '2px', background: '#2196F3' }}></span>
+          <span>维保系统: {maintenanceStatus().synced}/{maintenanceStatus().total} 已同步</span>
         </div>
-        <div class="bg-gray-700 rounded p-3">
-          <div class="text-gray-400 text-sm">运行控制同步</div>
-          <div class="flex items-center justify-between">
-            <span class="text-2xl font-bold text-blue-400">{getSyncStats().operation.syncedCount}</span>
-            <span class="text-sm text-gray-400">
-              待处理: <span class="text-yellow-400">{getSyncStats().operation.pendingCount}</span>
-            </span>
-          </div>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '6px' }}>
+          <span style={{ width: '12px', height: '12px', 'border-radius': '2px', background: '#4CAF50' }}></span>
+          <span>运行控制: {operationStatus().synced}/{operationStatus().total} 已同步</span>
         </div>
       </div>
 
-      <div class="max-h-80 overflow-y-auto space-y-2">
-        <For each={faults()}>
-          {fault => (
-            <div 
-              class={`bg-gray-700 rounded-lg p-3 border-l-4 ${
-                fault.semanticLevel === 'emergency' ? 'border-red-500' :
-                fault.semanticLevel === 'critical' ? 'border-orange-500' :
-                fault.semanticLevel === 'warning' ? 'border-yellow-500' :
-                'border-blue-500'
-              } ${fault.acknowledged ? 'opacity-60' : ''}`}
-            >
-              <div class="flex items-start justify-between">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class={`${SEMANTIC_LEVEL_COLORS[fault.semanticLevel]} px-2 py-0.5 rounded text-xs text-white font-medium`}>
-                      {fault.semanticLevel.toUpperCase()}
-                    </span>
-                    <span class="text-xs text-gray-400">{sourceLabels[fault.source]}</span>
-                    <span class="text-xs text-gray-400">{formatTime(fault.timestamp)}</span>
+      <div style={{ 'max-height': '300px', 'overflow-y': 'auto' }}>
+        {faults().length === 0 ? (
+          <div style={{ 'text-align': 'center', color: '#999', padding: '20px' }}>暂无故障信号</div>
+        ) : (
+          <For each={faults()}>
+            {(fault) => (
+              <div style={{
+                padding: '10px',
+                'margin-bottom': '8px',
+                'border-radius': '6px',
+                'border-left': `4px solid ${SemanticLevelColor[fault.semanticLevel]}`,
+                background: fault.acknowledged ? '#f5f5f5' : '#fff8f5',
+                opacity: fault.acknowledged ? 0.7 : 1
+              }}>
+                <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'flex-start' }}>
+                  <div>
+                    <div style={{ 'font-weight': 600, color: '#333' }}>
+                      {FaultTypeLabel[fault.faultType]} - {fault.doorId}
+                    </div>
+                    <div style={{ 'font-size': '12px', color: '#666', 'margin-top': '4px' }}>
+                      {fault.description}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', 'margin-top': '6px', 'font-size': '11px' }}>
+                      <span style={{
+                        padding: '2px 6px',
+                        'border-radius': '3px',
+                        background: SemanticLevelColor[fault.semanticLevel] + '20',
+                        color: SemanticLevelColor[fault.semanticLevel]
+                      }}>
+                        {SemanticLevelLabel[fault.semanticLevel]}
+                      </span>
+                      <span style={{ color: '#999' }}>
+                        {new Date(fault.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
                   </div>
-                  <div class="text-white font-medium">{fault.description}</div>
-                  {fault.doorId && (
-                    <div class="text-sm text-gray-400">关联门体: {fault.doorId}</div>
-                  )}
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="flex gap-1">
-                    <span 
-                      class={`w-2 h-2 rounded-full ${
-                        actions.isSignalSynced(fault.id, 'maintenance') 
-                          ? 'bg-green-500' 
-                          : 'bg-gray-500'
-                      }`}
-                      title="维保系统同步状态"
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <span
+                      title={`维保系统: ${actions.isFaultSynced(fault.id, 'maintenance') ? '已同步' : '同步中'}`}
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        'border-radius': '50%',
+                        background: actions.isFaultSynced(fault.id, 'maintenance') ? '#4CAF50' : '#FFC107'
+                      }}
                     />
-                    <span 
-                      class={`w-2 h-2 rounded-full ${
-                        actions.isSignalSynced(fault.id, 'operation_control') 
-                          ? 'bg-blue-500' 
-                          : 'bg-gray-500'
-                      }`}
-                      title="运行控制同步状态"
+                    <span
+                      title={`运行控制: ${actions.isFaultSynced(fault.id, 'operation_control') ? '已同步' : '同步中'}`}
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        'border-radius': '50%',
+                        background: actions.isFaultSynced(fault.id, 'operation_control') ? '#4CAF50' : '#FFC107'
+                      }}
                     />
                   </div>
-                  {!fault.acknowledged && (
-                    <button 
-                      onClick={() => actions.acknowledgeFault(fault.id)}
-                      class="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs transition-colors"
-                    >
-                      确认
-                    </button>
-                  )}
                 </div>
+                {!fault.acknowledged && (
+                  <button
+                    onClick={() => actions.acknowledgeFault(fault.id)}
+                    style={{
+                      'margin-top': '8px',
+                      padding: '4px 8px',
+                      'font-size': '11px',
+                      border: 'none',
+                      'border-radius': '3px',
+                      background: '#2196F3',
+                      color: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    确认收到
+                  </button>
+                )}
               </div>
-            </div>
-          )}
-        </For>
-        {faults().length === 0 && (
-          <div class="text-center text-gray-500 py-8">
-            暂无故障信号
-          </div>
+            )}
+          </For>
         )}
       </div>
     </div>

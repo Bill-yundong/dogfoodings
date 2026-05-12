@@ -1,101 +1,84 @@
-import { Component, createEffect, createSignal, For } from 'solid-js';
-import { appState, getChainStates, actions } from '../../store';
+import { Component, For } from 'solid-js';
+import { appState, actions } from '../../store';
 
 export const FaultChainSimulatorPanel: Component = () => {
-  const [chains, setChains] = createSignal(getChainStates());
-
-  createEffect(() => {
-    const interval = setInterval(() => {
-      setChains(getChainStates());
-    }, 100);
-
-    return () => clearInterval(interval);
-  });
+  const chainStates = () => appState.chainStates;
+  const isSimulating = () => appState.isSimulating;
 
   return (
-    <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
-      <h2 class="text-xl font-bold text-white mb-4">故障链模拟</h2>
-      
-      <div class="grid grid-cols-2 gap-2 mb-4">
-        <button 
-          onClick={() => actions.triggerFault('motor_failure', 'current_sensor')}
-          class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
-        >
-          触发电机故障
-        </button>
-        <button 
-          onClick={() => actions.triggerFault('sensor_error', 'position_sensor_a')}
-          class="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm transition-colors"
-        >
-          触发传感器故障
-        </button>
-        <button 
-          onClick={() => actions.triggerFault('obstacle_detection', 'light_curtain')}
-          class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm transition-colors"
-        >
-          触发障碍物检测
-        </button>
-        <button 
-          onClick={() => actions.triggerFault('communication', 'packet_loss')}
-          class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-        >
-          触发通信故障
-        </button>
+    <div style={{ background: '#fff', 'border-radius': '8px', padding: '16px', 'box-shadow': '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '16px' }}>
+        <h3 style={{ margin: 0, 'font-size': '18px', 'font-weight': 600, color: '#333' }}>故障链模拟器</h3>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => actions.triggerRandomFault()}
+            style={{ padding: '6px 12px', border: 'none', 'border-radius': '4px', background: '#FF9800', color: '#fff', cursor: 'pointer' }}
+          >
+            随机触发
+          </button>
+          <button
+            onClick={() => actions.toggleSimulation()}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              'border-radius': '4px',
+              background: isSimulating() ? '#f44336' : '#4CAF50',
+              color: '#fff',
+              cursor: 'pointer'
+            }}
+          >
+            {isSimulating() ? '停止模拟' : '开始模拟'}
+          </button>
+          <button
+            onClick={() => actions.resetAllChains()}
+            style={{ padding: '6px 12px', border: 'none', 'border-radius': '4px', background: '#9E9E9E', color: '#fff', cursor: 'pointer' }}
+          >
+            重置全部
+          </button>
+        </div>
       </div>
 
-      <div class="flex gap-2 mb-4">
-        <button 
-          onClick={actions.triggerRandomFault}
-          class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm transition-colors"
-        >
-          随机故障
-        </button>
-        <button 
-          onClick={actions.toggleSimulation}
-          class={`flex-1 px-3 py-2 text-white rounded text-sm transition-colors ${
-            appState.isSimulationRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-500'
-          }`}
-        >
-          {appState.isSimulationRunning ? '停止模拟' : '自动模拟'}
-        </button>
-        <button 
-          onClick={actions.resetAllChains}
-          class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded text-sm transition-colors"
-        >
-          重置全部
-        </button>
-      </div>
-
-      <div class="space-y-3">
-        <For each={chains()}>
-          {chain => (
-            <div class="bg-gray-700 rounded-lg p-3">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-white font-medium">{chain.name}</span>
-                <span class={`px-2 py-0.5 rounded text-xs font-medium ${
-                  chain.active ? 'bg-red-500 text-white' : 'bg-gray-600 text-gray-300'
-                }`}>
-                  {chain.active ? '激活' : '正常'}
+      <div style={{ display: 'flex', 'flex-direction': 'column', gap: '12px' }}>
+        <For each={chainStates()}>
+          {(chain) => (
+            <div style={{
+              padding: '12px',
+              'border-radius': '6px',
+              border: `2px solid ${chain.active ? '#f44336' : '#e0e0e0'}`,
+              background: chain.active ? '#fff5f5' : '#fafafa'
+            }}>
+              <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '10px' }}>
+                <span style={{ 'font-weight': 600, color: '#333' }}>{chain.name}</span>
+                <span style={{
+                  padding: '2px 8px',
+                  'border-radius': '4px',
+                  'font-size': '12px',
+                  background: chain.active ? '#f44336' : '#9E9E9E',
+                  color: '#fff'
+                }}>
+                  {chain.active ? '触发中' : '待机'}
                 </span>
               </div>
-              <div class="flex items-center gap-1 flex-wrap">
+
+              <div style={{ display: 'flex', gap: '4px', 'flex-wrap': 'wrap' }}>
                 <For each={chain.gates}>
-                  {gate => (
-                    <>
-                      <div 
-                        class={`px-2 py-1 rounded text-xs ${
-                          gate.output 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-gray-600 text-gray-300'
-                        }`}
-                        title={gate.type}
-                      >
-                        {gate.id}
-                      </div>
-                      {gate !== chain.gates[chain.gates.length - 1] && (
-                        <div class="text-gray-500">→</div>
-                      )}
-                    </>
+                  {(gate) => (
+                    <button
+                      onClick={() => actions.triggerFault(chain.id, gate.id)}
+                      style={{
+                        padding: '4px 8px',
+                        'font-size': '11px',
+                        border: `1px solid ${gate.output ? '#f44336' : '#ccc'}`,
+                        'border-radius': '4px',
+                        background: gate.output ? '#ffebee' : '#fff',
+                        color: gate.output ? '#f44336' : '#666',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      title={`点击触发 ${gate.id}`}
+                    >
+                      {gate.id}
+                    </button>
                   )}
                 </For>
               </div>
@@ -106,5 +89,3 @@ export const FaultChainSimulatorPanel: Component = () => {
     </div>
   );
 };
-
-// 修正 appState
