@@ -1,5 +1,5 @@
-import type { FaultSignal, CycleData, SemanticLevel } from '../../core/types';
-import { SEMANTIC_MAPPINGS } from '../../core/constants';
+import type { FaultSignal, CycleData, SemanticLevel } from '../../core/domain';
+import { SEMANTIC_MAPPINGS } from '../../core/constants/app.constants';
 
 export type ModuleType = 'maintenance' | 'operation_control';
 
@@ -16,11 +16,9 @@ interface QueuedSignal {
   retryCount: number;
 }
 
-interface SyncCallback {
-  (signal: FaultSignal, module: ModuleType): void;
-}
+export type SyncCallback = (signal: FaultSignal, module: ModuleType) => void;
 
-class SemanticSynchronizer {
+export class SemanticSynchronizer {
   private maintenanceQueue: QueuedSignal[] = [];
   private operationQueue: QueuedSignal[] = [];
   private syncIntervals: Map<ModuleType, number> = new Map();

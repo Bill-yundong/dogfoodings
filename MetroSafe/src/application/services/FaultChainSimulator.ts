@@ -1,5 +1,6 @@
-import type { FaultSignal } from '../../core/types';
-import { FAULT_CHAIN_CONFIGS, DOOR_IDS } from '../../core/constants';
+import type { FaultSignal } from '../../core/domain';
+import { FaultType, SemanticLevel } from '../../core/domain';
+import { FAULT_CHAIN_CONFIGS, DOOR_IDS } from '../../core/constants/app.constants';
 
 type LogicGateType = 'AND' | 'OR' | 'NOT' | 'NAND' | 'NOR' | 'XOR';
 
@@ -9,24 +10,10 @@ interface LogicGate {
   inputs: Array<{ id: string; value: boolean; timestamp: number }>;
   output: boolean;
   delay: number;
-  faultType?: string;
-  semanticLevel?: string;
+  faultType?: FaultType;
+  semanticLevel?: SemanticLevel;
   description?: string;
   triggeredAt?: number;
-}
-
-interface ChainConfig {
-  id: string;
-  name: string;
-  gates: Array<{
-    id: string;
-    type: LogicGateType;
-    delay: number;
-    faultType?: string;
-    semanticLevel?: string;
-    description?: string;
-  }>;
-  connections: Array<[string, string]>;
 }
 
 interface FaultChainState {
@@ -38,11 +25,9 @@ interface FaultChainState {
   triggeredAt?: number;
 }
 
-interface FaultTriggerCallback {
-  (fault: Omit<FaultSignal, 'id' | 'timestamp' | 'acknowledged'>): void;
-}
+export type FaultTriggerCallback = (fault: Omit<FaultSignal, 'id' | 'timestamp' | 'acknowledged'>) => void;
 
-class FaultChainSimulator {
+export class FaultChainSimulator {
   private chains: Map<string, FaultChainState> = new Map();
   private simulationInterval: number | null = null;
   private onFaultTriggered: FaultTriggerCallback | null = null;
@@ -57,11 +42,16 @@ class FaultChainSimulator {
 
   private initializeChains(): void {
     FAULT_CHAIN_CONFIGS.forEach(config => {
-      this.createChain(config);
+      this.createChain(config as any);
     });
   }
 
-  private createChain(config: ChainConfig): void {
+  private createChain(config: {
+    id: string;
+    name: string;
+    gates: Array<{ id: string; type: LogicGateType; delay: number; faultType?: FaultType; semanticLevel?: SemanticLevel; description?: string }>;
+    connections: Array<[string, string]>;
+  }): void {
     const gates = new Map<string, LogicGate>();
     const connections = new Map<string, string[]>();
 
@@ -138,9 +128,9 @@ class FaultChainSimulator {
       if (newOutput && gate.faultType && gate.semanticLevel && this.onFaultTriggered) {
         const randomDoorId = DOOR_IDS[Math.floor(Math.random() * DOOR_IDS.length)];
         this.onFaultTriggered({
-          faultType: gate.faultType,
+          faultType: gate.faultType as FaultType,
           source: 'sensor',
-          semanticLevel: gate.semanticLevel,
+          semanticLevel: gate.semanticLevel as SemanticLevel,
           doorId: randomDoorId,
           description: gate.description || gate.faultType
         });
@@ -233,6 +223,10 @@ class FaultChainSimulator {
       clearInterval(this.simulationInterval);
       this.simulationInterval = null;
     }
+  }
+
+  isSimulating(): boolean {
+    return this.simulationInterval !== null;
   }
 }
 

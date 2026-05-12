@@ -1,30 +1,26 @@
 import { createStore, produce } from 'solid-js/store';
 import { createSignal } from 'solid-js';
-import type { DoorStatus, FaultSignal } from '../core/types';
-import { DoorState, DOOR_IDS } from '../core/constants';
-import { semanticSynchronizer } from '../domain/services/SemanticSynchronizer';
-import { faultChainSimulator } from '../domain/services/FaultChainSimulator';
+import type { Door, DoorStatus, FaultSignal, CycleStats, DoorState } from '../../core/domain';
+import { createDoor, DoorState as DoorStateEnum } from '../../core/domain';
+import { DOOR_IDS } from '../../core/constants/app.constants';
+import { semanticSynchronizer } from '../../application/services/SemanticSynchronizer';
+import { faultChainSimulator } from '../../application/services/FaultChainSimulator';
+import type { SyncStatus } from '../../application/services/SemanticSynchronizer';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export interface AppState {
-  doors: Map<string, DoorStatus>;
+  doors: Map<string, Door>;
   faultSignals: FaultSignal[];
   cycleCount: number;
   isSimulationRunning: boolean;
   isInitialized: boolean;
+  cycleStats: CycleStats | null;
 }
 
-const initialDoors = new Map<string, DoorStatus>();
+const initialDoors = new Map<string, Door>();
 Array.from(DOOR_IDS).forEach(id => {
-  initialDoors.set(id, {
-    doorId: id,
-    state: DoorState.CLOSED,
-    position: 0,
-    speed: 0,
-    motorCurrent: 0,
-    timestamp: Date.now()
-  });
+  initialDoors.set(id, createDoor(id));
 });
 
 const [store, setStore] = createStore<AppState>({
@@ -32,10 +28,16 @@ const [store, setStore] = createStore<AppState>({
   faultSignals: [],
   cycleCount: 0,
   isSimulationRunning: false,
-  isInitialized: false
+  isInitialized: false,
+  cycleStats: null
 });
 
-const [syncStats, setSyncStats] = createSignal(semanticSynchronizer.getStats());
+const [syncStats, setSyncStats] = createSignal<{
+  maintenance: SyncStatus;
+  operation: SyncStatus;
+  totalSynced: number;
+}>(semanticSynchronizer.getStats());
+
 const [chainStates, setChainStates] = createSignal(faultChainSimulator.getAllChainStates());
 
 export const appState = store;
@@ -55,11 +57,25 @@ export const actions = {
     setStore('isInitialized', true);
   },
 
-  updateDoorStatus(doorId: string, updates: Partial<DoorStatus>): void {
+  updateDoorStatus(doorId: string, updates: Partial<Door>): void {
     setStore('doors', produce(doors => {
       const existing = doors.get(doorId);
       if (existing) {
-        doors.set(doorId, { ...existing, ...updates, timestamp: Date.now() });
+        doors.set(doorId, { ...existing, ...updates, lastUpdated: Date.now() });
+      }
+    }));
+  },
+
+  updateDoorState(doorId: string, state: DoorState): void {
+    setStore('doors', produce(doors => {
+      const existing = doors.get(doorId);
+      if (existing) {
+        doors.set(doorId, {
+          ...existing,
+          state,
+          position: state === DoorStateEnum.OPEN ? 100 : state === DoorStateEnum.CLOSED ? 0 : existing.position,
+          lastUpdated: Date.now()
+        });
       }
     }));
   },
@@ -97,6 +113,10 @@ export const actions = {
     setStore('cycleCount', c => c + 1);
   },
 
+  setCycleStats(stats: CycleStats): void {
+    setStore('cycleStats', stats);
+  },
+
   startSimulation(): void {
     faultChainSimulator.startSimulation(3000);
     setStore('isSimulationRunning', true);
@@ -117,17 +137,17 @@ export const actions = {
 
   triggerFault(chainId: string, gateId: string): void {
     faultChainSimulator.triggerFault(chainId, gateId);
-    setChainStates(faultChainSimulator.getAllChainStates());
+    actions.refreshChainStates();
   },
 
   triggerRandomFault(): void {
     faultChainSimulator.triggerRandomFault();
-    setChainStates(faultChainSimulator.getAllChainStates());
+    actions.refreshChainStates();
   },
 
   resetAllChains(): void {
     faultChainSimulator.resetAll();
-    setChainStates(faultChainSimulator.getAllChainStates());
+    actions.refreshChainStates();
   },
 
   refreshChainStates(): void {
@@ -138,7 +158,18 @@ export const actions = {
     return semanticSynchronizer.isSignalSynced(signalId, module);
   },
 
-  getDoorArray(): DoorStatus[] {
+  getDoorArray(): Door[] {
     return Array.from(store.doors.values());
+  },
+
+  convertToDoorStatus(door: Door): DoorStatus {
+    return {
+      doorId: door.id,
+      state: door.state,
+      position: door.position,
+      speed: door.speed,
+      motorCurrent: door.motorCurrent,
+      timestamp: door.lastUpdated
+    };
   }
 };

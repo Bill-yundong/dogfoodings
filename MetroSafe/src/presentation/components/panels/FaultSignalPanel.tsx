@@ -1,15 +1,7 @@
 import { Component, createEffect, createSignal, For } from 'solid-js';
-import { doorStore, acknowledgeFault, clearFaults } from '../store/doorStore';
-import { semanticSynchronizer } from '../sync/SemanticSynchronizer';
-import type { FaultSignal } from '../types';
-import { SemanticLevel } from '../types';
-
-const levelColors: Record<SemanticLevel, string> = {
-  [SemanticLevel.INFORMATIONAL]: 'bg-blue-500',
-  [SemanticLevel.WARNING]: 'bg-yellow-500',
-  [SemanticLevel.CRITICAL]: 'bg-orange-500',
-  [SemanticLevel.EMERGENCY]: 'bg-red-500 animate-pulse'
-};
+import { appState, actions, getSyncStats } from '../../store';
+import { SEMANTIC_LEVEL_COLORS } from '../../../core/constants/app.constants';
+import type { FaultSignal } from '../../../core/domain';
 
 const sourceLabels: Record<string, string> = {
   maintenance: '维保系统',
@@ -19,12 +11,10 @@ const sourceLabels: Record<string, string> = {
 
 export const FaultSignalPanel: Component = () => {
   const [faults, setFaults] = createSignal<FaultSignal[]>([]);
-  const [syncStats, setSyncStats] = createSignal(semanticSynchronizer.getStats());
 
   createEffect(() => {
     const interval = setInterval(() => {
-      setFaults([...doorStore.faultSignals]);
-      setSyncStats(semanticSynchronizer.getStats());
+      setFaults([...appState.faultSignals]);
     }, 200);
 
     return () => clearInterval(interval);
@@ -39,7 +29,7 @@ export const FaultSignalPanel: Component = () => {
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-white">故障信号监控</h2>
         <button 
-          onClick={clearFaults}
+          onClick={actions.clearFaults}
           class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
         >
           清除全部
@@ -50,18 +40,18 @@ export const FaultSignalPanel: Component = () => {
         <div class="bg-gray-700 rounded p-3">
           <div class="text-gray-400 text-sm">维保系统同步</div>
           <div class="flex items-center justify-between">
-            <span class="text-2xl font-bold text-green-400">{syncStats().maintenance.syncedCount}</span>
+            <span class="text-2xl font-bold text-green-400">{getSyncStats().maintenance.syncedCount}</span>
             <span class="text-sm text-gray-400">
-              待处理: <span class="text-yellow-400">{syncStats().maintenance.pendingCount}</span>
+              待处理: <span class="text-yellow-400">{getSyncStats().maintenance.pendingCount}</span>
             </span>
           </div>
         </div>
         <div class="bg-gray-700 rounded p-3">
           <div class="text-gray-400 text-sm">运行控制同步</div>
           <div class="flex items-center justify-between">
-            <span class="text-2xl font-bold text-blue-400">{syncStats().operation.syncedCount}</span>
+            <span class="text-2xl font-bold text-blue-400">{getSyncStats().operation.syncedCount}</span>
             <span class="text-sm text-gray-400">
-              待处理: <span class="text-yellow-400">{syncStats().operation.pendingCount}</span>
+              待处理: <span class="text-yellow-400">{getSyncStats().operation.pendingCount}</span>
             </span>
           </div>
         </div>
@@ -81,7 +71,7 @@ export const FaultSignalPanel: Component = () => {
               <div class="flex items-start justify-between">
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class={`${levelColors[fault.semanticLevel]} px-2 py-0.5 rounded text-xs text-white font-medium`}>
+                    <span class={`${SEMANTIC_LEVEL_COLORS[fault.semanticLevel]} px-2 py-0.5 rounded text-xs text-white font-medium`}>
                       {fault.semanticLevel.toUpperCase()}
                     </span>
                     <span class="text-xs text-gray-400">{sourceLabels[fault.source]}</span>
@@ -96,7 +86,7 @@ export const FaultSignalPanel: Component = () => {
                   <div class="flex gap-1">
                     <span 
                       class={`w-2 h-2 rounded-full ${
-                        semanticSynchronizer.isSignalSynced(fault.id, 'maintenance') 
+                        actions.isSignalSynced(fault.id, 'maintenance') 
                           ? 'bg-green-500' 
                           : 'bg-gray-500'
                       }`}
@@ -104,7 +94,7 @@ export const FaultSignalPanel: Component = () => {
                     />
                     <span 
                       class={`w-2 h-2 rounded-full ${
-                        semanticSynchronizer.isSignalSynced(fault.id, 'operation_control') 
+                        actions.isSignalSynced(fault.id, 'operation_control') 
                           ? 'bg-blue-500' 
                           : 'bg-gray-500'
                       }`}
@@ -113,7 +103,7 @@ export const FaultSignalPanel: Component = () => {
                   </div>
                   {!fault.acknowledged && (
                     <button 
-                      onClick={() => acknowledgeFault(fault.id)}
+                      onClick={() => actions.acknowledgeFault(fault.id)}
                       class="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs transition-colors"
                     >
                       确认

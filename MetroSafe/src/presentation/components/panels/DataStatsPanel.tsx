@@ -1,30 +1,30 @@
-import { Component, createEffect, createSignal } from 'solid-js';
-import { cycleDB } from '../db/CycleDatabase';
-import type { CycleData, FaultType } from '../types';
+import { Component, createEffect, createSignal, For } from 'solid-js';
+import { cycleRepository } from '../../../infrastructure/database/CycleRepository';
+import type { CycleData, CycleStats, FaultType } from '../../../core/domain';
 
-interface Stats {
-  totalCycles: number;
-  successfulCycles: number;
-  failedCycles: number;
-  avgDuration: number;
-  avgMotorCurrent: number;
-  faultDistribution: Map<FaultType, number>;
-}
+const faultTypeLabels: Record<FaultType, string> = {
+  none: '无',
+  obstacle_detected: '障碍物检测',
+  motor_failure: '电机故障',
+  sensor_error: '传感器故障',
+  communication_error: '通信故障',
+  door_misalignment: '门体错位'
+};
 
 export const DataStatsPanel: Component = () => {
-  const [stats, setStats] = createSignal<Stats | null>(null);
+  const [stats, setStats] = createSignal<CycleStats | null>(null);
   const [recentCycles, setRecentCycles] = createSignal<CycleData[]>([]);
   const [isGenerating, setIsGenerating] = createSignal(false);
   const [dbReady, setDbReady] = createSignal(false);
 
   createEffect(async () => {
     try {
-      await cycleDB.init();
+      await cycleRepository.init();
       setDbReady(true);
       
       const [currentStats, cycles] = await Promise.all([
-        cycleDB.getStats(),
-        cycleDB.getRecentCycles(10)
+        cycleRepository.getStats(),
+        cycleRepository.getRecentCycles(10)
       ]);
       setStats(currentStats);
       setRecentCycles(cycles);
@@ -35,8 +35,8 @@ export const DataStatsPanel: Component = () => {
     const interval = setInterval(async () => {
       if (dbReady()) {
         const [currentStats, cycles] = await Promise.all([
-          cycleDB.getStats(),
-          cycleDB.getRecentCycles(10)
+          cycleRepository.getStats(),
+          cycleRepository.getRecentCycles(10)
         ]);
         setStats(currentStats);
         setRecentCycles(cycles);
@@ -49,8 +49,8 @@ export const DataStatsPanel: Component = () => {
   const generateSampleData = async () => {
     setIsGenerating(true);
     try {
-      await cycleDB.generateSampleData(1000);
-      const currentStats = await cycleDB.getStats();
+      await cycleRepository.generateSampleData(1000);
+      const currentStats = await cycleRepository.getStats();
       setStats(currentStats);
     } catch (e) {
       console.error('Failed to generate sample data', e);
@@ -60,21 +60,12 @@ export const DataStatsPanel: Component = () => {
 
   const clearData = async () => {
     try {
-      await cycleDB.clearAll();
-      const currentStats = await cycleDB.getStats();
+      await cycleRepository.clearAll();
+      const currentStats = await cycleRepository.getStats();
       setStats(currentStats);
     } catch (e) {
       console.error('Failed to clear data', e);
     }
-  };
-
-  const faultTypeLabels: Record<FaultType, string> = {
-    none: '无',
-    obstacle_detected: '障碍物检测',
-    motor_failure: '电机故障',
-    sensor_error: '传感器故障',
-    door_misalignment: '门体错位',
-    communication_error: '通信错误'
   };
 
   if (!dbReady()) {
@@ -128,7 +119,7 @@ export const DataStatsPanel: Component = () => {
         </div>
       </div>
 
-      {stats() && stats()!.faultDistribution.size > 0 && (
+      {stats() && stats()!.faultDistribution && stats()!.faultDistribution.size > 0 && (
         <div class="mb-4">
           <h3 class="text-white font-medium mb-2">故障分布</h3>
           <div class="space-y-1">
@@ -145,15 +136,17 @@ export const DataStatsPanel: Component = () => {
       <div>
         <h3 class="text-white font-medium mb-2">最近记录</h3>
         <div class="max-h-40 overflow-y-auto space-y-1">
-          {recentCycles().map(cycle => (
-            <div class="flex items-center justify-between bg-gray-700 rounded p-2 text-sm">
-              <span class="text-gray-300">{cycle.doorId}</span>
-              <span class={cycle.success ? 'text-green-400' : 'text-red-400'}>
-                {cycle.success ? '成功' : '失败'}
-              </span>
-              <span class="text-gray-400">{(cycle.duration / 1000).toFixed(2)}s</span>
-            </div>
-          ))}
+          <For each={recentCycles()}>
+            {cycle => (
+              <div class="flex items-center justify-between bg-gray-700 rounded p-2 text-sm">
+                <span class="text-gray-300">{cycle.doorId}</span>
+                <span class={cycle.success ? 'text-green-400' : 'text-red-400'}>
+                  {cycle.success ? '成功' : '失败'}
+                </span>
+                <span class="text-gray-400">{(cycle.duration / 1000).toFixed(2)}s</span>
+              </div>
+            )}
+          </For>
           {recentCycles().length === 0 && (
             <div class="text-center text-gray-500 py-4">
               暂无记录

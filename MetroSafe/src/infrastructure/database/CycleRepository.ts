@@ -1,14 +1,31 @@
-import type { CycleData, FaultType } from '../types';
+import type { CycleData, CycleStats, CycleFilter, FaultType } from '../../core/domain';
+import { DATABASE_CONFIG, DOOR_IDS } from '../../core/constants/app.constants';
 
-class CycleDatabase {
-  private dbName: string = 'MetroSafeCycleDB';
-  private storeName: string = 'cycles';
-  private dbVersion: number = 1;
+export interface ICycleRepository {
+  init(): Promise<void>;
+  addCycle(cycle: Omit<CycleData, 'id'>): Promise<number>;
+  addCycles(cycles: Array<Omit<CycleData, 'id'>>): Promise<void>;
+  getCycle(id: number): Promise<CycleData | null>;
+  getCyclesByDoorId(doorId: string, limit?: number): Promise<CycleData[]>;
+  getRecentCycles(limit?: number): Promise<CycleData[]>;
+  getFailedCycles(limit?: number): Promise<CycleData[]>;
+  getStats(): Promise<CycleStats>;
+  deleteCycle(id: number): Promise<void>;
+  clearAll(): Promise<void>;
+  generateSampleData(count?: number): Promise<void>;
+  isReady(): boolean;
+}
+
+class CycleRepository implements ICycleRepository {
   private db: IDBDatabase | null = null;
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+    if (this.initPromise) return this.initPromise;
+    if (this.db) return;
+
+    this.initPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DATABASE_CONFIG.name, DATABASE_CONFIG.version);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
@@ -18,25 +35,30 @@ class CycleDatabase {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const cycleConfig = DATABASE_CONFIG.stores.cycles;
         
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true });
-          store.createIndex('doorId', 'doorId', { unique: false });
-          store.createIndex('cycleNumber', 'cycleNumber', { unique: false });
-          store.createIndex('startTime', 'startTime', { unique: false });
-          store.createIndex('success', 'success', { unique: false });
-          store.createIndex('faultType', 'faultType', { unique: false });
+        if (!db.objectStoreNames.contains(cycleConfig.name)) {
+          const store = db.createObjectStore(cycleConfig.name, {
+            keyPath: cycleConfig.keyPath,
+            autoIncrement: cycleConfig.autoIncrement
+          });
+          
+          cycleConfig.indexes.forEach(index => {
+            store.createIndex(index.name, index.name, { unique: index.unique });
+          });
         }
       };
     });
+
+    return this.initPromise;
   }
 
   async addCycle(cycle: Omit<CycleData, 'id'>): Promise<number> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readwrite');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.add(cycle);
 
       request.onsuccess = () => resolve(request.result as number);
@@ -45,11 +67,11 @@ class CycleDatabase {
   }
 
   async addCycles(cycles: Array<Omit<CycleData, 'id'>>): Promise<void> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readwrite');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
 
       cycles.forEach(cycle => store.add(cycle));
 
@@ -59,11 +81,11 @@ class CycleDatabase {
   }
 
   async getCycle(id: number): Promise<CycleData | null> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readonly');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.get(id);
 
       request.onsuccess = () => resolve(request.result || null);
@@ -72,11 +94,11 @@ class CycleDatabase {
   }
 
   async getCyclesByDoorId(doorId: string, limit: number = 100): Promise<CycleData[]> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readonly');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const index = store.index('doorId');
       const request = index.openCursor(IDBKeyRange.only(doorId), 'prev');
       const cycles: CycleData[] = [];
@@ -96,11 +118,11 @@ class CycleDatabase {
   }
 
   async getRecentCycles(limit: number = 100): Promise<CycleData[]> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readonly');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.openCursor(null, 'prev');
       const cycles: CycleData[] = [];
 
@@ -119,11 +141,11 @@ class CycleDatabase {
   }
 
   async getFailedCycles(limit: number = 100): Promise<CycleData[]> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readonly');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const index = store.index('success');
       const request = index.openCursor(IDBKeyRange.only(false), 'prev');
       const cycles: CycleData[] = [];
@@ -142,19 +164,12 @@ class CycleDatabase {
     });
   }
 
-  async getStats(): Promise<{
-    totalCycles: number;
-    successfulCycles: number;
-    failedCycles: number;
-    avgDuration: number;
-    avgMotorCurrent: number;
-    faultDistribution: Map<FaultType, number>;
-  }> {
-    if (!this.db) await this.init();
+  async getStats(): Promise<CycleStats> {
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readonly');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.openCursor();
 
       let totalCycles = 0;
@@ -197,11 +212,11 @@ class CycleDatabase {
   }
 
   async deleteCycle(id: number): Promise<void> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readwrite');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.delete(id);
 
       request.onsuccess = () => resolve();
@@ -210,11 +225,11 @@ class CycleDatabase {
   }
 
   async clearAll(): Promise<void> {
-    if (!this.db) await this.init();
+    await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+      const transaction = this.db!.transaction([DATABASE_CONFIG.stores.cycles.name], 'readwrite');
+      const store = transaction.objectStore(DATABASE_CONFIG.stores.cycles.name);
       const request = store.clear();
 
       request.onsuccess = () => resolve();
@@ -223,9 +238,8 @@ class CycleDatabase {
   }
 
   async generateSampleData(count: number = 1000): Promise<void> {
-    if (!this.db) await this.init();
-
-    const doorIds = ['PSD-01', 'PSD-02', 'PSD-03', 'PSD-04', 'PSD-05', 'PSD-06'];
+    await this.init();
+    const doorIds = Array.from(DOOR_IDS);
     const cycles: Array<Omit<CycleData, 'id'>> = [];
 
     for (let i = 0; i < count; i++) {
@@ -257,4 +271,4 @@ class CycleDatabase {
   }
 }
 
-export const cycleDB = new CycleDatabase();
+export const cycleRepository = new CycleRepository();

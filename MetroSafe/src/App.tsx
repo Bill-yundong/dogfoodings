@@ -1,10 +1,15 @@
-import type { Component } from 'solid-js';
-import { DoorStatusPanel } from './components/DoorStatusPanel';
-import { FaultSignalPanel } from './components/FaultSignalPanel';
-import { FaultChainSimulatorPanel } from './components/FaultChainSimulator';
-import { DataStatsPanel } from './components/DataStatsPanel';
+import { Component, createEffect } from 'solid-js';
+import { DoorStatusPanel } from './presentation/components/panels/DoorStatusPanel';
+import { FaultSignalPanel } from './presentation/components/panels/FaultSignalPanel';
+import { FaultChainSimulatorPanel } from './presentation/components/panels/FaultChainSimulatorPanel';
+import { DataStatsPanel } from './presentation/components/panels/DataStatsPanel';
+import { actions } from './presentation/store';
 
 const App: Component = () => {
+  createEffect(() => {
+    actions.initialize();
+  });
+
   return (
     <div class="min-h-screen bg-gray-900 p-4">
       <header class="mb-6">
@@ -12,7 +17,7 @@ const App: Component = () => {
           地铁屏蔽门监控系统
         </h1>
         <p class="text-gray-400 mt-1">
-          基于 SolidJS + IndexedDB 的故障信号语义同步系统
+          基于 Clean Architecture 的分层架构 | IndexedDB 持久化存储 | 故障语义同步
         </p>
       </header>
 
@@ -35,8 +40,8 @@ const App: Component = () => {
       </div>
 
       <footer class="mt-8 text-center text-gray-500 text-sm">
-        <p>异步逻辑门阵列模拟故障链传导 | IndexedDB 存储万级开关门循环特征数据</p>
-        <p>维保系统与行车控制模块间的故障信号语义同步</p>
+        <p>核心层 → 基础设施层 → 应用层 → 表现层 → UI层</p>
+        <p>异步逻辑门阵列模拟故障链传导 | 维保系统与行车控制模块语义同步</p>
       </footer>
     </div>
   );

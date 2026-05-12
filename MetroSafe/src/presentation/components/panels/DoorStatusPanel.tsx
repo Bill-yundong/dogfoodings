@@ -1,6 +1,7 @@
 import { Component, createEffect, createSignal, For } from 'solid-js';
 import { appState, actions } from '../../store';
-import { DOOR_STATE_COLORS, DOOR_STATE_LABELS, DoorState } from '../../core/constants';
+import { DOOR_STATE_COLORS, DOOR_STATE_LABELS } from '../../../core/constants/app.constants';
+import { DoorState } from '../../../core/domain';
 
 export const DoorStatusPanel: Component = () => {
   const [doors, setDoors] = createSignal(actions.getDoorArray());
@@ -12,9 +13,8 @@ export const DoorStatusPanel: Component = () => {
         if (Math.random() > 0.95) {
           const states = [DoorState.CLOSED, DoorState.OPENING, DoorState.OPEN, DoorState.CLOSING];
           const randomState = states[Math.floor(Math.random() * states.length)];
-          actions.updateDoorStatus(door.doorId, {
+          actions.updateDoorStatus(door.id, {
             state: randomState,
-            position: randomState === DoorState.OPEN ? 100 : randomState === DoorState.CLOSED ? 0 : Math.random() * 100,
             speed: Math.random() * 0.5,
             motorCurrent: 2 + Math.random() * 3
           });
@@ -35,7 +35,7 @@ export const DoorStatusPanel: Component = () => {
           {door => (
             <div class="bg-gray-700 rounded-lg p-3 transition-all hover:bg-gray-600">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-white font-semibold">{door.doorId}</span>
+                <span class="text-white font-semibold">{door.id}</span>
                 <span class={`${DOOR_STATE_COLORS[door.state]} px-2 py-1 rounded text-xs text-white font-medium`}>
                   {DOOR_STATE_LABELS[door.state]}
                 </span>
