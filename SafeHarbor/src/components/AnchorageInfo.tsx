@@ -1,19 +1,13 @@
 import React from 'react';
 import type { Anchorage } from '../types';
+import { GEOLOGY_LABELS } from '../constants';
+import { formatNumber } from '../utils/format';
 
 interface AnchorageInfoProps {
   anchorage: Anchorage;
   isSelected: boolean;
   onSelect: () => void;
 }
-
-const geologyLabels: Record<string, string> = {
-  mud: '泥质',
-  sand: '沙质',
-  rock: '岩质',
-  clay: '黏质',
-  mixed: '混合'
-};
 
 export const AnchorageInfo: React.FC<AnchorageInfoProps> = ({ anchorage, isSelected, onSelect }) => {
   return (
@@ -25,27 +19,29 @@ export const AnchorageInfo: React.FC<AnchorageInfoProps> = ({ anchorage, isSelec
     >
       <h4 className="font-semibold text-gray-800 mb-2">{anchorage.name}</h4>
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <span className="text-gray-500">水深: </span>
-          <span className="font-medium">{anchorage.depth} m</span>
-        </div>
-        <div>
-          <span className="text-gray-500">半径: </span>
-          <span className="font-medium">{anchorage.radius} nm</span>
-        </div>
-        <div>
-          <span className="text-gray-500">地质: </span>
-          <span className="font-medium">{geologyLabels[anchorage.geologyType]}</span>
-        </div>
-        <div>
-          <span className="text-gray-500">容量: </span>
-          <span className="font-medium">{anchorage.maxCapacity} 艘</span>
-        </div>
-        <div className="col-span-2">
-          <span className="text-gray-500">抓力系数: </span>
-          <span className="font-medium">{(anchorage.holdingCapacity * 100).toFixed(0)}%</span>
-        </div>
+        <AnchorageInfoItem label="水深" value={`${anchorage.depth} m`} />
+        <AnchorageInfoItem label="半径" value={`${anchorage.radius} nm`} />
+        <AnchorageInfoItem label="地质" value={GEOLOGY_LABELS[anchorage.geologyType] || anchorage.geologyType} />
+        <AnchorageInfoItem label="容量" value={`${anchorage.maxCapacity} 艘`} />
+        <AnchorageInfoItem 
+          label="抓力系数" 
+          value={`${formatNumber(anchorage.holdingCapacity * 100, 0)}%`} 
+          colSpan2 
+        />
       </div>
     </div>
   );
 };
+
+interface AnchorageInfoItemProps {
+  label: string;
+  value: string;
+  colSpan2?: boolean;
+}
+
+const AnchorageInfoItem: React.FC<AnchorageInfoItemProps> = ({ label, value, colSpan2 = false }) => (
+  <div className={colSpan2 ? 'col-span-2' : ''}>
+    <span className="text-gray-500">{label}: </span>
+    <span className="font-medium">{value}</span>
+  </div>
+);

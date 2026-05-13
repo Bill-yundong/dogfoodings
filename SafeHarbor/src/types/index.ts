@@ -1,3 +1,8 @@
+export type GeologyType = 'mud' | 'sand' | 'rock' | 'clay' | 'mixed';
+export type DragRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type MessageSource = 'monitoring' | 'ship';
+export type MessageType = 'status_update' | 'alert' | 'command' | 'acknowledgment';
+
 export interface Ship {
   id: string;
   name: string;
@@ -17,7 +22,7 @@ export interface Anchorage {
   longitude: number;
   radius: number;
   maxCapacity: number;
-  geologyType: 'mud' | 'sand' | 'rock' | 'clay' | 'mixed';
+  geologyType: GeologyType;
   holdingCapacity: number;
   depth: number;
 }
@@ -44,7 +49,7 @@ export interface AnchorStatus {
   timestamp: number;
   scope: number;
   holdingPower: number;
-  dragRisk: 'low' | 'medium' | 'high' | 'critical';
+  dragRisk: DragRiskLevel;
   position: {
     latitude: number;
     longitude: number;
@@ -54,9 +59,9 @@ export interface AnchorStatus {
 
 export interface SemanticSyncMessage {
   id: string;
-  source: 'monitoring' | 'ship';
+  source: MessageSource;
   timestamp: number;
-  type: 'status_update' | 'alert' | 'command' | 'acknowledgment';
+  type: MessageType;
   payload: any;
   semanticHash: string;
 }
