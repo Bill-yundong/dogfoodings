@@ -54,7 +54,7 @@ export class FingerprintStore {
       const featureStore = db.createObjectStore('trafficFeatures', { keyPath: 'id' });
       featureStore.createIndex('timestamp', 'timestamp', { unique: false });
       featureStore.createIndex('sourceIP', 'sourceIP', { unique: false });
-      featureStore.createIndex('destinationIP', 'destinationIP', { unique: false });
+      featureStore.createIndex('destIP', 'destIP', { unique: false });
       featureStore.createIndex('protocol', 'protocol', { unique: false });
     }
 

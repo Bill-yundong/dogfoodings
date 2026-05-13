@@ -10,7 +10,7 @@ export function Analysis(props: Props) {
   const [selectedProtocol, setSelectedProtocol] = createSignal<string>('all');
   const [showHighRisk, setShowHighRisk] = createSignal(false);
 
-  const protocols = ['all', 'TCP', 'UDP', 'MODBUS', 'S7COMM', 'DNP3', 'HTTP'];
+  const protocols = ['all', 'TCP', 'UDP', 'MODBUS', 'S7COMM', 'DNP3', 'HTTP', 'HTTPS'];
 
   const filteredFeatures = () => {
     let features = trafficFeatures();
@@ -30,18 +30,16 @@ export function Analysis(props: Props) {
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
-      case 'malicious': return 'text-red-400 bg-red-900/30';
-      case 'suspicious': return 'text-yellow-400 bg-yellow-900/30';
-      case 'unknown': return 'text-blue-400 bg-blue-900/30';
+      case 'MALICIOUS': return 'text-red-400 bg-red-900/30';
+      case 'SUSPICIOUS': return 'text-yellow-400 bg-yellow-900/30';
       default: return 'text-green-400 bg-green-900/30';
     }
   };
 
   const getClassificationLabel = (classification: string) => {
     switch (classification) {
-      case 'malicious': return '恶意';
-      case 'suspicious': return '可疑';
-      case 'unknown': return '未知';
+      case 'MALICIOUS': return '恶意';
+      case 'SUSPICIOUS': return '可疑';
       default: return '正常';
     }
   };
@@ -123,7 +121,7 @@ export function Analysis(props: Props) {
                     <tr class="border-t border-gray-700 hover:bg-gray-700/50">
                       <td class="py-2 px-3 text-gray-300">{new Date(feature.timestamp).toLocaleTimeString()}</td>
                       <td class="py-2 px-3 text-gray-300 font-mono">{feature.sourceIP}</td>
-                      <td class="py-2 px-3 text-gray-300 font-mono">{feature.destinationIP}</td>
+                      <td class="py-2 px-3 text-gray-300 font-mono">{feature.destIP}</td>
                       <td class="py-2 px-3">
                         <span class={`px-2 py-1 rounded text-xs ${
                           ['MODBUS', 'S7COMM', 'DNP3'].includes(feature.protocol)

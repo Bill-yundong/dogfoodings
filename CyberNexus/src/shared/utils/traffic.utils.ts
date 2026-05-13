@@ -45,8 +45,8 @@ export function hasSuspiciousFlags(flags: string[]): boolean {
   return SUSPICIOUS_FLAGS.some(f => flags.includes(f)) && flags.length > 2;
 }
 
-export function generateFeatureHash(feature: Pick<TrafficFeature, 'sourceIP' | 'destinationIP' | 'protocol' | 'payloadHash'>): string {
-  const key = `${feature.sourceIP}:${feature.destinationIP}:${feature.protocol}:${feature.payloadHash}`;
+export function generateFeatureHash(feature: Pick<TrafficFeature, 'sourceIP' | 'destIP' | 'protocol' | 'payloadHash'>): string {
+  const key = `${feature.sourceIP}:${feature.destIP}:${feature.protocol}:${feature.payloadHash}`;
   let hash = 0;
   for (let i = 0; i < key.length; i++) {
     const char = key.charCodeAt(i);

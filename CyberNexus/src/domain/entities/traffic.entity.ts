@@ -1,6 +1,6 @@
-export type ProtocolType = 'TCP' | 'UDP' | 'ICMP' | 'HTTP' | 'MODBUS' | 'S7COMM' | 'DNP3';
+export type ProtocolType = 'MODBUS' | 'S7COMM' | 'DNP3' | 'TCP' | 'UDP' | 'ICMP' | 'HTTP' | 'HTTPS';
 
-export type ClassificationType = 'normal' | 'unknown' | 'suspicious' | 'malicious';
+export type ClassificationType = 'NORMAL' | 'SUSPICIOUS' | 'MALICIOUS';
 
 export type AlertType = 'info' | 'warning' | 'danger';
 
@@ -8,18 +8,20 @@ export interface TrafficFeature {
   id: string;
   timestamp: number;
   sourceIP: string;
-  destinationIP: string;
+  destIP: string;
   sourcePort: number;
-  destinationPort: number;
+  destPort: number;
   protocol: ProtocolType;
-  packetLength: number;
   packetCount: number;
+  totalBytes: number;
   duration: number;
-  bytesIn: number;
-  bytesOut: number;
-  interval: number;
+  packetRate: number;
+  byteRate: number;
+  direction: 'INBOUND' | 'OUTBOUND' | 'INTERNAL';
   flags: string[];
   payloadHash: string;
+  entropy: number;
+  isIndustrial: boolean;
 }
 
 export interface NormalizedTraffic {

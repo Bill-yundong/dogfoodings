@@ -57,7 +57,7 @@ export function useSecurityStore() {
       setNormalizedTraffic(prev => [...prev.slice(-999), normalized]);
 
       if (riskScore >= 70) {
-        addAlert(`检测到高风险流量: ${feature.sourceIP} -> ${feature.destinationIP}`, 'danger');
+        addAlert(`检测到高风险流量: ${feature.sourceIP} -> ${feature.destIP}`, 'danger');
       } else if (riskScore >= 40) {
         addAlert(`检测到可疑流量: ${feature.protocol} 协议`, 'warning');
       }

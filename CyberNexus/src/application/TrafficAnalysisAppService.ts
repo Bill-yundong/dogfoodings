@@ -63,22 +63,30 @@ export class TrafficAnalysisAppService {
     const features: TrafficFeature[] = [];
 
     for (let i = 0; i < count; i++) {
+      const packetCount = Math.floor(Math.random() * 1000) + 1;
+      const totalBytes = packetCount * (Math.floor(Math.random() * 1400) + 64);
+      const duration = Math.random() * 3600;
+      const protocol = generateRandomProtocol();
+      const sourceIP = generateRandomIP();
+
       const feature: TrafficFeature = {
         id: generateId('feat'),
         timestamp: Date.now() - Math.random() * 86400000,
-        sourceIP: generateRandomIP(),
-        destinationIP: Math.random() > 0.8 ? generateRandomIP() : generateRandomIP(),
+        sourceIP,
+        destIP: generateRandomIP(),
         sourcePort: Math.floor(Math.random() * 65535),
-        destinationPort: Math.floor(Math.random() * 65535),
-        protocol: generateRandomProtocol(),
-        packetLength: Math.floor(Math.random() * 1500),
-        packetCount: Math.floor(Math.random() * 1000),
-        duration: Math.floor(Math.random() * 60000),
-        bytesIn: Math.floor(Math.random() * 1000000),
-        bytesOut: Math.floor(Math.random() * 1000000),
-        interval: Math.floor(Math.random() * 10000),
+        destPort: Math.floor(Math.random() * 65535),
+        protocol,
+        packetCount,
+        totalBytes,
+        duration,
+        packetRate: packetCount / Math.max(duration, 1),
+        byteRate: totalBytes / Math.max(duration, 1),
+        direction: sourceIP.startsWith('192.168.') ? 'OUTBOUND' : 'INBOUND',
         flags: generateRandomFlags(),
         payloadHash: Math.random().toString(36).substr(2, 32),
+        entropy: Math.random() * 8,
+        isIndustrial: ['MODBUS', 'S7COMM', 'DNP3'].includes(protocol),
       };
 
       features.push(feature);

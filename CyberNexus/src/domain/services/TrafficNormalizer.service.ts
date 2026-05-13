@@ -21,7 +21,7 @@ export class TrafficNormalizerService {
 
   static normalize(feature: TrafficFeature): NormalizedTraffic {
     const normalizedVector = this.extractFeatureVector(feature);
-    const riskScore = this.calculateRiskScore(feature, normalizedVector);
+    const riskScore = this.calculateRiskScore(feature);
     const classification = this.classifyTraffic(riskScore);
 
     return {
@@ -37,43 +37,43 @@ export class TrafficNormalizerService {
     const vector: number[] = new Array(this.VECTOR_DIMENSIONS).fill(0);
 
     vector[0] = normalizeIP(feature.sourceIP);
-    vector[1] = normalizeIP(feature.destinationIP);
+    vector[1] = normalizeIP(feature.destIP);
     vector[2] = normalizePort(feature.sourcePort);
-    vector[3] = normalizePort(feature.destinationPort);
+    vector[3] = normalizePort(feature.destPort);
     vector[4] = this.PROTOCOL_MAP[feature.protocol] || 0;
-    vector[5] = Math.min(feature.packetLength / 1500, 1);
+    vector[5] = Math.min(feature.totalBytes / feature.packetCount / 1500, 1);
     vector[6] = Math.min(feature.packetCount / 1000, 1);
-    vector[7] = Math.min(feature.duration / 60000, 1);
-    vector[8] = Math.min(feature.bytesIn / 1000000, 1);
-    vector[9] = Math.min(feature.bytesOut / 1000000, 1);
-    vector[10] = Math.min(feature.interval / 1000, 1);
+    vector[7] = Math.min(feature.duration / 3600, 1);
+    vector[8] = Math.min(feature.packetRate / 1000, 1);
+    vector[9] = Math.min(feature.byteRate / 1000000, 1);
+    vector[10] = feature.direction === 'INBOUND' ? 0 : feature.direction === 'OUTBOUND' ? 1 : 2;
     vector[11] = hashFlags(feature.flags);
     vector[12] = isICSProtocol(feature.protocol) ? 1 : 0;
     vector[13] = isPrivateIP(feature.sourceIP) ? 1 : 0;
-    vector[14] = isPrivateIP(feature.destinationIP) ? 1 : 0;
+    vector[14] = isPrivateIP(feature.destIP) ? 1 : 0;
     vector[15] = getPacketEntropy(feature.payloadHash);
-    vector[16] = feature.bytesOut > 0 ? Math.min(feature.bytesIn / feature.bytesOut, 2) / 2 : 0;
-    vector[17] = feature.packetCount > 0 ? Math.min(feature.packetLength / feature.packetCount, 1500) / 1500 : 0;
-    vector[18] = isWellKnownPort(feature.destinationPort) ? 1 : 0;
+    vector[16] = feature.entropy / 8;
+    vector[17] = feature.isIndustrial ? 1 : 0;
+    vector[18] = isWellKnownPort(feature.destPort) ? 1 : 0;
     vector[19] = hasSuspiciousFlags(feature.flags) ? 1 : 0;
 
     return vector;
   }
 
-  private static calculateRiskScore(feature: TrafficFeature, vector: number[]): number {
+  private static calculateRiskScore(feature: TrafficFeature): number {
     let score = 0;
 
-    if (isICSProtocol(feature.protocol)) {
-      if (!isPrivateIP(feature.sourceIP) || !isPrivateIP(feature.destinationIP)) {
+    if (feature.isIndustrial) {
+      if (!isPrivateIP(feature.sourceIP) || !isPrivateIP(feature.destIP)) {
         score += 30;
       }
     }
 
-    if (!isPrivateIP(feature.sourceIP) && isICSProtocol(feature.protocol)) {
+    if (!isPrivateIP(feature.sourceIP) && feature.isIndustrial) {
       score += 25;
     }
 
-    if (feature.duration > 300000) {
+    if (feature.duration > 300) {
       score += 15;
     }
 
@@ -85,7 +85,7 @@ export class TrafficNormalizerService {
       score += 20;
     }
 
-    if (vector[15] < 0.3) {
+    if (feature.entropy < 2) {
       score += 15;
     }
 
@@ -93,10 +93,9 @@ export class TrafficNormalizerService {
   }
 
   private static classifyTraffic(riskScore: number): ClassificationType {
-    if (riskScore >= RISK_THRESHOLDS.HIGH) return 'malicious';
-    if (riskScore >= RISK_THRESHOLDS.MEDIUM) return 'suspicious';
-    if (riskScore >= RISK_THRESHOLDS.LOW) return 'unknown';
-    return 'normal';
+    if (riskScore >= RISK_THRESHOLDS.HIGH) return 'MALICIOUS';
+    if (riskScore >= RISK_THRESHOLDS.MEDIUM) return 'SUSPICIOUS';
+    return 'NORMAL';
   }
 
   static syncMapping(): Record<string, number[]> {
