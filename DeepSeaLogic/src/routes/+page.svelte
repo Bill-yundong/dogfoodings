@@ -14,6 +14,8 @@
   let semanticParams: any[] = [];
   let selectedStakeholder: 'engineering' | 'environmental' = 'engineering';
   let selectedPumpForces: ForceBalance | null = null;
+  let snapshotMessage: string = '';
+  let isSnapshotLoading: boolean = false;
 
   onMount(async () => {
     simulation = new SimulationController();
@@ -66,8 +68,22 @@
   }
 
   async function createSnapshot() {
-    await simulation.createSnapshot();
-    await loadSavedStates();
+    if (isSnapshotLoading) return;
+    
+    isSnapshotLoading = true;
+    snapshotMessage = '正在创建快照...';
+    
+    try {
+      await simulation.createSnapshot();
+      await loadSavedStates();
+      snapshotMessage = '快照创建成功！';
+      setTimeout(() => snapshotMessage = '', 2000);
+    } catch (error) {
+      console.error('Failed to create snapshot:', error);
+      snapshotMessage = '快照创建失败: ' + (error as Error).message;
+    } finally {
+      isSnapshotLoading = false;
+    }
   }
 
   async function loadSavedStates() {
@@ -188,10 +204,15 @@
           <button on:click={resetSimulation} class="btn btn-danger">
             ↻ 重置
           </button>
-          <button on:click={createSnapshot} class="btn btn-success">
-            📷 创建快照
+          <button on:click={createSnapshot} disabled={isSnapshotLoading} class="btn btn-success">
+            {isSnapshotLoading ? '⏳ 创建中...' : '📷 创建快照'}
           </button>
         </div>
+        {#if snapshotMessage}
+          <div class="snapshot-message" class:error={snapshotMessage.includes('失败')}>
+            {snapshotMessage}
+          </div>
+        {/if}
       </section>
 
       <section class="panel-section">
@@ -488,6 +509,23 @@
   .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .snapshot-message {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    text-align: center;
+    background: rgba(102, 187, 106, 0.2);
+    color: #81c784;
+    border: 1px solid rgba(102, 187, 106, 0.3);
+  }
+
+  .snapshot-message.error {
+    background: rgba(239, 83, 80, 0.2);
+    color: #ef5350;
+    border: 1px solid rgba(239, 83, 80, 0.3);
   }
 
   .btn-primary {
