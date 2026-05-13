@@ -1,29 +1,30 @@
 import { Component, createEffect, createSignal } from 'solid-js';
-import { EnergyBalance } from './components/EnergyBalance';
-import { StationList } from './components/StationList';
-import { SystemMetrics } from './components/SystemMetrics';
-import { EnergyChart } from './components/EnergyChart';
-import { energyStore } from './store/energyStore';
-import { preloadTypicalDaySnapshots, energyDB } from './utils/indexedDB';
-import { OperationalSnapshot } from './types/energy';
+import { EnergyBalanceCard } from './components/features/EnergyBalanceCard';
+import { StationList } from './components/features/StationList';
+import { SystemMetrics } from './components/features/SystemMetrics';
+import { EnergyChart } from './components/features/EnergyChart';
+import { useEnergyStore } from './store/useEnergyStore';
+import { snapshotService } from './services/SnapshotService';
+import { WEATHER_TYPE_SHORT_LABELS } from './domain/constants/energy';
 
 const App: Component = () => {
-  const { startRealTimeSync, runOptimization, loadSnapshot } = energyStore;
-  const [snapshots, setSnapshots] = createSignal<OperationalSnapshot[]>([]);
+  const {
+    startRealTimeSync,
+    runOptimization,
+    loadSnapshot,
+    snapshots,
+    loadSnapshots,
+  } = useEnergyStore();
+
   const [showSnapshots, setShowSnapshots] = createSignal(false);
 
   createEffect(() => {
-    preloadTypicalDaySnapshots();
+    snapshotService.preloadTypicalSnapshots();
     startRealTimeSync();
     loadSnapshots();
   });
 
-  const loadSnapshots = async () => {
-    const latest = await energyDB.getLatestSnapshots(10);
-    setSnapshots(latest);
-  };
-
-  const handleLoadSnapshot = async (snapshot: OperationalSnapshot) => {
+  const handleLoadSnapshot = async (snapshot: any) => {
     await loadSnapshot(snapshot);
     setShowSnapshots(false);
   };
@@ -35,15 +36,6 @@ const App: Component = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const weatherTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      typical_summer: '夏季',
-      typical_winter: '冬季',
-      typical_transition: '过渡',
-    };
-    return labels[type] || type;
   };
 
   return (
@@ -64,7 +56,10 @@ const App: Component = () => {
             </div>
             <div class="flex items-center space-x-3">
               <button
-                onClick={() => setShowSnapshots(!showSnapshots())}
+                onClick={() => {
+                  setShowSnapshots(!showSnapshots());
+                  loadSnapshots();
+                }}
                 class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
               >
                 历史快照 ({snapshots().length})
@@ -74,7 +69,12 @@ const App: Component = () => {
                 class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium flex items-center space-x-2"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 <span>立即优化</span>
               </button>
@@ -105,7 +105,7 @@ const App: Component = () => {
                     class="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors text-left border border-gray-200 hover:border-blue-300"
                   >
                     <div class="text-xs font-medium text-gray-900">{formatDate(snapshot.timestamp)}</div>
-                    <div class="text-xs text-gray-500 mt-1">{weatherTypeLabel(snapshot.weatherType)}</div>
+                    <div class="text-xs text-gray-500 mt-1">{WEATHER_TYPE_SHORT_LABELS[snapshot.weatherType]}</div>
                     <div class="text-xs text-green-600 mt-1">效率: {(snapshot.optimizationScore * 100).toFixed(1)}%</div>
                   </button>
                 ))}
@@ -118,13 +118,13 @@ const App: Component = () => {
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-6">
-            <EnergyBalance />
+            <EnergyBalanceCard />
             <StationList />
             <EnergyChart />
           </div>
           <div class="space-y-6">
             <SystemMetrics />
-            
+
             <div class="bg-white rounded-lg shadow-md p-6">
               <h3 class="text-lg font-semibold text-gray-800 mb-4">系统状态</h3>
               <div class="space-y-3">

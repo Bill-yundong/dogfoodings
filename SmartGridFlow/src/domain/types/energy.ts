@@ -15,21 +15,19 @@ export interface EnergyBalance {
 export interface EnergyStation {
   id: string;
   name: string;
-  location: { lat: number; lng: number };
+  location: Coordinates;
   capacity: EnergyData;
   currentOutput: EnergyData;
   efficiency: EnergyData;
-  status: 'online' | 'offline' | 'maintenance';
+  status: StationStatus;
 }
 
-export interface CommandCenter {
-  id: string;
-  name: string;
-  connectedStations: string[];
-  lastSyncTime: number;
-  totalDemand: EnergyData;
-  totalSupply: EnergyData;
+export interface Coordinates {
+  lat: number;
+  lng: number;
 }
+
+export type StationStatus = 'online' | 'offline' | 'maintenance';
 
 export interface WeatherData {
   temperature: number;
@@ -41,7 +39,7 @@ export interface WeatherData {
 
 export interface OperationalSnapshot {
   id?: string;
-  weatherType: 'typical_summer' | 'typical_winter' | 'typical_transition';
+  weatherType: WeatherType;
   timestamp: number;
   weatherData: WeatherData;
   energyBalance: EnergyBalance;
@@ -65,5 +63,13 @@ export interface SyncStatus {
   stationId: string;
   lastSync: number;
   latency: number;
-  status: 'synced' | 'syncing' | 'error';
+  status: SyncState;
+}
+
+export type SyncState = 'synced' | 'syncing' | 'error';
+
+export interface OptimizationConfig {
+  maxIterations: number;
+  convergenceTolerance: number;
+  learningRate: number;
 }
