@@ -47,7 +47,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setAnchorStatus
   );
 
-  const { evacuationPlan, setEvacuationPlan, generatePlan } = useEvacuationPlan(
+  const { evacuationPlan, setEvacuationPlan, generatePlan, clearPlan } = useEvacuationPlan(
     ships,
     anchorages,
     weather,
@@ -73,6 +73,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setCurrentSpeed,
     addMessage,
     setEvacuationPlan,
+    clearEvacuationPlan: clearPlan,
     setIsLoading,
     setError,
     initializeData,

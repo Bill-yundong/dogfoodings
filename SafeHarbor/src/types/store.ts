@@ -23,6 +23,7 @@ export interface AppActions {
   setCurrentSpeed: (speed: number) => void;
   addMessage: (message: SemanticSyncMessage) => void;
   setEvacuationPlan: (plan: EvacuationPlan | null) => void;
+  clearEvacuationPlan: () => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   initializeData: () => Promise<void>;

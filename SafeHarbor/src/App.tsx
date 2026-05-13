@@ -25,7 +25,7 @@ const AppContent: React.FC = () => {
     setSelectedAnchorageId,
     setWeather,
     setCurrentSpeed,
-    setEvacuationPlan,
+    clearEvacuationPlan,
     initializeData,
     simulateAnchorStability,
     simulateAllShips,
@@ -182,7 +182,7 @@ const AppContent: React.FC = () => {
                         <span>应急疏散方案</span>
                       </div>
                       <button
-                        onClick={() => setEvacuationPlan(null)}
+                        onClick={clearEvacuationPlan}
                         className="text-navy-500 hover:text-navy-700"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +240,7 @@ const AppContent: React.FC = () => {
                       生成疏散方案
                     </button>
                     <button
-                      onClick={() => setEvacuationPlan(null)}
+                      onClick={clearEvacuationPlan}
                       disabled={!evacuationPlan}
                       className="w-full btn-secondary"
                     >
