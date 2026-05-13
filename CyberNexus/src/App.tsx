@@ -1,12 +1,13 @@
+import type { Component } from 'solid-js';
 import { createEffect, For } from 'solid-js';
-import { useSecurityStore } from './presentation/state/useSecurityStore';
-import { Dashboard } from './presentation/components/Dashboard';
-import { Analysis } from './presentation/components/Analysis';
-import { Fingerprints } from './presentation/components/Fingerprints';
-import { Settings } from './presentation/components/Settings';
+import { createAppStore } from './app/store';
+import { Dashboard } from './pages/Dashboard';
+import { Analysis } from './pages/Analysis';
+import { Fingerprints } from './pages/Fingerprints';
+import { Settings } from './pages/Settings';
 
-function App() {
-  const store = useSecurityStore();
+const App: Component = () => {
+  const store = createAppStore();
 
   createEffect(() => {
     store.init();
@@ -41,7 +42,7 @@ function App() {
           <div class="flex items-center gap-3">
             <span class="text-3xl">🛡️</span>
             <div>
-              <h1 class="text-xl font-bold text-gray-100">CyberNexus</h1>
+              <h1 class="text-xl font-bold text-white">CyberNexus</h1>
               <p class="text-xs text-gray-500">工业控制系统安全防御平台</p>
             </div>
           </div>
@@ -49,15 +50,15 @@ function App() {
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 text-sm">
               <span
-                class={`w-2 h-2 rounded-full animate-pulse ${store.isProcessing() ? 'bg-yellow-400' : 'bg-green-400'}`}
+                class={`w-2 h-2 rounded-full animate-pulse ${store.traffic.isProcessing() ? 'bg-yellow-400' : 'bg-green-400'}`}
               />
-              <span class="text-gray-400">{store.isProcessing() ? '处理中...' : '系统正常'}</span>
+              <span class="text-gray-400">{store.traffic.isProcessing() ? '处理中...' : '系统正常'}</span>
             </div>
             <div class="flex items-center gap-3 text-sm">
               <span class="px-2 py-1 bg-blue-900/50 text-blue-300 rounded">
                 特征: {store.statistics().totalFeatures}
               </span>
-              <span class="px-2 py-1 bg-purple-900/50 text-purple-300 rounded">
+              <span class="px-2 py-1 bg-green-900/50 text-green-300 rounded">
                 指纹: {store.statistics().totalFingerprints}
               </span>
               {store.statistics().aptClusterCount > 0 && (
@@ -92,8 +93,8 @@ function App() {
 
           <div class="mt-8 p-4 bg-gray-900/50 rounded-lg">
             <p class="text-xs text-gray-500 mb-2">实时告警</p>
-            <div class="space-y-2 max-h-40 overflow-y-auto">
-              <For each={store.alerts().slice(0, 5)}>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+              <For each={store.alerts.alerts().slice(0, 5)}>
                 {(alert) => (
                   <div
                     class={`text-xs p-2 rounded ${
@@ -108,8 +109,8 @@ function App() {
                   </div>
                 )}
               </For>
-              {store.alerts().length === 0 && (
-                <p class="text-xs text-gray-600">暂无告警</p>
+              {store.alerts.alerts().length === 0 && (
+                <p class="text-xs text-gray-500">暂无告警</p>
               )}
             </div>
           </div>
@@ -128,6 +129,6 @@ function App() {
       </footer>
     </div>
   );
-}
+};
 
 export default App;
