@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroPulse - 流域梯级水电站监控系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0c1929 0%, #1a3a5c 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00d4ff;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 10px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .reservoir-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .reservoir-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .reservoir-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .water-level {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin: 10px 0;
+        }
+        .unit {
+            font-size: 14px;
+            color: #888;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            transition: width 0.5s ease;
+        }
+        .power-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .unit-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .unit-number {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .power-output {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffaa00;
+            margin: 5px 0;
+        }
+        .efficiency {
+            font-size: 12px;
+            color: #00ff88;
+        }
+        .gate-control {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .gate-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .gate-name {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .gate-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .gate-value {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        .sync-panel {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .sync-node {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .sync-node h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        .sync-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .history-panel {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .history-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .history-item:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        .history-time {
+            font-size: 12px;
+            color: #888;
+        }
+        .btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #cc5555);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .metric-label {
+            color: #888;
+        }
+        .metric-value {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        .alarm {
+            background: rgba(255, 107, 107, 0.3);
+            border: 1px solid #ff6b6b;
+            animation: alarmPulse 1s infinite;
+        }
+        @keyframes alarmPulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 107, 107, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>⚡ HydroPulse - 流域梯级水电站监控系统</h1>
+            <div class="status-indicator">
+                <span>{{ currentTime }}</span>
+                <div class="status-dot"></div>
+                <span>系统运行正常</span>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="panel full-width">
+                <h2>🌊 水库水位监控</h2>
+                <div class="reservoir-grid">
+                    <div v-for="reservoir in reservoirs" :key="reservoir.id" 
+                         :class="['reservoir-card', { 'alarm': reservoir.level > reservoir.maxLevel * 0.95 }]">
+                        <div class="reservoir-name">{{ reservoir.name }}</div>
+                        <div class="water-level">{{ reservoir.level.toFixed(2) }}<span class="unit">m</span></div>
+                        <div style="font-size: 12px; color: #888;">
+                            库容: {{ reservoir.capacity.toFixed(1) }} 亿 m³
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" 
+                                 :style="{ width: (reservoir.level / reservoir.maxLevel * 100) + '%' }"></div>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 5px;">
+                            {{ (reservoir.level / reservoir.maxLevel * 100).toFixed(1) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>⚡ 机组出力监控</h2>
+                <div class="power-grid">
+                    <div v-for="unit in powerUnits" :key="unit.id" class="unit-card">
+                        <div class="unit-number">{{ unit.name }}</div>
+                        <div class="power-output">{{ unit.output.toFixed(1) }}<span class="unit">MW</span></div>
+                        <div class="efficiency">效率: {{ unit.efficiency.toFixed(1) }}%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" 
+                                 :style="{ width: (unit.output / unit.maxOutput * 100) + '%', background: getEfficiencyColor(unit.efficiency) }"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🚪 闸门联调控制</h2>
+                <div class="gate-control">
+                    <div v-for="gate in gates" :key="gate.id" class="gate-card">
+                        <div class="gate-name">{{ gate.name }}</div>
+                        <input type="range" class="gate-slider" min="0" max="100" 
+                               v-model.number="gate.opening" @input="updateGate(gate)">
+                        <div class="gate-value">{{ gate.opening }}%</div>
+                        <div style="font-size: 11px; color: #888; text-align: center;">
+                            流量: {{ (gate.opening * gate.maxFlow / 100).toFixed(1) }} m³/s
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn" @click="runOptimization">执行优化调度</button>
+                    <button class="btn btn-success" @click="simulateFlood">模拟泄洪</button>
+                </div>
+            </div>
+
+            <div class="panel full-width">
+                <h2>📊 实时同步状态</h2>
+                <div class="sync-panel">
+                    <div class="sync-node">
+                        <h3>🏭 电网中心</h3>
+                        <div class="sync-status">
+                            <div class="status-dot" :style="{ background: syncStatus.powerGrid ? '#00ff88' : '#ff6b6b' }"></div>
+                            <span>{{ syncStatus.powerGrid ? '已同步' : '未同步' }}</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px;">
+                            延迟: {{ syncStatus.powerGridLatency }}ms
+                        </div>
+                    </div>
+                    <div style="font-size: 40px; color: #00d4ff;">↔</div>
+                    <div class="sync-node">
+                        <h3>🎯 调度中心</h3>
+                        <div class="sync-status">
+                            <div class="status-dot" :style="{ background: syncStatus.dispatchCenter ? '#00ff88' : '#ff6b6b' }"></div>
+                            <span>{{ syncStatus.dispatchCenter ? '已同步' : '未同步' }}</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px;">
+                            延迟: {{ syncStatus.dispatchLatency }}ms
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>📈 水能利用率趋势</h2>
+                <div class="chart-container">
+                    <canvas ref="efficiencyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>💧 水资源调配效率</h2>
+                <div class="chart-container">
+                    <canvas ref="waterChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel full-width">
+                <h2>📦 水文历史快照 (IndexedDB)</h2>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" @click="saveSnapshot">保存当前快照</button>
+                    <button class="btn btn-danger" @click="clearHistory">清空历史</button>
+                </div>
+                <div class="history-panel">
+                    <div v-for="snapshot in snapshots" :key="snapshot.id" 
+                         class="history-item" @click="loadSnapshot(snapshot)">
+                        <div class="history-time">{{ snapshot.time }}</div>
+                        <div style="margin-top: 5px; font-size: 13px;">
+                            总水位: {{ snapshot.totalLevel.toFixed(2) }}m | 
+                            总出力: {{ snapshot.totalPower.toFixed(1) }}MW |
+                            利用率: {{ snapshot.efficiency.toFixed(1) }}%
+                        </div>
+                    </div>
+                    <div v-if="snapshots.length === 0" style="text-align: center; color: #888; padding: 20px;">
+                        暂无历史快照
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel full-width">
+                <h2>📋 关键指标</h2>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                    <div class="metric-row" style="display: block; text-align: center;">
+                        <div class="metric-label">水能利用率</div>
+                        <div class="metric-value" style="font-size: 24px;">{{ overallEfficiency.toFixed(1) }}%</div>
+                    </div>
+                    <div class="metric-row" style="display: block; text-align: center;">
+                        <div class="metric-label">总装机容量</div>
+                        <div class="metric-value" style="font-size: 24px;">{{ totalCapacity.toFixed(1) }} MW</div>
+                    </div>
+                    <div class="metric-row" style="display: block; text-align: center;">
+                        <div class="metric-label">跨系统调配效率</div>
+                        <div class="metric-value" style="font-size: 24px;">{{ allocationEfficiency.toFixed(1) }}%</div>
+                    </div>
+                    <div class="metric-row" style="display: block; text-align: center;">
+                        <div class="metric-label">日发电量</div>
+                        <div class="metric-value" style="font-size: 24px;">{{ dailyGeneration.toFixed(0) }} MWh</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
