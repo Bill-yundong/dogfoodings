@@ -132,6 +132,8 @@ export class SimulationController {
   }
 
   async createSnapshot(): Promise<SimulationState> {
+    await this.storage.init();
+    
     const particles = this.sedimentSimulator.getParticles();
     const pumps = this.dynamicsEngine.getPumps();
     const params = this.semanticSync.getEngineeringParameters();
@@ -217,6 +219,9 @@ export class SimulationController {
     this.dynamicsEngine.reset();
     this.elapsedTime = 0;
     this.semanticSync.reset();
+    this.notifyStatus();
+    this.notifyParticleUpdate();
+    this.notifyPumpUpdate();
   }
 
   onStatusUpdate(callback: (status: { running: boolean; elapsedTime: number }) => void): void {

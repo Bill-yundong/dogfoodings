@@ -41,6 +41,7 @@
       semanticParams = params;
     });
 
+    await simulation.getStorage().init();
     await loadSavedStates();
     render();
   });
