@@ -25,6 +25,9 @@ export default function Home() {
     avgLatency: 0,
   });
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
   useEffect(() => {
     const initSystem = async () => {
@@ -72,6 +75,13 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isInitialized]);
 
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   const updateStats = async () => {
     try {
       const newStats = await securityHub.getSystemStats();
@@ -91,29 +101,48 @@ export default function Home() {
       const event = await securityHub.processAccessRequest(biometricData, hashType, userId, nodeId);
       setEvents([...securityHub.getRecentAccessEvents(50)]);
       await updateStats();
+      setNotification({
+        message: event.result === 'granted' ? '访问授权成功' : '访问已拒绝',
+        type: 'success',
+      });
       return event;
     } catch (error) {
       console.error('Access request failed:', error);
+      setNotification({ message: '访问请求失败', type: 'info' });
       throw error;
     }
   };
 
   const handleRefresh = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
     try {
       setNodes([...securityHub.getAllNodes()]);
       setEvents([...securityHub.getRecentAccessEvents(50)]);
       await updateStats();
+      setNotification({ message: '数据刷新成功', type: 'success' });
     } catch (error) {
       console.error('Refresh failed:', error);
+      setNotification({ message: '数据刷新失败', type: 'info' });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   const handleCreateSnapshot = async () => {
+    if (isCreatingSnapshot) return;
+    
+    setIsCreatingSnapshot(true);
     try {
       await securityHub.createManualSnapshot();
       await updateStats();
+      setNotification({ message: '快照创建成功，数据已持久化', type: 'success' });
     } catch (error) {
       console.error('Create snapshot failed:', error);
+      setNotification({ message: '快照创建失败', type: 'info' });
+    } finally {
+      setIsCreatingSnapshot(false);
     }
   };
 
@@ -147,22 +176,45 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleCreateSnapshot}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm transition-colors"
+                disabled={isCreatingSnapshot}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 rounded-lg text-sm transition-colors"
               >
-                <Database size={16} />
-                创建快照
+                <Database size={16} className={isCreatingSnapshot ? 'animate-spin' : ''} />
+                {isCreatingSnapshot ? '创建中...' : '创建快照'}
               </button>
               <button
                 onClick={handleRefresh}
-                className="flex items-center gap-2 px-4 py-2 bg-vault-600 hover:bg-vault-500 rounded-lg text-sm transition-colors"
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-vault-600 hover:bg-vault-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
               >
-                <RefreshCw size={16} />
-                刷新数据
+                <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                {isRefreshing ? '刷新中...' : '刷新数据'}
               </button>
             </div>
           </div>
         </div>
       </header>
+
+      {notification && (
+        <div className="fixed top-24 right-8 z-50 animate-fade-in">
+          <div className={`px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+            notification.type === 'success' 
+              ? 'bg-emerald-500/90 text-white' 
+              : 'bg-vault-500/90 text-white'
+          }`}>
+            {notification.type === 'success' ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            <span className="font-medium text-sm">{notification.message}</span>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
