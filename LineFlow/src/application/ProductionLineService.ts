@@ -1,8 +1,8 @@
-import { ProductionLine, ProductionLineSnapshot } from '../domain/entities/ProductionLine'
-import { Workstation } from '../domain/entities/Workstation'
-import { SimulationEngine, SimulationAlert } from '../infra/engine/SimulationEngine'
-import { queueingEngine } from '../infra/engine/QueueingTheoryEngine'
-import { indexedDBStore } from '../infra/storage/IndexedDBStore'
+import { ProductionLine, ProductionLineSnapshot } from '@domain/entities/ProductionLine'
+import { Workstation } from '@domain/entities/Workstation'
+import { SimulationEngine, SimulationAlert } from '@infra/engine/SimulationEngine'
+import { queueingEngine } from '@infra/engine/QueueingTheoryEngine'
+import { indexedDBStore } from '@infra/storage/IndexedDBStore'
 
 export class ProductionLineService {
   private productionLine: ProductionLine | null = null

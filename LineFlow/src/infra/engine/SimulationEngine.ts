@@ -1,6 +1,6 @@
-import { ProductionLine } from '../../domain/entities/ProductionLine'
-import { Workstation } from '../../domain/entities/Workstation'
-import { Product } from '../../domain/entities/Product'
+import { ProductionLine } from '@domain/entities/ProductionLine'
+import { Workstation } from '@domain/entities/Workstation'
+import { Product } from '@domain/entities/Product'
 import { queueingEngine } from './QueueingTheoryEngine'
 
 type SimulationEventType = 'ARRIVAL' | 'COMPLETION' | 'BREAKDOWN' | 'REPAIR'
@@ -22,6 +22,7 @@ export interface SimulationAlert {
   stationId?: string
   message: string
   type: string
+  acknowledged: boolean
 }
 
 export class SimulationEngine {
@@ -341,7 +342,8 @@ export class SimulationEngine {
       level,
       stationId,
       message,
-      type: level === 'critical' ? 'breakdown' : level === 'warning' ? 'warning' : 'info'
+      type: level === 'critical' ? 'breakdown' : level === 'warning' ? 'warning' : 'info',
+      acknowledged: false
     }
     if (this.onAlert) {
       this.onAlert(alert)

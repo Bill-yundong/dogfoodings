@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch, ref } from 'vue'
-import { useProductionLineStore } from '../../stores/productionLine'
-import WorkstationCard from '../components/WorkstationCard.vue'
-import MetricsPanel from '../components/MetricsPanel.vue'
-import AlertPanel from '../components/AlertPanel.vue'
-import OptimizationPanel from '../components/OptimizationPanel.vue'
-import ControlPanel from '../components/ControlPanel.vue'
+import { useProductionLineStore } from '@presentation/stores/productionLine'
+import WorkstationCard from '@presentation/components/WorkstationCard.vue'
+import MetricsPanel from '@presentation/components/MetricsPanel.vue'
+import AlertPanel from '@presentation/components/AlertPanel.vue'
+import OptimizationPanel from '@presentation/components/OptimizationPanel.vue'
+import ControlPanel from '@presentation/components/ControlPanel.vue'
 
 const store = useProductionLineStore()
 const snapshotInterval = ref<number | null>(null)

@@ -1,4 +1,4 @@
-import { WorkstationStatus, WorkstationStatusEnum } from '../value-objects/WorkstationStatus'
+import { WorkstationStatus } from '../value-objects/WorkstationStatus'
 import { QueueMetrics } from '../value-objects/QueueMetrics'
 
 export class Workstation {
@@ -45,12 +45,6 @@ export class Workstation {
     this.actualCycleTime = this.calculateAvgCycleTime()
   }
 
-  private calculateAvgCycleTime(): number {
-    if (this.cycleTimeHistory.length === 0) return this.cycleTime
-    const sum = this.cycleTimeHistory.reduce((a, b) => a + b, 0)
-    return sum / this.cycleTimeHistory.length
-  }
-
   get utilization(): number {
     return this.queueMetrics.utilization
   }
@@ -77,6 +71,10 @@ export class Workstation {
 
   get isFault(): boolean {
     return this.status.isFault()
+  }
+
+  get isBlocked(): boolean {
+    return this.status.equals(WorkstationStatus.BLOCKED)
   }
 
   startProcessing(): void {
@@ -144,6 +142,21 @@ export class Workstation {
     ws.queueMetrics = this.queueMetrics.clone()
     ws.currentProductId = this.currentProductId
     ws.lastUpdate = new Date(this.lastUpdate.getTime())
+    ws.setCycleTimeHistory([...this.cycleTimeHistory])
     return ws
+  }
+
+  setCycleTimeHistory(history: number[]): void {
+    this.cycleTimeHistory = history
+  }
+
+  getCycleTimeHistory(): number[] {
+    return [...this.cycleTimeHistory]
+  }
+
+  calculateAvgCycleTime(): number {
+    if (this.cycleTimeHistory.length === 0) return this.cycleTime
+    const sum = this.cycleTimeHistory.reduce((a, b) => a + b, 0)
+    return sum / this.cycleTimeHistory.length
   }
 }

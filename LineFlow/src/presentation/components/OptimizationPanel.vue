@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Workstation } from '../../domain/entities/Workstation'
+import type { IWorkstation } from '@domain/index'
 
 const props = defineProps<{
-  bottleneckStation: Workstation | null | undefined
+  bottleneckStation: IWorkstation | null | undefined
   suggestions: string[]
 }>()
 

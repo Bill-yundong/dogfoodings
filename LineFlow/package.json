@@ -1,25 +1,29 @@
 {
   "name": "lineflow",
   "version": "1.0.0",
-  "description": "离散制造业总装线动态平衡系统",
+  "description": "离散制造业总装线动态平衡与仿真系统",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
+    "vue": "^3.4.21",
     "pinia": "^2.1.7",
-    "echarts": "^5.4.3",
-    "dayjs": "^1.11.10",
-    "idb": "^7.1.1"
+    "idb": "^8.0.0",
+    "echarts": "^5.5.0",
+    "vue-echarts": "^6.6.9",
+    "dayjs": "^1.11.10"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.5.2",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.10",
-    "vue-tsc": "^1.8.25"
+    "@vitejs/plugin-vue": "^5.0.4",
+    "typescript": "^5.4.3",
+    "vite": "^5.2.7",
+    "vue-tsc": "^2.0.7",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.38",
+    "autoprefixer": "^10.4.19"
   }
 }

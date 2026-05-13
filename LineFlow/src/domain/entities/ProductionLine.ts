@@ -1,6 +1,5 @@
 import { Workstation } from './Workstation'
 import { Product } from './Product'
-import { QueueMetrics } from '../value-objects/QueueMetrics'
 
 export class ProductionLine {
   public id: string

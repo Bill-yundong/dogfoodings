@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase, DBSchema } from 'idb'
-import { ProductionLineSnapshot } from '../../domain/entities/ProductionLine'
+import { ProductionLineSnapshot } from '@domain/entities/ProductionLine'
 
 interface LineFlowDB extends DBSchema {
   snapshots: {

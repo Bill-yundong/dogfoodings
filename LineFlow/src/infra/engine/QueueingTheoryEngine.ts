@@ -1,9 +1,8 @@
-import { Workstation } from '../../domain/entities/Workstation'
-import { QueueMetrics } from '../../domain/value-objects/QueueMetrics'
+import { Workstation } from '@domain/entities/Workstation'
+import { QueueMetrics } from '@domain/value-objects/QueueMetrics'
 
 export class QueueingTheoryEngine {
   private stations: Map<string, Workstation> = new Map()
-  private historyWindow: number = 50
 
   setStations(stations: Workstation[]): void {
     this.stations.clear()
@@ -75,7 +74,7 @@ export class QueueingTheoryEngine {
 
   getAllStationMetrics(): Map<string, QueueMetrics> {
     const result = new Map<string, QueueMetrics>()
-    this.stations.forEach((station, id) => {
+    this.stations.forEach((_station, id) => {
       result.set(id, this.calculateStationMetrics(id))
     })
     return result

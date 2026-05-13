@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Workstation } from '../../domain/entities/Workstation'
-import { WorkstationStatus } from '../../domain/value-objects/WorkstationStatus'
+import type { IWorkstation } from '@domain/index'
+import { WorkstationStatus } from '@domain/value-objects/WorkstationStatus'
 
 const props = defineProps<{
-  workstation: Workstation
+  workstation: IWorkstation
   isBottleneck?: boolean
   bottleneckSeverity?: string
 }>()

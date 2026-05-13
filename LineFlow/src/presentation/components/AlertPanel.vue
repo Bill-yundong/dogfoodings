@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SimulationAlert } from '../../infra/engine/SimulationEngine'
+import type { SimulationAlert } from '@infra/engine/SimulationEngine'
 
 const props = defineProps<{
   alerts: SimulationAlert[]

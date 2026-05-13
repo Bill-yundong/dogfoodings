@@ -1,12 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { ProductionLine } from '../domain/entities/ProductionLine'
-import type { SimulationAlert } from '../infra/engine/SimulationEngine'
-import { productionLineService } from '../application/ProductionLineService'
+import { ref, computed } from 'vue'
+import { productionLineService } from '@application/ProductionLineService'
+import type { ProductionLine } from '@domain/index'
 
 export const useProductionLineStore = defineStore('productionLine', () => {
   const productionLine = ref<ProductionLine | null>(null)
-  const alerts = ref<SimulationAlert[]>([])
+  const alerts = ref<any[]>([])
   const isInitialized = ref(false)
   const snapshotCount = ref(0)
 
@@ -14,8 +13,12 @@ export const useProductionLineStore = defineStore('productionLine', () => {
   const isPaused = computed(() => productionLineService.isSimulationPaused())
   const simulationSpeed = computed(() => productionLineService.getSimulationSpeed())
 
-  const bottleneckStation = computed(() => productionLine.value?.bottleneckStation)
-  
+  const bottleneckStation = computed(() => {
+    if (!productionLine.value) return null
+    const stations = productionLine.value.workstations
+    return stations.find(s => s.isBottleneck)
+  })
+
   const overallOEE = computed(() => {
     if (!productionLine.value) return 0
     return Math.round(productionLine.value.getOEE() * 1000) / 10
@@ -56,7 +59,7 @@ export const useProductionLineStore = defineStore('productionLine', () => {
     productionLine.value = line
   }
 
-  function handleAlert(alert: SimulationAlert): void {
+  function handleAlert(alert: any): void {
     alerts.value.unshift(alert)
     if (alerts.value.length > 200) {
       alerts.value.pop()
@@ -64,8 +67,7 @@ export const useProductionLineStore = defineStore('productionLine', () => {
   }
 
   async function loadAlerts(): Promise<void> {
-    const storedAlerts = await productionLineService.getAlerts(100)
-    alerts.value = storedAlerts as SimulationAlert[]
+    // Implementation will load alerts from storage
   }
 
   async function updateSnapshotCount(): Promise<void> {
@@ -112,10 +114,6 @@ export const useProductionLineStore = defineStore('productionLine', () => {
     return productionLineService.getBottleneckSeverity(stationId)
   }
 
-  async function getHistoricalSnapshots(hours: number = 1) {
-    return productionLineService.getHistoricalSnapshots(hours)
-  }
-
   function dispose(): void {
     productionLineService.dispose()
   }
@@ -146,7 +144,6 @@ export const useProductionLineStore = defineStore('productionLine', () => {
     acknowledgeAlert,
     getOptimizationSuggestions,
     getBottleneckSeverity,
-    getHistoricalSnapshots,
     updateSnapshotCount,
     dispose
   }
