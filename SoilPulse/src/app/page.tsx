@@ -113,8 +113,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">🌱</div>
-          <p className="text-slate-600 text-lg">正在加载 SoilPulse 系统...</p>
+          <div className="text-7xl mb-6 animate-pulse">🌱</div>
+          <p className="text-slate-600 text-xl">正在加载 SoilPulse 系统...</p>
         </div>
       </div>
     );
@@ -122,39 +122,39 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm`}>
-        <div className="p-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-crop-400 to-crop-600 rounded-xl flex items-center justify-center shadow-sm">
-              <span className="text-xl">🌱</span>
+      <aside className={`${sidebarCollapsed ? 'w-24' : 'w-72'} bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm`}>
+        <div className="p-6 border-b border-slate-100">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-crop-400 to-crop-600 rounded-2xl flex items-center justify-center shadow-sm">
+              <span className="text-2xl">🌱</span>
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-slate-800">SoilPulse</h1>
-                <p className="text-xs text-slate-500">农田养分智能监控</p>
+                <h1 className="font-bold text-slate-800 text-lg">SoilPulse</h1>
+                <p className="text-sm text-slate-500">农田养分智能监控</p>
               </div>
             )}
           </div>
         </div>
 
-        <nav className="flex-1 py-4">
-          <div className="px-3 mb-2">
-            {!sidebarCollapsed && <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">功能模块</p>}
+        <nav className="flex-1 py-6">
+          <div className="px-4 mb-4">
+            {!sidebarCollapsed && <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">功能模块</p>}
           </div>
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full px-3 py-2.5 flex items-center gap-3 text-left transition-all rounded-lg mx-3 mb-1 ${
+              className={`w-full px-4 py-4 flex items-center gap-4 text-left transition-all rounded-2xl mx-4 mb-2 ${
                 activeTab === item.id
                   ? 'bg-crop-50 text-crop-700 shadow-sm'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
+              <span className="text-2xl">{item.icon}</span>
               {!sidebarCollapsed && (
                 <div>
-                  <p className="font-medium text-sm">{item.label}</p>
+                  <p className="font-bold text-base">{item.label}</p>
                   <p className="text-xs text-slate-400">{item.description}</p>
                 </div>
               )}
@@ -162,20 +162,20 @@ export default function Home() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
+        <div className="p-6 border-t border-slate-100">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
               管
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700">管理员</p>
+                <p className="text-sm font-bold text-slate-700">管理员</p>
                 <p className="text-xs text-slate-400">admin@soilpulse.com</p>
               </div>
             )}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
             >
               {sidebarCollapsed ? '→' : '←'}
             </button>
@@ -184,26 +184,26 @@ export default function Home() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
+        <header className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">{activeNav?.label}</h2>
-              <p className="text-sm text-slate-500">{activeNav?.description}</p>
+              <h2 className="text-2xl font-bold text-slate-800">{activeNav?.label}</h2>
+              <p className="text-sm text-slate-500 mt-1">{activeNav?.description}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3 text-sm">
                 <span className="status-dot status-success animate-pulse"></span>
-                <span className="text-slate-600">系统运行正常</span>
+                <span className="text-slate-600 font-medium">系统运行正常</span>
               </div>
-              <div className="h-6 w-px bg-slate-200"></div>
+              <div className="h-8 w-px bg-slate-200"></div>
               <div className="text-sm text-slate-600">
-                样本总数: <span className="font-semibold text-slate-800">{soilSamples.length}</span>
+                样本总数: <span className="font-bold text-slate-800 text-lg">{soilSamples.length}</span>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-8">
           {renderContent()}
         </div>
       </main>
