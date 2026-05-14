@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { FlowField, Building } from '../turbulence/RNGKEpsilon';
+import type { FlowField, Building } from '../turbulence/RNGKEpsilon';
 
 export interface VisualizationConfig {
   showVelocityVectors: boolean;

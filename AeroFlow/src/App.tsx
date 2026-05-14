@@ -1,53 +1,29 @@
-import { Component, createSignal, createEffect, onMount, Show, For } from 'solid-js';
-import { RNGKEpsilonSolver, FlowField, Building } from './lib/turbulence/RNGKEpsilon';
-import { WindFieldVisualizer, VisualizationConfig, DEFAULT_CONFIG } from './lib/visualization/WindFieldVisualizer';
-import { WindHazardEvaluator, AssessmentReport } from './lib/assessment/WindHazardEvaluator';
-import { windFieldDB, WindFieldRecord, CityInfo } from './lib/database/WindFieldDB';
+import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
+import { RNGKEpsilonSolver } from './lib/turbulence/RNGKEpsilon';
+import { WindFieldVisualizer, DEFAULT_CONFIG } from './lib/visualization/WindFieldVisualizer';
+import { WindHazardEvaluator } from './lib/assessment/WindHazardEvaluator';
+import { windFieldDB } from './lib/database/WindFieldDB';
 import './App.css';
 
-const App: Component = () => {
-  const [flowField, setFlowField] = createSignal<FlowField | null>(null);
-  const [buildings, setBuildings] = createSignal<Building[]>([]);
+function App() {
+  const [flowField, setFlowField] = createSignal<any>(null);
+  const [buildings, setBuildings] = createSignal<any[]>([]);
   const [isSimulating, setIsSimulating] = createSignal(false);
-  const [simulationProgress, setSimulationProgress] = createSignal(0);
   const [inletVelocity, setInletVelocity] = createSignal(10);
-  const [gridResolution, setGridResolution] = createSignal(50);
-  const [currentCity, setCurrentCity] = createSignal<CityInfo>({
+  const [currentCity] = createSignal({
     id: 'city_shanghai',
     name: '上海市',
-    country: '中国',
-    latitude: 31.2304,
-    longitude: 121.4737,
-    timezone: 'Asia/Shanghai',
     dominantWindDirection: 45,
-    averageWindSpeed: 3.5
   });
-  const [savedRecords, setSavedRecords] = createSignal<WindFieldRecord[]>([]);
-  const [assessmentReport, setAssessmentReport] = createSignal<AssessmentReport | null>(null);
-  const [activeTab, setActiveTab] = createSignal<'visualization' | 'assessment' | 'database'>('visualization');
-  const [visConfig, setVisConfig] = createSignal<VisualizationConfig>(DEFAULT_CONFIG);
+  const [savedRecords, setSavedRecords] = createSignal<any[]>([]);
+  const [assessmentReport, setAssessmentReport] = createSignal<any>(null);
+  const [activeTab, setActiveTab] = createSignal<any>('visualization');
+  const [visConfig, setVisConfig] = createSignal<any>(DEFAULT_CONFIG);
+  const [initialized, setInitialized] = createSignal(false);
 
-  let visualizerContainer: HTMLDivElement | undefined;
   let visualizer: WindFieldVisualizer | null = null;
   const solver = new RNGKEpsilonSolver();
   const evaluator = new WindHazardEvaluator();
-
-  onMount(async () => {
-    try {
-      await windFieldDB.init();
-      await loadSavedRecords();
-      generateSampleBuildings();
-    } catch (error) {
-      console.error('数据库初始化失败:', error);
-    }
-  });
-
-  const cleanup = () => {
-    if (visualizer) {
-      visualizer.destroy();
-      visualizer = null;
-    }
-  };
 
   const initVisualizer = (element: HTMLDivElement) => {
     if (!visualizer && element) {
@@ -60,6 +36,17 @@ const App: Component = () => {
       }
     }
   };
+
+  onMount(async () => {
+    try {
+      generateSampleBuildings();
+      await windFieldDB.init();
+      await loadSavedRecords();
+      setInitialized(true);
+    } catch (error) {
+      console.error('初始化失败:', error);
+    }
+  });
 
   createEffect(() => {
     if (visualizer && flowField()) {
@@ -74,7 +61,7 @@ const App: Component = () => {
   });
 
   const generateSampleBuildings = () => {
-    const sampleBuildings: Building[] = [
+    const sampleBuildings = [
       { id: 'b1', x: 100, y: 100, z: 0, width: 40, depth: 40, height: 200 },
       { id: 'b2', x: 180, y: 100, z: 0, width: 35, depth: 35, height: 150 },
       { id: 'b3', x: 100, y: 200, z: 0, width: 50, depth: 45, height: 180 },
@@ -91,36 +78,21 @@ const App: Component = () => {
   const runSimulation = async () => {
     try {
       setIsSimulating(true);
-      setSimulationProgress(0);
-
-      const nx = gridResolution();
-      const ny = gridResolution();
-      const nz = Math.floor(gridResolution() * 0.6);
+      const nx = 50;
+      const ny = 50;
+      const nz = 30;
       const dx = 10;
       const dy = 10;
       const dz = 10;
 
-      setSimulationProgress(10);
-      await new Promise(resolve => setTimeout(resolve, 50));
-
       const field = solver.initFlowField(nx, ny, nz, dx, dy, dz, inletVelocity());
-      setSimulationProgress(30);
-
-      await new Promise(resolve => setTimeout(resolve, 50));
-      setSimulationProgress(50);
-
+      await new Promise(resolve => setTimeout(resolve, 100));
       await solver.solve(field, 30);
-      setSimulationProgress(80);
-
       setFlowField(field);
-      setSimulationProgress(100);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
       setIsSimulating(false);
     } catch (error) {
       console.error('模拟失败:', error);
       setIsSimulating(false);
-      alert('模拟失败: ' + (error as Error).message);
     }
   };
 
@@ -145,7 +117,7 @@ const App: Component = () => {
       return;
     }
 
-    const record: Omit<WindFieldRecord, 'id' | 'createdAt' | 'updatedAt'> = {
+    const record: Omit<any, 'id' | 'createdAt' | 'updatedAt'> = {
       cityId: currentCity().id,
       simulationId: `sim_${Date.now()}`,
       timestamp: Date.now(),
@@ -167,7 +139,7 @@ const App: Component = () => {
     setSavedRecords(records);
   };
 
-  const loadRecord = async (record: WindFieldRecord) => {
+  const loadRecord = async (record: any) => {
     const field = windFieldDB.serializableToFlowField(record.flowFieldData);
     setFlowField(field);
     setBuildings(record.buildings);
@@ -192,26 +164,11 @@ const App: Component = () => {
     }
   };
 
-  const getRiskText = (level: string) => {
-    switch (level) {
-      case 'low': return '低风险';
-      case 'medium': return '中等风险';
-      case 'high': return '高风险';
-      case 'severe': return '严重风险';
-      default: return '未知';
-    }
-  };
-
   return (
     <div class="app-container">
       <header class="header">
         <div class="header-content">
           <div class="logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 2L4 8V16C4 23.732 10.748 30 16 30C21.252 30 28 23.732 28 16V8L16 2Z" fill="#3b82f6"/>
-              <path d="M16 8L20 10L16 14L12 10L16 8Z" fill="#93c5fd"/>
-              <path d="M10 16L16 20L22 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
             <h1>AeroFlow - 超高层建筑群微气候风环境模拟平台</h1>
           </div>
           <div class="city-info">
@@ -233,23 +190,10 @@ const App: Component = () => {
                 min="1" 
                 max="30" 
                 value={inletVelocity()} 
-                onInput={(e) => setInletVelocity(Number(e.target.value))}
+                onInput={(e: any) => setInletVelocity(Number(e.target.value))}
                 disabled={isSimulating()}
               />
               <span class="value-display">{inletVelocity()} m/s</span>
-            </div>
-
-            <div class="control-group">
-              <label>网格分辨率</label>
-              <select 
-                value={gridResolution()} 
-                onChange={(e) => setGridResolution(Number(e.target.value))}
-                disabled={isSimulating()}
-              >
-                <option value="30">低 (30×30)</option>
-                <option value="50">中 (50×50)</option>
-                <option value="80">高 (80×80)</option>
-              </select>
             </div>
 
             <button 
@@ -259,12 +203,6 @@ const App: Component = () => {
             >
               {isSimulating() ? '计算中...' : '运行风场模拟'}
             </button>
-
-            <Show when={isSimulating()}>
-              <div class="progress-bar">
-                <div class="progress-fill" style={{ width: `${simulationProgress()}%` }}></div>
-              </div>
-            </Show>
 
             <Show when={flowField()}>
               <button class="btn btn-secondary" onClick={runAssessment}>
@@ -284,7 +222,7 @@ const App: Component = () => {
                 <input 
                   type="checkbox" 
                   checked={visConfig().showVelocityVectors}
-                  onChange={(e) => setVisConfig({...visConfig(), showVelocityVectors: e.target.checked})}
+                  onChange={(e: any) => setVisConfig({...visConfig(), showVelocityVectors: e.target.checked})}
                 />
                 速度矢量
               </label>
@@ -292,38 +230,10 @@ const App: Component = () => {
                 <input 
                   type="checkbox" 
                   checked={visConfig().showPressureContours}
-                  onChange={(e) => setVisConfig({...visConfig(), showPressureContours: e.target.checked})}
+                  onChange={(e: any) => setVisConfig({...visConfig(), showPressureContours: e.target.checked})}
                 />
                 压力等值面
               </label>
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={visConfig().showTurbulence}
-                  onChange={(e) => setVisConfig({...visConfig(), showTurbulence: e.target.checked})}
-                />
-                湍流粒子
-              </label>
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={visConfig().showBuildings}
-                  onChange={(e) => setVisConfig({...visConfig(), showBuildings: e.target.checked})}
-                />
-                建筑模型
-              </label>
-            </div>
-
-            <div class="control-group">
-              <label>矢量缩放</label>
-              <input 
-                type="range" 
-                min="1" 
-                max="10" 
-                step="0.5"
-                value={visConfig().vectorScale}
-                onInput={(e) => setVisConfig({...visConfig(), vectorScale: Number(e.target.value)})}
-              />
             </div>
           </div>
 
@@ -372,7 +282,7 @@ const App: Component = () => {
                 <div class="metrics-panel">
                   <div class="metric-card">
                     <span class="metric-label">最大风速</span>
-                    <span class="metric-value">{Math.max(...Array.from(flowField()!.u.map((u, i) => 
+                    <span class="metric-value">{Math.max(...Array.from(flowField()!.u.map((u: number, i: number) => 
                       Math.sqrt(u*u + flowField()!.v[i]*flowField()!.v[i] + flowField()!.w[i]*flowField()!.w[i])
                     ))).toFixed(1)} m/s</span>
                   </div>
@@ -383,10 +293,6 @@ const App: Component = () => {
                   <div class="metric-card">
                     <span class="metric-label">建筑数量</span>
                     <span class="metric-value">{buildings().length}</span>
-                  </div>
-                  <div class="metric-card">
-                    <span class="metric-label">模拟区域</span>
-                    <span class="metric-value">{flowField()!.nx * flowField()!.dx}m × {flowField()!.ny * flowField()!.dy}m</span>
                   </div>
                 </div>
               </Show>
@@ -407,9 +313,6 @@ const App: Component = () => {
             <Show when={activeTab() === 'assessment'}>
               <Show when={assessmentReport()} fallback={
                 <div class="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                  </svg>
                   <p>请先运行风场模拟，然后点击"生成风害评估报告"</p>
                 </div>
               }>
@@ -417,7 +320,9 @@ const App: Component = () => {
                   <div class="report-header">
                     <h2>风环境安全评估报告</h2>
                     <div class="risk-badge" style={{ background: getRiskColor(assessmentReport()!.overallRiskLevel) }}>
-                      {getRiskText(assessmentReport()!.overallRiskLevel)}
+                      {assessmentReport()!.overallRiskLevel === 'low' ? '低风险' :
+                       assessmentReport()!.overallRiskLevel === 'medium' ? '中等风险' :
+                       assessmentReport()!.overallRiskLevel === 'high' ? '高风险' : '严重风险'}
                     </div>
                   </div>
 
@@ -426,68 +331,11 @@ const App: Component = () => {
                     <p>{assessmentReport()!.summary}</p>
                   </div>
 
-                  <div class="metrics-grid">
-                    <div class="metric-item">
-                      <span class="metric-name">最大风速</span>
-                      <span class="metric-number">{assessmentReport()!.metrics.maxWindSpeed.toFixed(1)} m/s</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-name">平均风速</span>
-                      <span class="metric-number">{assessmentReport()!.metrics.avgWindSpeed.toFixed(1)} m/s</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-name">最大湍流强度</span>
-                      <span class="metric-number">{(assessmentReport()!.metrics.maxTurbulenceIntensity * 100).toFixed(1)}%</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-name">峡谷放大系数</span>
-                      <span class="metric-number">{assessmentReport()!.metrics.canyonAmplificationFactor.toFixed(2)}x</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-name">行人层风速</span>
-                      <span class="metric-number">{assessmentReport()!.metrics.pedestrianLevelWindSpeed.toFixed(1)} m/s</span>
-                    </div>
-                    <div class="metric-item">
-                      <span class="metric-name">风险区域数量</span>
-                      <span class="metric-number">{assessmentReport()!.hazardZones.length}</span>
-                    </div>
-                  </div>
-
-                  <Show when={assessmentReport()!.hazardZones.length > 0}>
-                    <div class="zones-section">
-                      <h3>风险区域分布</h3>
-                      <div class="zones-list">
-                        <For each={assessmentReport()!.hazardZones}>
-                          {(zone) => (
-                            <div class="zone-card" style={{ borderLeftColor: getRiskColor(zone.hazardLevel) }}>
-                              <div class="zone-header">
-                                <span class="zone-id">{zone.id}</span>
-                                <span class="zone-level" style={{ background: getRiskColor(zone.hazardLevel) }}>
-                                  {getRiskText(zone.hazardLevel)}
-                                </span>
-                              </div>
-                              <div class="zone-details">
-                                <p>位置: ({zone.x.toFixed(0)}, {zone.y.toFixed(0)}, {zone.z.toFixed(0)})</p>
-                                <p>尺寸: {zone.width.toFixed(0)}m × {zone.depth.toFixed(0)}m × {zone.height.toFixed(0)}m</p>
-                                <p>主要风险: {zone.primaryHazard === 'speed' ? '高速风' : 
-                                             zone.primaryHazard === 'turbulence' ? '强湍流' :
-                                             zone.primaryHazard === 'pressure' ? '高压差' : '峡谷效应'}</p>
-                                <Show when={zone.affectedBuildings.length > 0}>
-                                  <p>影响建筑: {zone.affectedBuildings.join(', ')}</p>
-                                </Show>
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </div>
-                    </div>
-                  </Show>
-
                   <div class="recommendations-section">
                     <h3>改善建议</h3>
                     <ul class="recommendations-list">
                       <For each={assessmentReport()!.recommendations}>
-                        {(rec) => <li>{rec}</li>}
+                        {(rec: string) => <li>{rec}</li>}
                       </For>
                     </ul>
                   </div>
@@ -504,9 +352,6 @@ const App: Component = () => {
                 
                 <Show when={savedRecords().length === 0}>
                   <div class="empty-state">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                      <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-                    </svg>
                     <p>暂无保存的记录，运行模拟后点击"保存到数据库"</p>
                   </div>
                 </Show>
@@ -522,7 +367,6 @@ const App: Component = () => {
                         <div class="record-meta">
                           <span>入口风速: {record.inletVelocity} m/s</span>
                           <span>建筑数量: {record.buildings.length}</span>
-                          <span>网格: {record.flowFieldData.nx}×{record.flowFieldData.ny}</span>
                         </div>
                         <div class="record-actions">
                           <button class="btn btn-small btn-secondary" onClick={() => loadRecord(record)}>
@@ -543,10 +387,10 @@ const App: Component = () => {
       </div>
 
       <footer class="footer">
-        <p>AeroFlow v1.0 - 基于 RNG k-ε 模型的城市微气候风环境模拟系统 | Powered by SolidJS & Three.js</p>
+        <p>AeroFlow v1.0 - 基于 RNG k-ε 模型的城市微气候风环境模拟系统</p>
       </footer>
     </div>
   );
-};
+}
 
 export default App;

@@ -1,5 +1,5 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { FlowField, Building } from '../turbulence/RNGKEpsilon';
+import { openDB } from 'idb';
+import type { FlowField, Building } from '../turbulence/RNGKEpsilon';
 
 export interface WindFieldRecord {
   id?: string;
@@ -54,33 +54,8 @@ export interface CityInfo {
   averageWindSpeed: number;
 }
 
-interface AeroFlowDB extends DBSchema {
-  windFields: {
-    key: string;
-    value: WindFieldRecord;
-    indexes: { 
-      'by-city': string;
-      'by-simulation': string;
-      'by-timestamp': number;
-    };
-  };
-  hazardAssessments: {
-    key: string;
-    value: WindHazardAssessment;
-    indexes: {
-      'by-city': string;
-      'by-simulation': string;
-      'by-level': string;
-    };
-  };
-  cities: {
-    key: string;
-    value: CityInfo;
-  };
-}
-
 export class WindFieldDatabase {
-  private db: IDBPDatabase<AeroFlowDB> | null = null;
+  private db: any = null;
   private readonly DB_NAME = 'AeroFlowDB';
   private readonly DB_VERSION = 1;
 
