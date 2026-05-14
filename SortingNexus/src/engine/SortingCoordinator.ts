@@ -1,4 +1,4 @@
-import { Package, ConveyorNode, WCSCommand, PLCStatus, PerformanceMetrics, SortingPath } from '../types/core';
+import { Package, ConveyorNode, WCSCommand, PLCStatus, PerformanceMetrics } from '../types/core';
 import { DijkstraPathFinder } from '../algorithms/DijkstraPathFinder';
 import { PlcSyncEngine } from '../alignment/PlcSyncEngine';
 import { SnapshotStore } from '../persistence/SnapshotStore';
@@ -70,7 +70,7 @@ export class SortingCoordinator {
         this.errorEngine.reportError(
           'MISALIGNMENT',
           `Package ${result.packageId} misaligned by ${result.timeDiff}ms`,
-          'HIGH',
+          'high',
           { packageId: result.packageId }
         );
       },
@@ -163,7 +163,7 @@ export class SortingCoordinator {
       this.errorEngine.reportError(
         'PATH_NOT_FOUND',
         `No path found for package ${pkg.id} to destination ${pkg.destination}`,
-        'HIGH',
+        'high',
         { packageId: pkg.id }
       );
       return;

@@ -1,15 +1,12 @@
-import { Package, WCSCommand, PLCStatus, AlignmentResult } from '../types/core';
+import { WCSCommand, PLCStatus, AlignmentResult } from '../types/core';
 import { SYSTEM_CONFIG, COMMAND_ACTION, COMMAND_STATUS } from '../config/constants';
 import { v4 as uuidv4 } from 'uuid';
-
-type EventHandler = (event: unknown) => void;
 
 export class PlcSyncEngine {
   private commandQueue: WCSCommand[] = [];
   private plcStatusMap: Map<string, PLCStatus> = new Map();
   private packagePositionMap: Map<string, string> = new Map();
   private readonly alignmentThreshold: number;
-  private readonly maxRetries: number;
   private readonly commandTimeout: number;
 
   private onCommandSent?: (command: WCSCommand) => void;
@@ -17,9 +14,8 @@ export class PlcSyncEngine {
   private onCommandExecuted?: (command: WCSCommand) => void;
 
   constructor() {
-    const { THRESHOLD_MS, MAX_RETRIES, COMMAND_TIMEOUT } = SYSTEM_CONFIG.ALIGNMENT;
+    const { THRESHOLD_MS, COMMAND_TIMEOUT } = SYSTEM_CONFIG.ALIGNMENT;
     this.alignmentThreshold = THRESHOLD_MS;
-    this.maxRetries = MAX_RETRIES;
     this.commandTimeout = COMMAND_TIMEOUT;
   }
 
