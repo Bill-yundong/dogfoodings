@@ -1,5 +1,5 @@
 import { openDB } from 'idb';
-import type { FlowField, Building } from '../turbulence/RNGKEpsilon';
+import type { FlowField, Building } from '../turbulence/RNGKEpsilon.ts';
 
 export interface WindFieldRecord {
   id?: string;

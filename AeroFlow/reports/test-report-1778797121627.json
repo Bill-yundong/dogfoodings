@@ -1,0 +1,373 @@
+{
+  "timestamp": "2026-05-14T22:18:41.627Z",
+  "version": "1.0.0",
+  "totalTests": 33,
+  "passed": 32,
+  "failed": 1,
+  "skipped": 0,
+  "totalDuration": 6699,
+  "results": [
+    {
+      "testName": "RNGKEpsilonSolver 实例化",
+      "testSuite": "系统初始化测试",
+      "status": "PASS",
+      "duration": 0,
+      "coverage": [
+        "RNGKEpsilon.ts:constructor"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:48-54"
+    },
+    {
+      "testName": "WindHazardEvaluator 实例化",
+      "testSuite": "系统初始化测试",
+      "status": "PASS",
+      "duration": 0,
+      "coverage": [
+        "WindHazardEvaluator.ts:constructor"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:46-72"
+    },
+    {
+      "testName": "WindFieldDB 初始化",
+      "testSuite": "系统初始化测试",
+      "status": "PASS",
+      "duration": 3,
+      "coverage": [
+        "WindFieldDB.ts:init",
+        "WindFieldDB.ts:constructor"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:57-92"
+    },
+    {
+      "testName": "流场初始化 - 20x20x10 网格",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 2,
+      "coverage": [
+        "RNGKEpsilon.ts:initFlowField"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:60-92"
+    },
+    {
+      "testName": "流场初始化 - 50x50x30 网格",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 10,
+      "coverage": [
+        "RNGKEpsilon.ts:initFlowField"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:60-92"
+    },
+    {
+      "testName": "建筑边界条件设置 - 8栋建筑",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 0,
+      "coverage": [
+        "RNGKEpsilon.ts:setBuildings",
+        "RNGKEpsilon.ts:isInsideBuilding"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:56-58"
+    },
+    {
+      "testName": "入口风速剖面初始化",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 3,
+      "coverage": [
+        "RNGKEpsilon.ts:initFlowField",
+        "RNGKEpsilon.ts:applyBuildingMask"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:73-88"
+    },
+    {
+      "testName": "湍动能初始化验证",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "RNGKEpsilon.ts:initFlowField",
+        "RNGKEpsilon.ts:calculateProduction"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:82-86"
+    },
+    {
+      "testName": "风场模拟执行 - 50次迭代",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 343,
+      "coverage": [
+        "RNGKEpsilon.ts:solve",
+        "RNGKEpsilon.ts:solveMomentum",
+        "RNGKEpsilon.ts:solvePressureCorrection",
+        "RNGKEpsilon.ts:solveK",
+        "RNGKEpsilon.ts:solveEpsilon",
+        "RNGKEpsilon.ts:updateEddyViscosity"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:110-220"
+    },
+    {
+      "testName": "街道峡谷效应计算",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 6,
+      "coverage": [
+        "RNGKEpsilon.ts:calculateStreetCanyonEffect"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:230-280"
+    },
+    {
+      "testName": "指定点风速查询",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "RNGKEpsilon.ts:getWindSpeedAtPoint"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:290-320"
+    },
+    {
+      "testName": "涡粘度场更新验证",
+      "testSuite": "RNG k-epsilon 紊流模型测试",
+      "status": "PASS",
+      "duration": 207,
+      "coverage": [
+        "RNGKEpsilon.ts:updateEddyViscosity"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:190-220"
+    },
+    {
+      "testName": "风场风险等级评估",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 1274,
+      "coverage": [
+        "WindHazardEvaluator.ts:evaluateWindField",
+        "WindHazardEvaluator.ts:determineOverallRisk"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:74-97"
+    },
+    {
+      "testName": "风害指标计算",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 94,
+      "coverage": [
+        "WindHazardEvaluator.ts:calculateMetrics",
+        "WindHazardEvaluator.ts:analyzeStreetCanyonEffect"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:99-180"
+    },
+    {
+      "testName": "风险区域识别",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 859,
+      "coverage": [
+        "WindHazardEvaluator.ts:identifyHazardZones",
+        "WindHazardEvaluator.ts:getHazardLevel"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:182-250"
+    },
+    {
+      "testName": "改善建议生成",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 347,
+      "coverage": [
+        "WindHazardEvaluator.ts:generateRecommendations"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:252-320"
+    },
+    {
+      "testName": "行人层面风速评估",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 117,
+      "coverage": [
+        "WindHazardEvaluator.ts:calculateMetrics"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:120-150"
+    },
+    {
+      "testName": "建筑风荷载计算",
+      "testSuite": "风害评估系统测试",
+      "status": "PASS",
+      "duration": 116,
+      "coverage": [
+        "WindHazardEvaluator.ts:calculateBuildingWindLoads"
+      ],
+      "codeLocation": "src/lib/assessment/WindHazardEvaluator.ts:152-180"
+    },
+    {
+      "testName": "风场记录保存",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 5,
+      "coverage": [
+        "WindFieldDB.ts:saveWindField",
+        "WindFieldDB.ts:generateId"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:110-140"
+    },
+    {
+      "testName": "风场记录查询 - 按ID获取",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 3,
+      "coverage": [
+        "WindFieldDB.ts:getWindField"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:142-160"
+    },
+    {
+      "testName": "风场记录查询 - 获取所有记录",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 8,
+      "coverage": [
+        "WindFieldDB.ts:getAllWindFields"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:162-180"
+    },
+    {
+      "testName": "流场数据序列化",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 2,
+      "coverage": [
+        "WindFieldDB.ts:flowFieldToSerializable"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:200-230"
+    },
+    {
+      "testName": "流场数据反序列化",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "WindFieldDB.ts:serializableToFlowField"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:232-260"
+    },
+    {
+      "testName": "城市信息保存与查询",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "WindFieldDB.ts:saveCity",
+        "WindFieldDB.ts:getCity",
+        "WindFieldDB.ts:getAllCities"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:280-320"
+    },
+    {
+      "testName": "风害评估记录保存",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 91,
+      "coverage": [
+        "WindFieldDB.ts:saveHazardAssessment"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:340-370"
+    },
+    {
+      "testName": "数据库统计信息",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 0,
+      "coverage": [
+        "WindFieldDB.ts:getDatabaseStats",
+        "WindFieldDB.ts:getWindFieldCount"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:380-420"
+    },
+    {
+      "testName": "风场记录删除",
+      "testSuite": "IndexedDB 数据库测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "WindFieldDB.ts:deleteWindField"
+      ],
+      "codeLocation": "src/lib/database/WindFieldDB.ts:182-198"
+    },
+    {
+      "testName": "单栋建筑配置",
+      "testSuite": "建筑群配置测试",
+      "status": "PASS",
+      "duration": 0,
+      "coverage": [
+        "RNGKEpsilon.ts:setBuildings",
+        "Building interface"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:27-36"
+    },
+    {
+      "testName": "超高层建筑群配置 (8栋)",
+      "testSuite": "建筑群配置测试",
+      "status": "PASS",
+      "duration": 2603,
+      "coverage": [
+        "RNGKEpsilon.ts:setBuildings",
+        "RNGKEpsilon.ts:applyBuildingMask"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:56-58"
+    },
+    {
+      "testName": "建筑遮挡效应验证",
+      "testSuite": "建筑群配置测试",
+      "status": "FAIL",
+      "duration": 0,
+      "error": "建筑内部风速未被正确屏蔽",
+      "coverage": [
+        "RNGKEpsilon.ts:isInsideBuilding",
+        "RNGKEpsilon.ts:applyBuildingMask"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:98-108"
+    },
+    {
+      "testName": "不同网格分辨率流场初始化",
+      "testSuite": "流场操作测试",
+      "status": "PASS",
+      "duration": 17,
+      "coverage": [
+        "RNGKEpsilon.ts:initFlowField"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:60-92"
+    },
+    {
+      "testName": "不同入口风速下的流场模拟",
+      "testSuite": "流场操作测试",
+      "status": "PASS",
+      "duration": 570,
+      "coverage": [
+        "RNGKEpsilon.ts:solve",
+        "RNGKEpsilon.ts:initFlowField"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:110-220"
+    },
+    {
+      "testName": "流场数据完整性验证",
+      "testSuite": "流场操作测试",
+      "status": "PASS",
+      "duration": 1,
+      "coverage": [
+        "FlowField interface"
+      ],
+      "codeLocation": "src/lib/turbulence/RNGKEpsilon.ts:11-25"
+    }
+  ],
+  "coverageSummary": {
+    "turbulence": 92,
+    "visualization": 78,
+    "assessment": 95,
+    "database": 88
+  },
+  "systemInfo": {
+    "nodeVersion": "v22.22.2",
+    "platform": "darwin",
+    "architecture": "arm64"
+  }
+}

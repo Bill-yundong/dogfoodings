@@ -1,5 +1,5 @@
-import { RNGKEpsilonSolver } from '../turbulence/RNGKEpsilon';
-import type { FlowField, Building } from '../turbulence/RNGKEpsilon';
+import { RNGKEpsilonSolver } from '../turbulence/RNGKEpsilon.ts';
+import type { FlowField, Building } from '../turbulence/RNGKEpsilon.ts';
 
 export interface WindHazardMetrics {
   maxWindSpeed: number;
