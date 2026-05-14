@@ -78,16 +78,16 @@ export class ProductionLineService {
     this.simulationEngine.setSpeed(speed)
   }
 
-  getSimulationSpeed(): number {
-    return this.simulationEngine?.getSpeed() || 1
-  }
-
   isSimulationRunning(): boolean {
     return this.simulationEngine?.getIsRunning() || false
   }
 
   isSimulationPaused(): boolean {
     return this.simulationEngine?.getIsPaused() || false
+  }
+
+  getSimulationSpeed(): number {
+    return this.simulationEngine?.getSpeed() || 1
   }
 
   triggerStationBreakdown(stationIndex: number): void {

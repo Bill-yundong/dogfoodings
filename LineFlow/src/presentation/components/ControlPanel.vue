@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRefs } from 'vue'
 
 const props = defineProps<{
   isRunning: boolean
   isPaused: boolean
   simulationSpeed: number
 }>()
+
+const { isRunning, isPaused, simulationSpeed } = toRefs(props)
 
 const emit = defineEmits<{
   start: []
