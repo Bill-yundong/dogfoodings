@@ -1,6 +1,4 @@
 <script>
-  import { $state } from 'svelte'
-
   let {
     onScheduleAdd,
     schedules = []

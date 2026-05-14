@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy, $state, $effect } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
 
   let {
     width = 500,

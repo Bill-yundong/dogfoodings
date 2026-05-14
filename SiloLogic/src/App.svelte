@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy, $state, $effect } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import SiloCanvas from './lib/components/SiloCanvas.svelte'
   import ControlPanel from './lib/components/ControlPanel.svelte'
   import QualityMonitor from './lib/components/QualityMonitor.svelte'

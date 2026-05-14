@@ -1,6 +1,4 @@
 <script>
-  import { $state, $effect } from 'svelte'
-
   let {
     materials = [],
     wallPressures = { left: 0, right: 0, bottom: 0 },
