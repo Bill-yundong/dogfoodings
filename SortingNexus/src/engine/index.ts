@@ -1,2 +1,1 @@
-export { SortingCoordinator } from './SortingCoordinator';
-export { ErrorRecoveryEngine } from './ErrorRecovery';
+export { SortingEngine } from './SortingEngine';
