@@ -9,6 +9,10 @@ export class IndexedDBStorage {
   constructor() {}
 
   async init(): Promise<void> {
+    if (this.db) {
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
 
