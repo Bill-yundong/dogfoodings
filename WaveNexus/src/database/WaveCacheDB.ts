@@ -41,55 +41,83 @@ class WaveCacheDB {
 
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-
-        if (!db.objectStoreNames.contains("waveObservations")) {
-          const observationStore = db.createObjectStore("waveObservations", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-          observationStore.createIndex("timestamp", "timestamp", {
-            unique: false,
-          });
-          observationStore.createIndex("location", "location", {
-            unique: false,
-          });
-          observationStore.createIndex("source", "source", { unique: false });
+      try {
+        if (!window.indexedDB) {
+          reject(new Error("IndexedDB is not supported in this browser"));
+          return;
         }
 
-        if (!db.objectStoreNames.contains("syncRecords")) {
-          const syncStore = db.createObjectStore("syncRecords", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-          syncStore.createIndex("syncTime", "syncTime", { unique: false });
-          syncStore.createIndex("sourceSystem", "sourceSystem", {
-            unique: false,
-          });
-        }
+        const request = indexedDB.open(this.dbName, this.dbVersion);
 
-        if (!db.objectStoreNames.contains("shoreProtectionLogs")) {
-          const protectionStore = db.createObjectStore("shoreProtectionLogs", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-          protectionStore.createIndex("timestamp", "timestamp", {
-            unique: false,
-          });
-          protectionStore.createIndex("structureType", "structureType", {
-            unique: false,
-          });
-        }
-      };
+        request.onerror = () => {
+          console.error("IndexedDB error:", request.error);
+          reject(request.error);
+        };
+
+        request.onsuccess = () => {
+          this.db = request.result;
+          
+          this.db.onerror = (event) => {
+            console.error("Database error:", event);
+          };
+
+          this.db.onversionchange = () => {
+            if (this.db) {
+              this.db.close();
+            }
+          };
+
+          resolve();
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          console.log("IndexedDB upgrade needed, creating stores...");
+
+          if (!db.objectStoreNames.contains("waveObservations")) {
+            const observationStore = db.createObjectStore("waveObservations", {
+              keyPath: "id",
+            });
+            observationStore.createIndex("timestamp", "timestamp", {
+              unique: false,
+            });
+            observationStore.createIndex("location", "location", {
+              unique: false,
+            });
+            observationStore.createIndex("source", "source", { unique: false });
+          }
+
+          if (!db.objectStoreNames.contains("syncRecords")) {
+            const syncStore = db.createObjectStore("syncRecords", {
+              keyPath: "id",
+            });
+            syncStore.createIndex("syncTime", "syncTime", { unique: false });
+            syncStore.createIndex("sourceSystem", "sourceSystem", {
+              unique: false,
+            });
+          }
+
+          if (!db.objectStoreNames.contains("shoreProtectionLogs")) {
+            const protectionStore = db.createObjectStore("shoreProtectionLogs", {
+              keyPath: "id",
+            });
+            protectionStore.createIndex("timestamp", "timestamp", {
+              unique: false,
+            });
+            protectionStore.createIndex("structureType", "structureType", {
+              unique: false,
+            });
+          }
+        };
+
+        request.onblocked = () => {
+          console.warn("IndexedDB open request blocked");
+          reject(new Error("Database open blocked, please close other tabs"));
+        };
+      } catch (error) {
+        console.error("IndexedDB init exception:", error);
+        reject(error);
+      }
     });
   }
 
@@ -102,16 +130,24 @@ class WaveCacheDB {
 
   async addWaveObservation(log: Omit<WaveObservationLog, "id">): Promise<string> {
     return new Promise((resolve, reject) => {
-      const db = this.ensureDB();
-      const transaction = db.transaction(["waveObservations"], "readwrite");
-      const store = transaction.objectStore("waveObservations");
-      const request = store.add({
-        ...log,
-        id: crypto.randomUUID(),
-      });
+      try {
+        const db = this.ensureDB();
+        const transaction = db.transaction(["waveObservations"], "readwrite");
+        const store = transaction.objectStore("waveObservations");
+        const request = store.add({
+          ...log,
+          id: crypto.randomUUID(),
+        });
 
-      request.onsuccess = () => resolve(request.result as string);
-      request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result as string);
+        request.onerror = () => {
+          console.error("Error adding wave observation:", request.error);
+          reject(request.error);
+        };
+      } catch (error) {
+        console.error("addWaveObservation exception:", error);
+        reject(error);
+      }
     });
   }
 
@@ -266,9 +302,41 @@ class WaveCacheDB {
     avgWaveHeight: number;
     avgWavePeriod: number;
   }> {
-    const observations = await this.getWaveObservations();
+    try {
+      const observations = await this.getWaveObservations();
 
-    if (observations.length === 0) {
+      if (observations.length === 0) {
+        return {
+          totalObservations: 0,
+          maritimeRecords: 0,
+          energyRecords: 0,
+          simulationRecords: 0,
+          avgWaveHeight: 0,
+          avgWavePeriod: 0,
+        };
+      }
+
+      const totalHeight = observations.reduce(
+        (sum, log) => sum + (log.waveHeight || 0),
+        0
+      );
+      const totalPeriod = observations.reduce(
+        (sum, log) => sum + (log.wavePeriod || 0),
+        0
+      );
+
+      return {
+        totalObservations: observations.length,
+        maritimeRecords: observations.filter((log) => log.source === "maritime").length,
+        energyRecords: observations.filter((log) => log.source === "energy").length,
+        simulationRecords: observations.filter(
+          (log) => log.source === "simulation"
+        ).length,
+        avgWaveHeight: totalHeight / observations.length,
+        avgWavePeriod: totalPeriod / observations.length,
+      };
+    } catch (error) {
+      console.error("getStatistics error:", error);
       return {
         totalObservations: 0,
         maritimeRecords: 0,
@@ -278,26 +346,6 @@ class WaveCacheDB {
         avgWavePeriod: 0,
       };
     }
-
-    const totalHeight = observations.reduce(
-      (sum, log) => sum + log.waveHeight,
-      0
-    );
-    const totalPeriod = observations.reduce(
-      (sum, log) => sum + log.wavePeriod,
-      0
-    );
-
-    return {
-      totalObservations: observations.length,
-      maritimeRecords: observations.filter((log) => log.source === "maritime").length,
-      energyRecords: observations.filter((log) => log.source === "energy").length,
-      simulationRecords: observations.filter(
-        (log) => log.source === "simulation"
-      ).length,
-      avgWaveHeight: totalHeight / observations.length,
-      avgWavePeriod: totalPeriod / observations.length,
-    };
   }
 
   async clearOldData(olderThan: number): Promise<void> {

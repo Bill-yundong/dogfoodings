@@ -260,42 +260,59 @@ export const WaveCanvas: React.FC<WaveCanvasProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error("Canvas element not found");
+      return;
+    }
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      console.error("Canvas 2D context not supported");
+      return;
+    }
+
+    let animationId: number;
+    let lastFrameTime = 0;
+    const frameInterval = 1000 / 60;
 
     const animate = async (timestamp: number) => {
+      animationId = requestAnimationFrame(animate);
+      
+      if (timestamp - lastFrameTime < frameInterval) {
+        return;
+      }
+      lastFrameTime = timestamp;
+
       timeRef.current = timestamp / 1000;
 
-      if (waveParamsRef.current && timestamp - lastUpdateRef.current > 100) {
-        simulationResultRef.current = await waveEngine.simulateEnergyFlow(
-          waveParamsRef.current,
-          1000,
-          500,
-          timeRef.current
-        );
-        lastUpdateRef.current = timestamp;
-      }
+      try {
+        if (waveParamsRef.current && timestamp - lastUpdateRef.current > 100) {
+          simulationResultRef.current = await waveEngine.simulateEnergyFlow(
+            waveParamsRef.current,
+            1000,
+            500,
+            timeRef.current
+          );
+          lastUpdateRef.current = timestamp;
+        }
 
-      if (waveParamsRef.current && simulationResultRef.current) {
-        drawWave(
-          ctx,
-          waveParamsRef.current,
-          timeRef.current,
-          simulationResultRef.current
-        );
+        if (waveParamsRef.current && simulationResultRef.current) {
+          drawWave(
+            ctx,
+            waveParamsRef.current,
+            timeRef.current,
+            simulationResultRef.current
+          );
+        }
+      } catch (error) {
+        console.error("Animation error:", error);
       }
-
-      animationRef.current = requestAnimationFrame(animate);
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      cancelAnimationFrame(animationId);
     };
   }, [drawWave]);
 

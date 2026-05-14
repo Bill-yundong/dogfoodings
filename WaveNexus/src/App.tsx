@@ -31,12 +31,26 @@ function App() {
     avgWavePeriod: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const init = async () => {
-      await waveCacheDB.init();
-      await dataFlowService.initialize();
-      await loadStats();
+      try {
+        console.log('Initializing WaveCacheDB...');
+        await waveCacheDB.init();
+        console.log('WaveCacheDB initialized');
+        
+        console.log('Initializing DataFlowService...');
+        await dataFlowService.initialize();
+        console.log('DataFlowService initialized');
+        
+        await loadStats();
+        console.log('WaveNexus initialized successfully');
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Initialization error:', error);
+        setIsInitialized(true);
+      }
     };
     init();
   }, []);
@@ -80,6 +94,51 @@ function App() {
       setIsLoading(false);
     }
   };
+
+  if (!isInitialized) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#f8fafc",
+        }}
+      >
+        <div style={{ fontSize: "64px", marginBottom: "20px" }}>🌊</div>
+        <h1 style={{ fontSize: "28px", marginBottom: "10px" }}>WaveNexus</h1>
+        <p style={{ color: "#94a3b8" }}>正在初始化系统...</p>
+        <div
+          style={{
+            width: "200px",
+            height: "4px",
+            background: "#334155",
+            borderRadius: "2px",
+            marginTop: "20px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: "50%",
+              height: "100%",
+              background: "linear-gradient(90deg, #0ea5e9, #06b6d4)",
+              animation: "loading 1s ease-in-out infinite",
+            }}
+          />
+        </div>
+        <style>{`
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div
