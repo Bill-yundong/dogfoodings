@@ -1,4 +1,5 @@
-import { waveCacheDB, WaveObservationLog } from "../database/WaveCacheDB";
+import { waveCacheDB } from "../database/WaveCacheDB";
+import { WaveObservationLog } from "../types";
 
 export interface MaritimeData {
   stationId: string;

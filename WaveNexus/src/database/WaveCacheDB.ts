@@ -1,38 +1,8 @@
-export interface WaveObservationLog {
-  id?: string;
-  timestamp: number;
-  waveHeight: number;
-  wavePeriod: number;
-  waterDepth: number;
-  location: string;
-  energyDensity?: number;
-  breakingProbability?: number;
-  source: "maritime" | "energy" | "simulation";
-  quality: number;
-}
-
-export interface DataSyncRecord {
-  id?: string;
-  syncTime: number;
-  sourceSystem: "maritime" | "energy";
-  recordCount: number;
-  status: "pending" | "completed" | "failed";
-  dataHash: string;
-}
-
-export interface ShoreProtectionLog {
-  id?: string;
-  timestamp: number;
-  structureType: string;
-  structureHeight: number;
-  structureWidth: number;
-  protectionIndex: number;
-  waveConditions: {
-    waveHeight: number;
-    wavePeriod: number;
-  };
-  stormIntensity?: number;
-}
+import {
+  WaveObservationLog,
+  DataSyncRecord,
+  ShoreProtectionLog,
+} from "../types";
 
 class WaveCacheDB {
   private dbName: string = "WaveNexusDB";
@@ -40,36 +10,28 @@ class WaveCacheDB {
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
-    console.log('WaveCacheDB.init() called');
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       try {
         if (!window.indexedDB) {
-          console.warn('IndexedDB not supported, using memory fallback');
           resolve();
           return;
         }
 
-        console.log('Opening IndexedDB...');
         const request = indexedDB.open(this.dbName, this.dbVersion);
 
         request.onerror = () => {
-          console.error('IndexedDB error:', request.error);
           resolve();
         };
 
         request.onsuccess = () => {
           this.db = request.result;
-          console.log('IndexedDB opened successfully');
           
-          this.db.onerror = (event) => {
-            console.error('Database error:', event);
-          };
+          this.db.onerror = () => {};
 
           resolve();
         };
 
         request.onupgradeneeded = (event) => {
-          console.log('IndexedDB upgrade needed...');
           const db = (event.target as IDBOpenDBRequest).result;
 
           try {
@@ -84,7 +46,6 @@ class WaveCacheDB {
                 unique: false,
               });
               observationStore.createIndex("source", "source", { unique: false });
-              console.log('waveObservations store created');
             }
 
             if (!db.objectStoreNames.contains("syncRecords")) {
@@ -95,7 +56,6 @@ class WaveCacheDB {
               syncStore.createIndex("sourceSystem", "sourceSystem", {
                 unique: false,
               });
-              console.log('syncRecords store created');
             }
 
             if (!db.objectStoreNames.contains("shoreProtectionLogs")) {
@@ -108,19 +68,15 @@ class WaveCacheDB {
               protectionStore.createIndex("structureType", "structureType", {
                 unique: false,
               });
-              console.log('shoreProtectionLogs store created');
             }
           } catch (e) {
-            console.error('Error during upgrade:', e);
           }
         };
 
         request.onblocked = () => {
-          console.warn('IndexedDB open blocked');
           resolve();
         };
       } catch (error) {
-        console.error('WaveCacheDB init exception:', error);
         resolve();
       }
     });
@@ -138,10 +94,8 @@ class WaveCacheDB {
     avgWaveHeight: number;
     avgWavePeriod: number;
   }> {
-    console.log('getStatistics called');
     try {
       const observations = await this.getWaveObservations();
-      console.log(`Got ${observations.length} observations`);
 
       if (observations.length === 0) {
         return {
@@ -174,7 +128,6 @@ class WaveCacheDB {
         avgWavePeriod: totalPeriod / observations.length,
       };
     } catch (error) {
-      console.error('getStatistics error:', error);
       return {
         totalObservations: 0,
         maritimeRecords: 0,
@@ -211,7 +164,6 @@ class WaveCacheDB {
         };
         request.onerror = () => resolve([]);
       } catch (e) {
-        console.error('getWaveObservations error:', e);
         resolve([]);
       }
     });
@@ -227,7 +179,6 @@ class WaveCacheDB {
       const store = transaction.objectStore("waveObservations");
       store.add({ ...log, id });
     } catch (e) {
-      console.error('addWaveObservation error:', e);
     }
     return id;
   }
@@ -254,13 +205,11 @@ class WaveCacheDB {
       const store = transaction.objectStore("syncRecords");
       store.add({ ...record, id });
     } catch (e) {
-      console.error('addSyncRecord error:', e);
     }
     return id;
   }
 
   async clearOldData(olderThan: number): Promise<void> {
-    console.log('clearOldData called with:', olderThan);
   }
 
   async close(): Promise<void> {
@@ -272,3 +221,4 @@ class WaveCacheDB {
 }
 
 export const waveCacheDB = new WaveCacheDB();
+export type { WaveObservationLog, DataSyncRecord, ShoreProtectionLog };

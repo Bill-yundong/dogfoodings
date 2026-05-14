@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { waveCacheDB } from "./database/WaveCacheDB";
+import { dataFlowService } from "./services/DataFlowService";
 
 interface Stats {
   totalObservations: number;
@@ -27,9 +29,6 @@ function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        const { waveCacheDB } = await import('./database/WaveCacheDB');
-        const { dataFlowService } = await import('./services/DataFlowService');
-        
         await waveCacheDB.init();
         await dataFlowService.initialize();
         
