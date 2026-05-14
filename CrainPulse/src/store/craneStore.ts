@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onCleanup } from 'solid-js';
+import { createSignal, onCleanup } from 'solid-js';
 import type { CraneState, CraneEnvelope, CollisionRisk, WarningAlert } from '../types/crane';
 import { envelopeGenerator } from '../utils/envelopeGenerator';
 import { collisionDetector } from '../utils/collisionDetector';
