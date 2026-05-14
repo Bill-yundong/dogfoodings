@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-console.log('App.tsx loaded');
-
 interface Stats {
   totalObservations: number;
   maritimeRecords: number;
@@ -12,8 +10,6 @@ interface Stats {
 }
 
 function App() {
-  console.log('App component rendering');
-  
   const [activeTab, setActiveTab] = useState<"simulation" | "protection" | "data">(
     "simulation"
   );
@@ -29,28 +25,17 @@ function App() {
   });
 
   useEffect(() => {
-    console.log('App useEffect running');
-    
     const init = async () => {
       try {
-        console.log('Initializing modules...');
-        
         const { waveCacheDB } = await import('./database/WaveCacheDB');
         const { dataFlowService } = await import('./services/DataFlowService');
         
-        console.log('Modules imported, initializing DB...');
         await waveCacheDB.init();
-        console.log('DB initialized');
-        
         await dataFlowService.initialize();
-        console.log('DataFlowService initialized');
         
         const newStats = await waveCacheDB.getStatistics();
         setStats(newStats);
-        console.log('Stats loaded:', newStats);
-        
         setIsInitialized(true);
-        console.log('Initialization complete');
       } catch (error) {
         console.error('Initialization error:', error);
         setInitError(error instanceof Error ? error.message : String(error));
@@ -62,7 +47,6 @@ function App() {
   }, []);
 
   if (!isInitialized) {
-    console.log('Showing loading screen');
     return (
       <div
         style={{
@@ -78,31 +62,6 @@ function App() {
         <div style={{ fontSize: "64px", marginBottom: "20px" }}>🌊</div>
         <h1 style={{ fontSize: "28px", marginBottom: "10px" }}>WaveNexus</h1>
         <p style={{ color: "#94a3b8" }}>正在初始化系统...</p>
-        <div
-          style={{
-            width: "200px",
-            height: "4px",
-            background: "#334155",
-            borderRadius: "2px",
-            marginTop: "20px",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: "50%",
-              height: "100%",
-              background: "linear-gradient(90deg, #0ea5e9, #06b6d4)",
-              animation: "loading 1s ease-in-out infinite",
-            }}
-          />
-        </div>
-        <style>{`
-          @keyframes loading {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(300%); }
-          }
-        `}</style>
       </div>
     );
   }
@@ -140,8 +99,6 @@ function App() {
       </div>
     );
   }
-
-  console.log('Rendering main app');
 
   return (
     <div
@@ -235,7 +192,7 @@ function App() {
           }}
         >
           <h3 style={{ color: "#f8fafc" }}>🌊 波浪模拟</h3>
-          <p style={{ color: "#94a3b8" }}>Canvas 组件将在此处渲染</p>
+          <p style={{ color: "#94a3b8", marginTop: "10px" }}>基于微幅波理论的波浪动力学模拟</p>
           <SimpleWaveCanvas />
         </div>
       )}
@@ -250,7 +207,7 @@ function App() {
           }}
         >
           <h3 style={{ color: "#f8fafc" }}>🛡️ 护岸模拟</h3>
-          <p style={{ color: "#94a3b8" }}>护岸工程防御模拟功能</p>
+          <p style={{ color: "#94a3b8", marginTop: "10px" }}>护岸工程防御效果评估</p>
         </div>
       )}
 
@@ -272,6 +229,14 @@ function App() {
               <div style={{ fontSize: "28px", color: "#22c55e", fontWeight: "bold" }}>{stats.maritimeRecords}</div>
               <div style={{ color: "#94a3b8", fontSize: "13px" }}>海事数据</div>
             </div>
+            <div style={{ background: "#334155", padding: "20px", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "28px", color: "#f59e0b", fontWeight: "bold" }}>{stats.energyRecords}</div>
+              <div style={{ color: "#94a3b8", fontSize: "13px" }}>能源数据</div>
+            </div>
+            <div style={{ background: "#334155", padding: "20px", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "28px", color: "#ef4444", fontWeight: "bold" }}>{stats.simulationRecords}</div>
+              <div style={{ color: "#94a3b8", fontSize: "13px" }}>模拟数据</div>
+            </div>
           </div>
         </div>
       )}
@@ -291,10 +256,6 @@ function App() {
 }
 
 function SimpleWaveCanvas() {
-  useEffect(() => {
-    console.log('SimpleWaveCanvas mounted');
-  }, []);
-
   return (
     <div style={{ marginTop: "20px" }}>
       <canvas
@@ -313,7 +274,7 @@ function SimpleWaveCanvas() {
               ctx.fillRect(0, 0, 600, 300);
               ctx.fillStyle = '#0ea5e9';
               ctx.font = '20px Arial';
-              ctx.fillText('Wave Canvas Working!', 200, 150);
+              ctx.fillText('Wave Canvas', 250, 150);
             }
           }
         }}

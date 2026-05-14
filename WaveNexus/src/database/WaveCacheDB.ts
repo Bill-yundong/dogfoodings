@@ -1,5 +1,3 @@
-console.log('WaveCacheDB module loaded');
-
 export interface WaveObservationLog {
   id?: string;
   timestamp: number;
@@ -274,4 +272,3 @@ class WaveCacheDB {
 }
 
 export const waveCacheDB = new WaveCacheDB();
-console.log('waveCacheDB instance created');

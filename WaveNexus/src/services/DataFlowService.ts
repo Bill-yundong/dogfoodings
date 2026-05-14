@@ -1,5 +1,3 @@
-console.log('DataFlowService module loading...');
-
 import { waveCacheDB, WaveObservationLog } from "../database/WaveCacheDB";
 
 export interface MaritimeData {
