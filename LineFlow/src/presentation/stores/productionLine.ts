@@ -42,10 +42,12 @@ export const useProductionLineStore = defineStore('productionLine', () => {
   })
 
   async function initialize(): Promise<void> {
+    console.log('【Store】initialize 被调用, isInitialized:', isInitialized.value)
     if (isInitialized.value) return
 
     await productionLineService.initialize()
     productionLine.value = productionLineService.getProductionLine()
+    console.log('【Store】productionLine 已设置:', !!productionLine.value)
     
     productionLineService.addUpdateListener(handleUpdate)
     productionLineService.addAlertListener(handleAlert)
@@ -53,6 +55,7 @@ export const useProductionLineStore = defineStore('productionLine', () => {
     await loadAlerts()
     await updateSnapshotCount()
     isInitialized.value = true
+    console.log('【Store】初始化完成, isRunning:', isRunning.value)
   }
 
   function handleUpdate(line: ProductionLine): void {
@@ -75,6 +78,7 @@ export const useProductionLineStore = defineStore('productionLine', () => {
   }
 
   function startSimulation(): void {
+    console.log('【Store】startSimulation 被调用')
     productionLineService.startSimulation()
   }
 

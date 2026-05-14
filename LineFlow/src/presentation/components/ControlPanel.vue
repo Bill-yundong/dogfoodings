@@ -46,7 +46,7 @@ const statusColor = computed(() => {
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <button
         v-if="!isRunning"
-        @click="emit('start')"
+        @click="() => { console.log('【ControlPanel】点击开始仿真按钮'); emit('start') }"
         class="px-6 py-3 bg-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all duration-300 flex items-center justify-center gap-2"
       >
         <span class="text-lg">▶</span>

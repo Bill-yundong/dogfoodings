@@ -34,8 +34,9 @@ function handleAcknowledgeAlert(alertId: string) {
 }
 
 function handleStartSimulation() {
-  store.startSimulation()
-}
+    console.log('【KanbanView】handleStartSimulation 被调用')
+    store.startSimulation()
+  }
 
 function handlePauseSimulation() {
   store.pauseSimulation()

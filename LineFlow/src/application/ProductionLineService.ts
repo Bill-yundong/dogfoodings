@@ -51,10 +51,15 @@ export class ProductionLineService {
   }
 
   startSimulation(): void {
-    if (!this.simulationEngine) return
+    console.log('【Service】startSimulation 被调用, simulationEngine:', !!this.simulationEngine)
+    if (!this.simulationEngine) {
+      console.warn('【Service】simulationEngine 未初始化！')
+      return
+    }
     
     this.simulationEngine.start()
     this.startSnapshotCapture()
+    console.log('【Service】仿真已启动')
   }
 
   pauseSimulation(): void {

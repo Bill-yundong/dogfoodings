@@ -59,13 +59,19 @@ export class SimulationEngine {
   }
 
   start(): void {
-    if (this.isRunning && !this.isPaused) return
+    console.log('【SimulationEngine】start 被调用, 当前状态 isRunning:', this.isRunning, 'isPaused:', this.isPaused)
+    if (this.isRunning && !this.isPaused) {
+      console.log('【SimulationEngine】已经在运行中，跳过')
+      return
+    }
     
     this.isRunning = true
     this.isPaused = false
-    this.scheduleNextArrival()
     this.lastTickTime = performance.now()
+    this.scheduleNextArrival()
+    console.log('【SimulationEngine】调度第一个产品到达，事件队列长度:', this.eventQueue.length)
     this.runLoop()
+    console.log('【SimulationEngine】runLoop 已启动')
   }
 
   pause(): void {
