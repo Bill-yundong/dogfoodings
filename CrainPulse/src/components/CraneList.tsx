@@ -13,50 +13,50 @@ export function CraneList(props: CraneListProps) {
   ];
 
   return (
-    <div class="crane-list p-6">
-      <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white text-lg">
+    <div class="crane-list p-8">
+      <h3 class="text-2xl font-extrabold text-slate-800 mb-8 flex items-center gap-4 flex-wrap">
+        <span class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white text-3xl shadow-lg shadow-orange-500/30 flex-shrink-0">
           🚧
         </span>
-        塔吊状态监控
+        <span>塔吊状态监控</span>
       </h3>
-      <div class="space-y-4">
+      <div class="space-y-6">
         <For each={props.cranes}>
           {(crane, index) => {
             const colors = craneColors[index() % craneColors.length];
             return (
-              <div class={`p-5 rounded-2xl ${colors.light} border border-opacity-50 hover:shadow-md transition-all duration-300`}>
-                <div class="flex items-center gap-4">
-                  <div class={`w-5 h-5 rounded-full ${colors.bg} shadow-lg`}></div>
-                  <div class="flex-1">
-                    <h4 class="font-bold text-slate-800 text-lg">{crane.name}</h4>
-                    <p class="text-xs text-slate-500 mt-1 font-mono">{crane.id}</p>
+              <div class={`p-7 rounded-2xl ${colors.light} border-2 border-opacity-60 hover:shadow-xl transition-all duration-300`}>
+                <div class="flex items-center gap-5">
+                  <div class={`w-6 h-6 rounded-full ${colors.bg} shadow-xl flex-shrink-0`}></div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-extrabold text-slate-800 text-xl whitespace-nowrap">{crane.name}</h4>
+                    <p class="text-sm text-slate-500 mt-2 font-mono">{crane.id}</p>
                   </div>
-                  <div class="text-right bg-white/60 px-4 py-2 rounded-xl">
-                    <p class="text-xl font-bold text-slate-700">
+                  <div class="text-right bg-white/80 px-6 py-4 rounded-xl shadow-sm flex-shrink-0">
+                    <p class="text-2xl font-extrabold text-slate-700">
                       {(crane.jibAngle % 360).toFixed(0)}°
                     </p>
-                    <p class="text-xs text-slate-500 font-medium">
+                    <p class="text-sm text-slate-500 font-semibold mt-1 whitespace-nowrap">
                       {crane.rotationSpeed > 0 ? '顺时针' : crane.rotationSpeed < 0 ? '逆时针' : '静止'}
                     </p>
                   </div>
                 </div>
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                  <div class="bg-white/70 px-3 py-2 rounded-lg">
-                    <span class="text-xs text-slate-500 block">小车位置</span>
-                    <span class="font-bold text-slate-700">{crane.trolleyPosition.toFixed(1)}m</span>
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                  <div class="bg-white/80 px-5 py-4 rounded-xl shadow-sm">
+                    <span class="text-xs text-slate-500 block font-semibold uppercase tracking-wide">小车位置</span>
+                    <span class="font-extrabold text-slate-700 text-lg mt-1 block">{crane.trolleyPosition.toFixed(1)}m</span>
                   </div>
-                  <div class="bg-white/70 px-3 py-2 rounded-lg">
-                    <span class="text-xs text-slate-500 block">吊钩高度</span>
-                    <span class="font-bold text-slate-700">{crane.hookHeight.toFixed(1)}m</span>
+                  <div class="bg-white/80 px-5 py-4 rounded-xl shadow-sm">
+                    <span class="text-xs text-slate-500 block font-semibold uppercase tracking-wide">吊钩高度</span>
+                    <span class="font-extrabold text-slate-700 text-lg mt-1 block">{crane.hookHeight.toFixed(1)}m</span>
                   </div>
-                  <div class="bg-white/70 px-3 py-2 rounded-lg">
-                    <span class="text-xs text-slate-500 block">载重</span>
-                    <span class="font-bold text-slate-700">{crane.loadWeight}kg</span>
+                  <div class="bg-white/80 px-5 py-4 rounded-xl shadow-sm">
+                    <span class="text-xs text-slate-500 block font-semibold uppercase tracking-wide">载重</span>
+                    <span class="font-extrabold text-slate-700 text-lg mt-1 block">{crane.loadWeight}kg</span>
                   </div>
-                  <div class="bg-white/70 px-3 py-2 rounded-lg">
-                    <span class="text-xs text-slate-500 block">臂长</span>
-                    <span class="font-bold text-slate-700">{crane.jibLength}m</span>
+                  <div class="bg-white/80 px-5 py-4 rounded-xl shadow-sm">
+                    <span class="text-xs text-slate-500 block font-semibold uppercase tracking-wide">臂长</span>
+                    <span class="font-extrabold text-slate-700 text-lg mt-1 block">{crane.jibLength}m</span>
                   </div>
                 </div>
               </div>
