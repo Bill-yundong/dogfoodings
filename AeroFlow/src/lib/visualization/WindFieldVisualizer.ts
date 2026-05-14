@@ -45,30 +45,31 @@ export class WindFieldVisualizer {
 
   private animationId: number | null = null;
   private particleSystems: THREE.Points[] = [];
+  private boundHandleResize: () => void;
 
   constructor(container: HTMLElement, config: Partial<VisualizationConfig> = {}) {
     this.container = container;
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.boundHandleResize = this.handleResize.bind(this);
     
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a2e);
     
-    this.camera = new THREE.PerspectiveCamera(
-      60,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      10000
-    );
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 600;
+    
+    this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 10000);
     this.camera.position.set(200, 150, 200);
     
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.container.appendChild(this.renderer.domElement);
     
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+    this.controls.target.set(250, 50, 250);
     
     this.vectorGroup = new THREE.Group();
     this.buildingGroup = new THREE.Group();
@@ -81,7 +82,7 @@ export class WindFieldVisualizer {
     this.addLighting();
     this.addAxesHelper();
     
-    window.addEventListener('resize', this.handleResize.bind(this));
+    window.addEventListener('resize', this.boundHandleResize);
     this.animate();
   }
 
@@ -397,9 +398,11 @@ export class WindFieldVisualizer {
   }
 
   private handleResize(): void {
-    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    const width = this.container.clientWidth || 800;
+    const height = this.container.clientHeight || 600;
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(width, height);
   }
 
   getCamera(): THREE.PerspectiveCamera {
@@ -424,9 +427,10 @@ export class WindFieldVisualizer {
   destroy(): void {
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
+      this.animationId = null;
     }
     
-    window.removeEventListener('resize', this.handleResize.bind(this));
+    window.removeEventListener('resize', this.boundHandleResize);
     this.clearVisualization();
     
     while (this.buildingGroup.children.length > 0) {
@@ -436,11 +440,20 @@ export class WindFieldVisualizer {
         if (child.material instanceof THREE.Material) {
           child.material.dispose();
         }
+      } else if (child instanceof THREE.LineSegments) {
+        child.geometry.dispose();
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose();
+        }
       }
       this.buildingGroup.remove(child);
     }
     
+    this.controls.dispose();
     this.renderer.dispose();
-    this.container.removeChild(this.renderer.domElement);
+    
+    if (this.container.contains(this.renderer.domElement)) {
+      this.container.removeChild(this.renderer.domElement);
+    }
   }
 }

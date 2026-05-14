@@ -33,20 +33,33 @@ const App: Component = () => {
   const evaluator = new WindHazardEvaluator();
 
   onMount(async () => {
-    await windFieldDB.init();
-    await loadSavedRecords();
-    generateSampleBuildings();
+    try {
+      await windFieldDB.init();
+      await loadSavedRecords();
+      generateSampleBuildings();
+    } catch (error) {
+      console.error('数据库初始化失败:', error);
+    }
   });
 
-  createEffect(() => {
-    if (visualizerContainer && !visualizer) {
-      visualizer = new WindFieldVisualizer(visualizerContainer, visConfig());
-      
+  const cleanup = () => {
+    if (visualizer) {
+      visualizer.destroy();
+      visualizer = null;
+    }
+  };
+
+  const initVisualizer = (element: HTMLDivElement) => {
+    if (!visualizer && element) {
+      visualizer = new WindFieldVisualizer(element, visConfig());
       if (buildings().length > 0) {
         visualizer.setBuildings(buildings());
       }
+      if (flowField()) {
+        visualizer.setFlowField(flowField()!);
+      }
     }
-  });
+  };
 
   createEffect(() => {
     if (visualizer && flowField()) {
@@ -76,30 +89,39 @@ const App: Component = () => {
   };
 
   const runSimulation = async () => {
-    setIsSimulating(true);
-    setSimulationProgress(0);
+    try {
+      setIsSimulating(true);
+      setSimulationProgress(0);
 
-    const nx = gridResolution();
-    const ny = gridResolution();
-    const nz = Math.floor(gridResolution() * 0.6);
-    const dx = 10;
-    const dy = 10;
-    const dz = 10;
+      const nx = gridResolution();
+      const ny = gridResolution();
+      const nz = Math.floor(gridResolution() * 0.6);
+      const dx = 10;
+      const dy = 10;
+      const dz = 10;
 
-    const field = solver.initFlowField(nx, ny, nz, dx, dy, dz, inletVelocity());
-    setSimulationProgress(20);
+      setSimulationProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-    await new Promise(resolve => setTimeout(resolve, 100));
-    setSimulationProgress(50);
+      const field = solver.initFlowField(nx, ny, nz, dx, dy, dz, inletVelocity());
+      setSimulationProgress(30);
 
-    await solver.solve(field, 30);
-    setSimulationProgress(80);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      setSimulationProgress(50);
 
-    setFlowField(field);
-    setSimulationProgress(100);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setIsSimulating(false);
+      await solver.solve(field, 30);
+      setSimulationProgress(80);
+
+      setFlowField(field);
+      setSimulationProgress(100);
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setIsSimulating(false);
+    } catch (error) {
+      console.error('模拟失败:', error);
+      setIsSimulating(false);
+      alert('模拟失败: ' + (error as Error).message);
+    }
   };
 
   const runAssessment = () => {
@@ -344,7 +366,7 @@ const App: Component = () => {
 
           <div class="tab-content">
             <Show when={activeTab() === 'visualization'}>
-              <div ref={visualizerContainer} class="visualization-canvas"></div>
+              <div ref={initVisualizer} class="visualization-canvas"></div>
               
               <Show when={flowField()}>
                 <div class="metrics-panel">
