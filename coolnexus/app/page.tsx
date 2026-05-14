@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Rack, PrecisionAC, TemperaturePoint, AirflowRisk, PUEStats, PowerSnapshot } from '@/lib/types/datacenter';
+import { Rack, PrecisionAC, TemperaturePoint, AirflowRisk, PUEStats } from '@/lib/types/datacenter';
 import { generateMockRacks, generateMockACs } from '@/lib/data/mockData';
 import { AsyncCFDEngine } from '@/lib/cfd/CFDEngine';
 import { heatLoadSyncManager } from '@/lib/sync/HeatLoadSync';
@@ -35,6 +35,8 @@ export default function Home() {
   const [cfdProgress, setCfdProgress] = useState(0);
   const [isSyncConnected, setIsSyncConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  
+  const isCFDComputingRef = useRef(false);
 
   useEffect(() => {
     const initialRacks = generateMockRacks();
@@ -42,24 +44,30 @@ export default function Home() {
     setRacks(initialRacks);
     setAcs(initialAcs);
 
-    indexedDBStore.init();
+    indexedDBStore.init().catch(() => {});
 
     computeCFD(initialRacks, initialAcs);
 
     heatLoadSyncManager.startRealTimeSimulation(initialRacks, initialAcs);
     setIsSyncConnected(heatLoadSyncManager.isSyncConnected());
 
-    heatLoadSyncManager.on('heat_load_update', async () => {
+    const handleHeatLoadUpdate = async () => {
       setRacks([...initialRacks]);
       setAcs([...initialAcs]);
       setLastUpdate(new Date());
 
-      const snapshot = heatLoadSyncManager.generatePowerSnapshot(initialRacks, initialAcs);
-      await indexedDBStore.addPowerSnapshot(snapshot);
+      try {
+        const snapshot = heatLoadSyncManager.generatePowerSnapshot(initialRacks, initialAcs);
+        await indexedDBStore.addPowerSnapshot(snapshot);
 
-      const snapshots = await indexedDBStore.getPowerSnapshots(100);
-      setPueStats(calculatePUEStats(snapshots));
-    });
+        const snapshots = await indexedDBStore.getPowerSnapshots(100);
+        setPueStats(calculatePUEStats(snapshots));
+      } catch (e) {
+        console.error('Error saving snapshot:', e);
+      }
+    };
+
+    heatLoadSyncManager.on('heat_load_update', handleHeatLoadUpdate);
 
     return () => {
       heatLoadSyncManager.stopSimulation();
@@ -68,44 +76,57 @@ export default function Home() {
   }, []);
 
   const computeCFD = useCallback(async (racksData: Rack[], acsData: PrecisionAC[]) => {
-    if (isCFDComputing) return;
+    if (isCFDComputingRef.current) return;
     
+    isCFDComputingRef.current = true;
     setIsCFDComputing(true);
     setCfdProgress(0);
 
-    const cfdEngine = new AsyncCFDEngine({
-      gridSize: { x: 20, y: 8, z: 15 },
-      iterations: 40,
-      relaxationFactor: 0.3
-    });
-
-    const points = await cfdEngine.computeTemperatureField(
-      racksData,
-      acsData,
-      (progress) => setCfdProgress(progress)
-    );
-
-    const detectedRisks = cfdEngine.detectAirflowRisks(points, racksData);
-
-    setTemperaturePoints(points);
-    setRisks(detectedRisks);
-    setIsCFDComputing(false);
-
-    if (detectedRisks.length > 0) {
-      detectedRisks.forEach(async (risk) => {
-        await indexedDBStore.addRiskAlert({
-          id: risk.id,
-          timestamp: Date.now(),
-          type: risk.type,
-          severity: risk.severity,
-          description: risk.description
-        });
+    try {
+      const cfdEngine = new AsyncCFDEngine({
+        gridSize: { x: 20, y: 8, z: 15 },
+        iterations: 40,
+        relaxationFactor: 0.3
       });
+
+      const points = await cfdEngine.computeTemperatureField(
+        racksData,
+        acsData,
+        (progress) => setCfdProgress(progress)
+      );
+
+      const detectedRisks = cfdEngine.detectAirflowRisks(points, racksData);
+
+      setTemperaturePoints(points);
+      setRisks(detectedRisks);
+
+      if (detectedRisks.length > 0) {
+        detectedRisks.forEach(async (risk) => {
+          try {
+            await indexedDBStore.addRiskAlert({
+              id: risk.id,
+              timestamp: Date.now(),
+              type: risk.type,
+              severity: risk.severity,
+              description: risk.description
+            });
+          } catch (e) {
+            console.error('Error saving risk alert:', e);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('CFD computation error:', e);
+    } finally {
+      isCFDComputingRef.current = false;
+      setIsCFDComputing(false);
     }
-  }, [isCFDComputing]);
+  }, []);
 
   const handleRefreshCFD = () => {
-    computeCFD(racks, acs);
+    if (racks.length > 0 && acs.length > 0) {
+      computeCFD(racks, acs);
+    }
   };
 
   return (
