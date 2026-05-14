@@ -1,5 +1,6 @@
+console.log('DataFlowService module loading...');
+
 import { waveCacheDB, WaveObservationLog } from "../database/WaveCacheDB";
-import { waveEngine, WaveParams } from "../engine/WaveTheoryEngine";
 
 export interface MaritimeData {
   stationId: string;
@@ -45,7 +46,6 @@ export interface AlignedDataPoint {
   };
   aligned: boolean;
   confidence: number;
-  waveParams?: WaveParams;
 }
 
 class DataFlowService {
@@ -143,12 +143,6 @@ class DataFlowService {
           1 - (heightDiff / maritime.waveHeight + periodDiff / maritime.wavePeriod) / 2
         );
 
-        const waveParams = await waveEngine.calculateWaveParameters(
-          (maritime.waveHeight + matchingEnergy.waveHeight) / 2,
-          (maritime.wavePeriod + matchingEnergy.wavePeriod) / 2,
-          maritime.waterDepth
-        );
-
         alignedPoints.push({
           timestamp: (maritime.timestamp + matchingEnergy.timestamp) / 2,
           location: maritime.location,
@@ -164,7 +158,6 @@ class DataFlowService {
           },
           aligned: confidence > 0.7,
           confidence,
-          waveParams,
         });
       }
     }
