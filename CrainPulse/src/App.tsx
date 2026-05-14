@@ -20,108 +20,166 @@ function App() {
   });
 
   return (
-    <div class="min-h-screen bg-gray-100">
-      <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-slate-200/50">
+        <div class="max-w-7xl mx-auto px-6 py-5">
           <div class="flex justify-between items-center">
             <div>
-              <h1 class="text-2xl font-bold text-gray-800">
+              <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
                 🏗️ CranePulse 塔吊群防碰撞系统
               </h1>
-              <p class="text-sm text-gray-500 mt-1">
-                吊运包络线对齐 | 异步碰撞检测 | 动能预警 | IndexedDB 黑匣子
+              <p class="text-sm text-slate-500 mt-2 flex items-center gap-3">
+                <span class="inline-flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  吊运包络线对齐
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  异步碰撞检测
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                  动能预警
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                  IndexedDB 黑匣子
+                </span>
               </p>
             </div>
-            <div class="flex items-center gap-4">
-              <div class="text-right">
-                <div class="text-sm text-gray-500">
-                  会话: {store.sessionId().split('-')[1]}
+            <div class="flex items-center gap-6">
+              <div class="text-right bg-slate-50 px-5 py-3 rounded-xl border border-slate-200">
+                <div class="text-xs text-slate-500 uppercase tracking-wider">
+                  会话 ID
                 </div>
-                <div class="text-sm text-gray-500">
-                  塔吊: {store.cranes().length} 台
+                <div class="text-lg font-mono font-semibold text-slate-700">
+                  {store.sessionId().split('-')[1]}
+                </div>
+                <div class="text-sm text-slate-500 mt-1">
+                  <span class="font-medium text-blue-600">{store.cranes().length}</span> 台塔吊运行中
                 </div>
               </div>
               <button
                 onClick={store.isRunning() ? store.stopSimulation : store.startSimulation}
-                class={`px-6 py-2 rounded-lg font-medium text-white transition-all ${
+                class={`px-8 py-3.5 rounded-2xl font-semibold text-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl ${
                   store.isRunning()
-                    ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-green-500 hover:bg-green-600'
+                    ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-red-500/30'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-emerald-500/30'
                 }`}
               >
-                {store.isRunning() ? '⏹️ 停止仿真' : '▶️ 开始仿真'}
+                <span class="flex items-center gap-2">
+                  {store.isRunning() ? (
+                    <>
+                      <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                      ⏹️ 停止仿真
+                    </>
+                  ) : (
+                    <>
+                      ▶️ 开始仿真
+                    </>
+                  )}
+                </span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main class="max-w-7xl mx-auto px-4 py-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2">
-            <div class="bg-white rounded-lg shadow p-4">
-              <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">作业区域可视化</h2>
-                <div class="flex items-center gap-2">
-                  <span class={`w-3 h-3 rounded-full ${store.isRunning() ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                  <span class="text-sm text-gray-600">
+      <main class="max-w-7xl mx-auto px-6 py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 space-y-8">
+            <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-slate-200/50 p-8 border border-slate-200/50">
+              <div class="flex justify-between items-center mb-8">
+                <div>
+                  <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-lg">
+                      📍
+                    </span>
+                    作业区域可视化
+                  </h2>
+                  <p class="text-sm text-slate-500 mt-2 ml-12 pl-1">实时监控塔吊运行状态与吊运轨迹</p>
+                </div>
+                <div class="flex items-center gap-3 px-5 py-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span class={`w-4 h-4 rounded-full ${store.isRunning() ? 'bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50' : 'bg-slate-400'}`}></span>
+                  <span class={`text-sm font-semibold ${store.isRunning() ? 'text-emerald-600' : 'text-slate-500'}`}>
                     {store.isRunning() ? '运行中' : '已停止'}
                   </span>
                 </div>
               </div>
-              <CraneVisualizer cranes={store.cranes()} envelopes={store.envelopes()} />
-              <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                <div class="grid grid-cols-4 gap-4 text-sm">
-                  <div class="text-center">
-                    <div class="font-medium text-gray-700">{store.collisionRisks().length}</div>
-                    <div class="text-gray-500">碰撞风险</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="font-medium text-gray-700">{store.alerts().filter(a => !a.acknowledged).length}</div>
-                    <div class="text-gray-500">未处理警报</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="font-medium text-gray-700">{store.envelopes().size}</div>
-                    <div class="text-gray-500">活跃包络线</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="font-medium text-gray-700">100ms</div>
-                    <div class="text-gray-500">更新间隔</div>
-                  </div>
+              <div class="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-6 border border-slate-200">
+                <CraneVisualizer cranes={store.cranes()} envelopes={store.envelopes()} />
+              </div>
+              <div class="mt-8 grid grid-cols-4 gap-4">
+                <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 text-center border border-orange-200/50">
+                  <div class="text-3xl font-bold text-orange-600">{store.collisionRisks().length}</div>
+                  <div class="text-sm text-orange-600/70 font-medium mt-1">碰撞风险</div>
+                </div>
+                <div class="bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl p-5 text-center border border-red-200/50">
+                  <div class="text-3xl font-bold text-red-600">{store.alerts().filter(a => !a.acknowledged).length}</div>
+                  <div class="text-sm text-red-600/70 font-medium mt-1">未处理警报</div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 text-center border border-blue-200/50">
+                  <div class="text-3xl font-bold text-blue-600">{store.envelopes().size}</div>
+                  <div class="text-sm text-blue-600/70 font-medium mt-1">活跃包络线</div>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 text-center border border-emerald-200/50">
+                  <div class="text-3xl font-bold text-emerald-600">100ms</div>
+                  <div class="text-sm text-emerald-600/70 font-medium mt-1">更新间隔</div>
                 </div>
               </div>
             </div>
 
-            <div class="mt-6">
+            <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/50 overflow-hidden">
               <BlackBoxViewer />
             </div>
           </div>
 
-          <div class="space-y-6">
-            <CraneList cranes={store.cranes()} />
-            <AlertPanel
-              alerts={store.alerts()}
-              collisionRisks={store.collisionRisks()}
-              onAcknowledge={store.acknowledgeAlert}
-            />
-            <div class="bg-white rounded-lg shadow p-4">
-              <h3 class="text-lg font-semibold mb-3 text-gray-800">系统说明</h3>
-              <div class="space-y-2 text-sm text-gray-600">
-                <div class="flex items-start gap-2">
-                  <span class="text-blue-500">🔵</span>
-                  <span><strong>吊运包络线:</strong> 预测吊钩未来5秒运动轨迹</span>
+          <div class="space-y-8">
+            <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/50 overflow-hidden">
+              <CraneList cranes={store.cranes()} />
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/50 overflow-hidden">
+              <AlertPanel
+                alerts={store.alerts()}
+                collisionRisks={store.collisionRisks()}
+                onAcknowledge={store.acknowledgeAlert}
+              />
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-slate-200/50 p-8 border border-slate-200/50">
+              <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-lg">
+                  ℹ️
+                </span>
+                系统说明
+              </h3>
+              <div class="space-y-4">
+                <div class="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-colors">
+                  <span class="text-2xl">🔵</span>
+                  <div>
+                    <span class="font-semibold text-blue-800 block">吊运包络线</span>
+                    <span class="text-sm text-blue-600/70">预测吊钩未来5秒运动轨迹</span>
+                  </div>
                 </div>
-                <div class="flex items-start gap-2">
-                  <span class="text-green-500">🟢</span>
-                  <span><strong>异步碰撞检测:</strong> 实时计算多塔吊间距离</span>
+                <div class="flex items-start gap-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 hover:bg-emerald-50 transition-colors">
+                  <span class="text-2xl">🟢</span>
+                  <div>
+                    <span class="font-semibold text-emerald-800 block">异步碰撞检测</span>
+                    <span class="text-sm text-emerald-600/70">实时计算多塔吊间距离</span>
+                  </div>
                 </div>
-                <div class="flex items-start gap-2">
-                  <span class="text-orange-500">🟠</span>
-                  <span><strong>动能反馈:</strong> 计算碰撞时的总动能</span>
+                <div class="flex items-start gap-4 p-4 bg-orange-50/50 rounded-2xl border border-orange-100 hover:bg-orange-50 transition-colors">
+                  <span class="text-2xl">🟠</span>
+                  <div>
+                    <span class="font-semibold text-orange-800 block">动能反馈</span>
+                    <span class="text-sm text-orange-600/70">计算碰撞时的总动能</span>
+                  </div>
                 </div>
-                <div class="flex items-start gap-2">
-                  <span class="text-purple-500">🟣</span>
-                  <span><strong>黑匣子:</strong> IndexedDB 持久化存储轨迹数据</span>
+                <div class="flex items-start gap-4 p-4 bg-purple-50/50 rounded-2xl border border-purple-100 hover:bg-purple-50 transition-colors">
+                  <span class="text-2xl">🟣</span>
+                  <div>
+                    <span class="font-semibold text-purple-800 block">黑匣子</span>
+                    <span class="text-sm text-purple-600/70">IndexedDB 持久化存储轨迹数据</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -129,9 +187,14 @@ function App() {
         </div>
       </main>
 
-      <footer class="bg-white border-t mt-8">
-        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
-          CranePulse 塔吊群防碰撞系统 | 基于 SolidJS + TypeScript + IndexedDB
+      <footer class="bg-white/60 backdrop-blur-sm border-t border-slate-200/50 mt-16">
+        <div class="max-w-7xl mx-auto px-6 py-8 text-center">
+          <p class="text-sm text-slate-500 font-medium">
+            CranePulse 塔吊群防碰撞系统 | 基于 SolidJS + TypeScript + IndexedDB
+          </p>
+          <p class="text-xs text-slate-400 mt-2">
+            为智慧工地提供全方位安全保障
+          </p>
         </div>
       </footer>
     </div>
