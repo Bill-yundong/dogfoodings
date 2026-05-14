@@ -13,13 +13,6 @@ const CommandCenter: Component<CommandCenterProps> = (props) => {
     return new Date(timestamp).toLocaleTimeString('zh-CN');
   };
 
-  const weatherTypeText = {
-    typical_summer: '夏季典型日',
-    typical_winter: '冬季典型日',
-    typical_spring: '春季典型日',
-    typical_autumn: '秋季典型日',
-  };
-
   return (
     <div class="min-h-screen bg-gray-50">
       <header class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">

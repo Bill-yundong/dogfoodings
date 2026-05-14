@@ -128,17 +128,16 @@ function createEnergyStore() {
   const [isOptimizing, setIsOptimizing] = createSignal(false);
   const [lastOptimization, setLastOptimization] = createSignal<number | null>(null);
 
-  const [commandCenterData, setCommandCenterData] = createSignal<CommandCenterData>(() => {
-    const initialStations = generateInitialStations();
-    const carbonMetrics = calculateCarbonMetrics(initialStations);
-    return {
-      stations: initialStations,
-      totalBalance: calculateTotalBalance(initialStations),
-      ...carbonMetrics,
-      efficiencyScore: calculateEfficiencyScore(initialStations),
-      lastAlignment: Date.now(),
-    };
-  });
+  const initialStations = generateInitialStations();
+  const carbonMetrics = calculateCarbonMetrics(initialStations);
+  const initialCommandCenterData: CommandCenterData = {
+    stations: initialStations,
+    totalBalance: calculateTotalBalance(initialStations),
+    ...carbonMetrics,
+    efficiencyScore: calculateEfficiencyScore(initialStations),
+    lastAlignment: Date.now(),
+  };
+  const [commandCenterData, setCommandCenterData] = createSignal<CommandCenterData>(initialCommandCenterData);
 
   createEffect(() => {
     const currentStations = stations();
