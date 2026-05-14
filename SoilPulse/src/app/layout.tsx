@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "SoilPulse - 农田养分监控与智慧施肥系统",
-  description: "基于 Next.js 的农田养分流失与施肥冗余监控系统，实现土壤化学特性实时映射",
+  title: 'SoilPulse - 农田养分智能监控系统',
+  description: '基于异步反应输运模拟的农田养分流失监控与智慧施肥决策系统',
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="bg-gray-50 min-h-screen">
+      <body className="bg-slate-50 min-h-screen font-sans">
         {children}
       </body>
     </html>

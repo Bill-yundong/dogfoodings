@@ -1,19 +1,151 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+@theme {
+  --color-soil-50: #f8f5f0;
+  --color-soil-100: #f1e8d9;
+  --color-soil-200: #e4d0b3;
+  --color-soil-300: #d4b082;
+  --color-soil-400: #c48f52;
+  --color-soil-500: #b77334;
+  --color-soil-600: #a55f2a;
+  --color-soil-700: #8a4924;
+  --color-soil-800: #723c22;
+  --color-soil-900: #5f331f;
+
+  --color-crop-50: #f0fdf4;
+  --color-crop-100: #dcfce7;
+  --color-crop-200: #bbf7d0;
+  --color-crop-300: #86efac;
+  --color-crop-400: #4ade80;
+  --color-crop-500: #22c55e;
+  --color-crop-600: #16a34a;
+  --color-crop-700: #15803d;
+  --color-crop-800: #166534;
+  --color-crop-900: #14532d;
+
+  --color-water-50: #eff6ff;
+  --color-water-100: #dbeafe;
+  --color-water-200: #bfdbfe;
+  --color-water-300: #93c5fd;
+  --color-water-400: #60a5fa;
+  --color-water-500: #3b82f6;
+  --color-water-600: #2563eb;
+  --color-water-700: #1d4ed8;
+  --color-water-800: #1e40af;
+  --color-water-900: #1e3a8a;
+
+  --color-nutrient-n: #3b82f6;
+  --color-nutrient-p: #22c55e;
+  --color-nutrient-k: #eab308;
+  --color-nutrient-o: #f97316;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Chart container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Status indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-success { background-color: #22c55e; }
+.status-warning { background-color: #eab308; }
+.status-error { background-color: #ef4444; }
+.status-info { background-color: #3b82f6; }
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Sidebar active item */
+.sidebar-item {
+  transition: all 0.15s ease;
+}
+
+.sidebar-item.active {
+  background-color: var(--color-crop-50);
+  color: var(--color-crop-700);
+  border-right: 3px solid var(--color-crop-500);
+}
+
+.sidebar-item:hover:not(.active) {
+  background-color: #f8fafc;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.5s ease;
+}
+
+/* Nutrient gradient backgrounds */
+.gradient-n {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.gradient-p {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+}
+
+.gradient-k {
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+}
+
+.gradient-o {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
 }
