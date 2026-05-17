@@ -44,18 +44,19 @@ export const StressDistribution3D: React.FC<StressDistribution3DProps> = ({ stre
 
     const maxStress = Math.max(...stressData.map(p => p.stress));
     const minStress = Math.min(...stressData.map(p => p.stress));
+    const stressRange = maxStress - minStress > 0 ? maxStress - minStress : 1;
 
     stressData.forEach((point) => {
       const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-      const normalizedStress = (point.stress - minStress) / (maxStress - minStress);
+      const normalizedStress = (point.stress - minStress) / stressRange;
       
       const color = new THREE.Color();
-      color.setHSL((1 - normalizedStress) * 0.6, 0.8, 0.5);
+      color.setHSL((1 - normalizedStress) * 0.65, 1.0, 0.5);
       
       const material = new THREE.MeshPhongMaterial({
         color,
         transparent: true,
-        opacity: 0.6 + normalizedStress * 0.3
+        opacity: 0.85
       });
       
       const cube = new THREE.Mesh(geometry, material);
@@ -131,15 +132,36 @@ export const StressDistribution3D: React.FC<StressDistribution3DProps> = ({ stre
       />
       <div style={{
         display: 'flex',
-        justifyContent: 'center',
-        gap: 20,
-        marginTop: 10,
-        fontSize: '12px',
-        color: '#666'
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: 15,
+        gap: 8
       }}>
-        <span>低应力 (蓝色)</span>
-        <span>←</span>
-        <span>高应力 (红色)</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}>
+          <span style={{ fontSize: '12px', color: '#666' }}>低应力</span>
+          <div style={{
+            width: 200,
+            height: 16,
+            borderRadius: 8,
+            background: 'linear-gradient(to right, hsl(234, 100%, 50%), hsl(180, 100%, 50%), hsl(120, 100%, 50%), hsl(60, 100%, 50%), hsl(0, 100%, 50%))',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+          }} />
+          <span style={{ fontSize: '12px', color: '#666' }}>高应力</span>
+        </div>
+        <div style={{
+          display: 'flex',
+          gap: 20,
+          fontSize: '11px',
+          color: '#888'
+        }}>
+          <span>🔵 蓝色 = 低应力区域</span>
+          <span>🟡 黄色 = 中等应力</span>
+          <span>🔴 红色 = 高应力区域</span>
+        </div>
       </div>
     </div>
   );

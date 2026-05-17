@@ -32,7 +32,7 @@ export const TemperatureHeatmap: React.FC<TemperatureHeatmapProps> = ({
   };
 
   return (
-    <div style={{ position: 'relative', width, height }}>
+    <div style={{ width, height: height + 40, paddingBottom: 40 }}>
       <svg width={width} height={height}>
         {data.map((row, i) =>
           row.map((point, j) => (
@@ -50,14 +50,12 @@ export const TemperatureHeatmap: React.FC<TemperatureHeatmapProps> = ({
         )}
       </svg>
       <div style={{
-        position: 'absolute',
-        bottom: -30,
-        left: 0,
-        right: 0,
         display: 'flex',
         justifyContent: 'space-between',
         fontSize: '12px',
-        color: '#666'
+        color: '#666',
+        marginTop: 8,
+        padding: '0 4px'
       }}>
         <span>25°C</span>
         <span>600°C</span>

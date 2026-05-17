@@ -47,10 +47,11 @@ export const QualityInspection: React.FC<QualityInspectionProps> = ({
       <h4 style={{ marginBottom: 16, color: '#333' }}>质量检验</h4>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
+        <label htmlFor="hardness-input" style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
           硬度 (HRC)
         </label>
         <input
+          id="hardness-input"
           type="number"
           value={hardness}
           onChange={(e) => setHardness(e.target.value)}
@@ -65,10 +66,11 @@ export const QualityInspection: React.FC<QualityInspectionProps> = ({
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
+        <label htmlFor="microstructure-select" style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
           显微组织
         </label>
         <select
+          id="microstructure-select"
           value={microstructure}
           onChange={(e) => setMicrostructure(e.target.value)}
           style={{
@@ -113,10 +115,11 @@ export const QualityInspection: React.FC<QualityInspectionProps> = ({
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
+        <label htmlFor="cooling-rate-input" style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#666' }}>
           冷却速率偏差 (%)
         </label>
         <input
+          id="cooling-rate-input"
           type="number"
           value={coolingRateDeviation}
           onChange={(e) => setCoolingRateDeviation(e.target.value)}
