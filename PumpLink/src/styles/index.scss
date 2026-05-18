@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tech-bg: #0A192F;
+  --tech-bg-light: #112240;
+  --tech-accent: #64FFDA;
+  --tech-accent-dark: #4FD1B2;
+  --status-normal: #00C853;
+  --status-warning: #FFD600;
+  --status-severe: #FF9100;
+  --status-critical: #FF1744;
+  --text-primary: #E6F1FF;
+  --text-secondary: #8892B0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #0A192F 0%, #112240 50%, #0A192F 100%);
+  color: var(--text-primary);
+}
+
+@layer components {
+  .tech-card {
+    @apply bg-tech-bg-light/80 backdrop-blur-sm border border-tech-accent/20 rounded-lg p-4 transition-all duration-300;
+  }
+  
+  .tech-card:hover {
+    @apply border-tech-accent/40 shadow-lg;
+    box-shadow: 0 0 20px rgba(100, 255, 218, 0.1);
+  }
+  
+  .tech-btn {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-300 cursor-pointer border border-tech-accent/30 bg-tech-accent/10 text-tech-accent hover:bg-tech-accent/20 hover:border-tech-accent/50;
+  }
+  
+  .tech-btn-primary {
+    @apply px-6 py-2 rounded-md font-medium transition-all duration-300 cursor-pointer bg-tech-accent text-tech-bg hover:bg-tech-accent-dark;
+  }
+  
+  .tech-input {
+    @apply bg-tech-bg border border-tech-accent/20 rounded-md px-3 py-2 text-text-primary focus:outline-none focus:border-tech-accent/50 transition-colors;
+  }
+  
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+  
+  .status-normal {
+    @apply bg-status-normal;
+    box-shadow: 0 0 8px var(--status-normal);
+  }
+  
+  .status-warning {
+    @apply bg-status-warning;
+    box-shadow: 0 0 8px var(--status-warning);
+  }
+  
+  .status-severe {
+    @apply bg-status-severe;
+    box-shadow: 0 0 8px var(--status-severe);
+  }
+  
+  .status-critical {
+    @apply bg-status-critical;
+    box-shadow: 0 0 8px var(--status-critical);
+    animation: pulse 2s infinite;
+  }
+  
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(100, 255, 218, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100, 255, 218, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  .glow-text {
+    text-shadow: 0 0 10px rgba(100, 255, 218, 0.5);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 255, 218, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 255, 218, 0.4);
+}
