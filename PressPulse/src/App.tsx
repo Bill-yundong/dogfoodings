@@ -13,6 +13,7 @@ const App: Component = () => {
   const [selectedDie, setSelectedDie] = createSignal<DieHealthRecord | null>(null)
   const [isLoading, setIsLoading] = createSignal(true)
   const [processingStatus, setProcessingStatus] = createSignal('')
+  const [isRefreshing, setIsRefreshing] = createSignal(false)
 
   createEffect(async () => {
     await initDB()
@@ -21,13 +22,22 @@ const App: Component = () => {
     setIsLoading(false)
   })
 
-  async function loadDieData() {
-    const records = await getAllDieRecords()
-    if (records.length === 0) {
-      await generateSampleData()
+  async function loadDieData(forceRefresh: boolean = false) {
+    setIsRefreshing(true)
+    try {
+      if (forceRefresh) {
+        await generateSampleData()
+      } else {
+        const records = await getAllDieRecords()
+        if (records.length === 0) {
+          await generateSampleData()
+        }
+      }
+      const updatedRecords = await getAllDieRecords()
+      setDies(updatedRecords)
+    } finally {
+      setIsRefreshing(false)
     }
-    const updatedRecords = await getAllDieRecords()
-    setDies(updatedRecords)
   }
 
   async function generateSampleData() {
@@ -223,24 +233,22 @@ const App: Component = () => {
               </div>
               <div style={{ 'margin-top': '20px' }}>
                 <button
-                  onClick={loadDieData}
+                  onClick={() => loadDieData(true)}
+                  disabled={isRefreshing()}
                   style={{
                     'width': '100%',
                     'padding': '12px',
-                    'background': '#667eea',
+                    'background': isRefreshing() ? '#9ca3af' : '#667eea',
                     color: 'white',
                     'border': 'none',
                     'border-radius': '8px',
                     'font-size': '14px',
                     'font-weight': 500,
-                    'cursor': 'pointer',
+                    'cursor': isRefreshing() ? 'not-allowed' : 'pointer',
                     'transition': 'background 0.2s',
-                    ':hover': {
-                      'background': '#5a67d8',
-                    },
                   }}
                 >
-                  刷新数据
+                  {isRefreshing() ? '刷新中...' : '刷新数据'}
                 </button>
               </div>
             </div>
