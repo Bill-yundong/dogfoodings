@@ -2,21 +2,21 @@ import { RainflowCycle, StressAccumulation, FatiguePrediction, CriticalPoint, Di
 
 const MATERIAL_CONSTANTS = {
   CR12MOV: {
-    k: 1.2e-15,
+    k: 1.2e12,
     m: 5,
     fatigueLimit: 250,
     ultimateStrength: 750,
     yieldStrength: 550,
   },
   SKD11: {
-    k: 1.5e-15,
+    k: 1.5e12,
     m: 4.8,
     fatigueLimit: 280,
     ultimateStrength: 800,
     yieldStrength: 600,
   },
   D2: {
-    k: 1.0e-15,
+    k: 1.0e12,
     m: 5.2,
     fatigueLimit: 300,
     ultimateStrength: 850,
@@ -151,10 +151,10 @@ export class FatigueLifePredictor {
       currentAccumulation.maxStress,
       ...newCycles.map(c => c.range / 2)
     )
-    const minStress = Math.min(
-      currentAccumulation.minStress,
-      ...newCycles.map(c => c.range / 2)
-    )
+    const newMinStress = Math.min(...newCycles.map(c => c.range / 2))
+    const minStress = currentAccumulation.minStress === 0 
+      ? newMinStress 
+      : Math.min(currentAccumulation.minStress, newMinStress)
 
     const totalCycles = allCycles.reduce((sum, c) => sum + c.count, 0)
 

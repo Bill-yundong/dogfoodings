@@ -11,14 +11,15 @@ export const HealthGauge: Component<HealthGaugeProps> = (props) => {
   const radius = () => size() / 2 - 10
   const circumference = () => 2 * Math.PI * radius()
   
+  const normalizedValue = createMemo(() => Math.max(0, Math.min(100, props.value)))
+  
   const strokeDashoffset = createMemo(() => {
-    const normalizedValue = Math.max(0, Math.min(100, props.value))
-    return circumference() * (1 - normalizedValue / 100)
+    return circumference() * (1 - normalizedValue() / 100)
   })
 
   const color = createMemo(() => {
-    if (props.value >= 70) return '#10b981'
-    if (props.value >= 40) return '#f59e0b'
+    if (normalizedValue() >= 70) return '#10b981'
+    if (normalizedValue() >= 40) return '#f59e0b'
     return '#ef4444'
   })
 
@@ -66,7 +67,7 @@ export const HealthGauge: Component<HealthGaugeProps> = (props) => {
           'font-weight': 'bold',
           'color': color(),
         }}>
-          {Math.round(props.value)}%
+          {Math.round(normalizedValue())}%
         </span>
       </div>
       {props.label && (
