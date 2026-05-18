@@ -35,7 +35,7 @@
         <div class="flex items-center gap-4">
           <div class="relative">
             <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <span class="text-white font-bold text-lg">F</span>
+              <span class="text-white font-bold text-lg">🏭</span>
             </div>
             <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900"></div>
           </div>
