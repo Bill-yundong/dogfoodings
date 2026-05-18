@@ -40,7 +40,7 @@
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden">
-      <header class="h-14 bg-tech-bg-light/50 backdrop-blur-sm border-b border-tech-accent/10 flex items-center justify-between px-6">
+      <header class="h-14 bg-tech-bg-light/50 backdrop-blur-sm border-b border-tech-accent/10 flex items-center justify-between px-6 relative z-40">
         <div class="flex items-center gap-4">
           <h2 class="text-lg font-medium text-text-primary">{{ currentTitle }}</h2>
           <span class="px-2 py-1 bg-status-normal/20 text-status-normal text-xs rounded-full flex items-center gap-1">
