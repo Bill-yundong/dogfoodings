@@ -17,50 +17,50 @@
   }
 </script>
 
-<div class="bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
-  <div class="p-4 border-b border-slate-700/50">
-    <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-      <span class="text-cyan-400">📋</span>
-      任务队列
-    </h3>
-  </div>
-  <div class="max-h-80 overflow-y-auto">
-    {#if Array.from($tasks.values()).length === 0}
-      <div class="p-8 text-center text-slate-500">
-        <p>暂无任务</p>
+<div class="max-h-80 overflow-y-auto">
+  {#if Array.from($tasks.values()).length === 0}
+    <div class="p-10 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center text-3xl opacity-50">
+        📋
       </div>
-    {:else}
-      {#each Array.from($tasks.values()).slice(-15).reverse() as task (task.id)}
-        <div class="p-3 border-b border-slate-700/30 hover:bg-slate-800/50 transition-colors">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-mono text-sm text-cyan-400">{task.id}</span>
+      <p class="text-slate-500">暂无任务</p>
+      <p class="text-xs text-slate-600 mt-1">点击"生成随机任务"开始</p>
+    </div>
+  {:else}
+    {#each Array.from($tasks.values()).slice(-15).reverse() as task (task.id)}
+      <div class="px-6 py-4 border-b border-slate-700/30 hover:bg-slate-800/30 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-sm text-cyan-400 font-medium">{task.id}</span>
             <span class="px-2 py-0.5 rounded-full text-xs font-medium {statusLabels[task.status]?.class}">
               {statusLabels[task.status]?.label}
             </span>
           </div>
-          <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
-            <div>
-              <span class="text-slate-500">晶圆:</span> {task.waferId || '-'}
-            </div>
-            <div>
-              <span class="text-slate-500">OHT:</span> {task.ohtId || '-'}
-            </div>
-            <div>
-              <span class="text-slate-500">起点:</span> {task.sourceNode}
-            </div>
-            <div>
-              <span class="text-slate-500">终点:</span> {task.targetNode}
-            </div>
-            <div>
-              <span class="text-slate-500">优先级:</span>
-              <span class="ml-1 text-amber-400">{'★'.repeat(task.priority)}</span>
-            </div>
-            <div>
-              <span class="text-slate-500">耗时:</span> {formatTime(task.actualDuration)}
-            </div>
+          <span class="text-amber-400 text-sm">{'★'.repeat(task.priority)}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 text-xs">晶圆:</span>
+            <span class="text-slate-300">{task.waferId || '-'}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 text-xs">OHT:</span>
+            <span class="text-slate-300">{task.ohtId || '-'}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 text-xs">起点:</span>
+            <span class="text-slate-300">{task.sourceNode}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 text-xs">终点:</span>
+            <span class="text-slate-300">{task.targetNode}</span>
+          </div>
+          <div class="col-span-2 flex items-center gap-2 pt-1">
+            <span class="text-slate-500 text-xs">耗时:</span>
+            <span class="text-emerald-400 font-medium">{formatTime(task.actualDuration)}</span>
           </div>
         </div>
-      {/each}
-    {/if}
-  </div>
+      </div>
+    {/each}
+  {/if}
 </div>

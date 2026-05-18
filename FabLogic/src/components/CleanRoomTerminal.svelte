@@ -21,64 +21,103 @@
     }
     return colors[status] || 'bg-slate-500'
   }
+
+  const equipmentStatusLabel = (status) => {
+    const labels = {
+      running: { label: '运行中', class: 'bg-emerald-500/20 text-emerald-400' },
+      idle: { label: '空闲', class: 'bg-amber-500/20 text-amber-400' },
+      maintenance: { label: '维护', class: 'bg-red-500/20 text-red-400' }
+    }
+    return labels[status] || labels.idle
+  }
 </script>
 
-<div class="bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
-  <div class="p-4 border-b border-slate-700/50">
-    <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-      <span class="text-cyan-400">🏭</span>
-      洁净室监控终端
-    </h3>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-    <div>
-      <h4 class="text-sm font-medium text-slate-300 mb-3">设备状态</h4>
-      <div class="space-y-2">
-        {#each equipmentList as eq (eq.id)}
-          <div
-            class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-cyan-500/50 cursor-pointer transition-colors {selectedEquipment?.id === eq.id ? 'border-cyan-500' : ''}"
-            onclick={() => selectedEquipment = selectedEquipment?.id === eq.id ? null : eq}
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-white">{eq.name}</p>
-                <p class="text-xs text-slate-400">{eq.type}</p>
+<div class="space-y-6">
+  <div>
+    <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+      生产设备状态
+    </h4>
+    <div class="space-y-2">
+      {#each equipmentList as eq (eq.id)}
+        <div
+          class="p-4 bg-slate-800/30 rounded-xl border border-slate-700/30 hover:border-cyan-500/30 cursor-pointer transition-all duration-200 {selectedEquipment?.id === eq.id ? 'border-cyan-500/50 bg-slate-800/50' : ''}"
+          onclick={() => selectedEquipment = selectedEquipment?.id === eq.id ? null : eq}
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-lg">
+                ⚙️
               </div>
-              <span class="w-2 h-2 rounded-full {eq.status === 'running' ? 'bg-emerald-500' : eq.status === 'idle' ? 'bg-amber-500' : 'bg-red-500'}"></span>
+              <div>
+                <p class="text-sm font-semibold text-white">{eq.name}</p>
+                <p class="text-xs text-slate-500">{eq.type}</p>
+              </div>
             </div>
-          </div>
-        {/each}
-      </div>
-    </div>
-
-    <div>
-      <h4 class="text-sm font-medium text-slate-300 mb-3">区域 OHT 状态</h4>
-      <div class="space-y-2 max-h-48 overflow-y-auto">
-        {#each Array.from($ohts.values()).slice(0, 6) as oht (oht.id)}
-          <div class="p-2 bg-slate-800/50 rounded-lg flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full {ohtStatusColor(oht.status)}"></span>
-              <span class="text-sm text-white">{oht.name}</span>
-            </div>
-            <span class="text-xs text-slate-400">
-              {oht.position.x.toFixed(0)}, {oht.position.y.toFixed(0)}
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium {equipmentStatusLabel(eq.status).class}">
+              {equipmentStatusLabel(eq.status).label}
             </span>
           </div>
-        {/each}
-      </div>
+          {#if selectedEquipment?.id === eq.id}
+            <div class="mt-4 pt-4 border-t border-slate-700/30 grid grid-cols-2 gap-3">
+              <div class="bg-slate-900/50 rounded-lg p-3">
+                <p class="text-xs text-slate-500 mb-1">当前批次</p>
+                <p class="text-sm text-cyan-400 font-mono">LOT-{Math.floor(Math.random() * 9000) + 1000}</p>
+              </div>
+              <div class="bg-slate-900/50 rounded-lg p-3">
+                <p class="text-xs text-slate-500 mb-1">完成进度</p>
+                <p class="text-sm text-emerald-400">{Math.floor(Math.random() * 50) + 50}%</p>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/each}
     </div>
   </div>
 
-  <div class="p-4 border-t border-slate-700/50">
-    <h4 class="text-sm font-medium text-slate-300 mb-3">等待中的晶圆</h4>
+  <div>
+    <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      区域 OHT 状态
+    </h4>
+    <div class="space-y-2 max-h-48 overflow-y-auto">
+      {#each Array.from($ohts.values()).slice(0, 6) as oht (oht.id)}
+        <div class="p-3 bg-slate-800/30 rounded-xl border border-slate-700/30 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full {ohtStatusColor(oht.status)} opacity-60"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 {ohtStatusColor(oht.status)}"></span>
+            </span>
+            <div>
+              <p class="text-sm font-medium text-white">{oht.name}</p>
+              <p class="text-xs text-slate-500">{oht.id}</p>
+            </div>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">
+            ({oht.position.x.toFixed(0)}, {oht.position.y.toFixed(0)})
+          </span>
+        </div>
+      {/each}
+    </div>
+  </div>
+
+  <div>
+    <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+      等待中的晶圆
+    </h4>
     <div class="grid grid-cols-5 gap-2">
       {#each Array.from($wafers.values()).filter(w => w.status === WaferStatus.WAITING).slice(0, 10) as wafer (wafer.id)}
-        <div class="aspect-square bg-slate-800/50 rounded-lg flex flex-col items-center justify-center p-1 border border-slate-700/50">
-          <span class="text-lg">💎</span>
+        <div class="aspect-square bg-slate-800/30 rounded-xl flex flex-col items-center justify-center p-2 border border-slate-700/30 hover:border-amber-500/30 transition-colors">
+          <span class="text-xl">💎</span>
           <span class="text-[10px] text-slate-400 mt-1 font-mono">{wafer.id.slice(-4)}</span>
         </div>
       {/each}
+      {#if Array.from($wafers.values()).filter(w => w.status === WaferStatus.WAITING).length === 0}
+        <div class="col-span-5 py-8 text-center text-slate-500 text-sm">
+          暂无等待中的晶圆
+        </div>
+      {/if}
     </div>
   </div>
 </div>

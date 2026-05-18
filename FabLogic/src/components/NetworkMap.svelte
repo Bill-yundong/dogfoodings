@@ -77,7 +77,7 @@
       y: (y - minY) * scale + padding
     })
 
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)'
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)'
     ctx.lineWidth = 2
     network.edges.forEach(edge => {
       const from = network.getNode(edge.from)
@@ -95,12 +95,15 @@
     nodes.forEach(node => {
       const p = transform(node.x, node.y)
       const color = nodeColors[node.type] || '#475569'
-      const size = node.type === NodeType.INTERSECTION ? 6 : 10
+      const size = node.type === NodeType.INTERSECTION ? 6 : 12
 
-      ctx.fillStyle = color + '40'
+      ctx.shadowColor = color
+      ctx.shadowBlur = 15
+      ctx.fillStyle = color + '30'
       ctx.beginPath()
-      ctx.arc(p.x, p.y, size + 4, 0, Math.PI * 2)
+      ctx.arc(p.x, p.y, size + 6, 0, Math.PI * 2)
       ctx.fill()
+      ctx.shadowBlur = 0
 
       ctx.fillStyle = color
       ctx.beginPath()
@@ -109,9 +112,9 @@
 
       if (node.type !== NodeType.INTERSECTION) {
         ctx.fillStyle = '#94a3b8'
-        ctx.font = '10px sans-serif'
+        ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(node.name, p.x, p.y + size + 14)
+        ctx.fillText(node.name, p.x, p.y + size + 16)
       }
     })
 
@@ -120,7 +123,7 @@
       const color = ohtColors[oht.status] || '#64748b'
 
       if (oht.status === OHTStatus.MOVING && oht.currentPath.length > 0) {
-        ctx.strokeStyle = color + '40'
+        ctx.strokeStyle = color + '50'
         ctx.lineWidth = 3
         ctx.setLineDash([5, 5])
         ctx.beginPath()
@@ -136,10 +139,13 @@
         ctx.setLineDash([])
       }
 
-      ctx.fillStyle = color + '30'
+      ctx.shadowColor = color
+      ctx.shadowBlur = 20
+      ctx.fillStyle = color + '25'
       ctx.beginPath()
-      ctx.arc(p.x, p.y, 16, 0, Math.PI * 2)
+      ctx.arc(p.x, p.y, 18, 0, Math.PI * 2)
       ctx.fill()
+      ctx.shadowBlur = 0
 
       ctx.fillStyle = color
       ctx.beginPath()
@@ -147,7 +153,7 @@
       ctx.fill()
 
       ctx.fillStyle = '#fff'
-      ctx.font = 'bold 9px sans-serif'
+      ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(oht.id.split('-')[1], p.x, p.y)
@@ -170,30 +176,40 @@
   })
 </script>
 
-<div class="network-map-container bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
-  <div class="p-4 border-b border-slate-700/50">
-    <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-      <span class="text-cyan-400">◇</span>
-      洁净室路网监控
-    </h3>
-  </div>
-  <canvas bind:this={canvas} width={800} height={500} class="w-full" />
-  <div class="p-3 border-t border-slate-700/50 flex flex-wrap gap-4 text-xs">
-    <div class="flex items-center gap-2">
-      <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+<div class="relative">
+  <canvas bind:this={canvas} width={900} height={500} class="w-full" />
+  <div class="absolute bottom-4 left-4 flex flex-wrap gap-4 p-3 bg-slate-900/90 backdrop-blur rounded-xl border border-slate-700/50">
+    <div class="flex items-center gap-2 text-xs">
+      <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
       <span class="text-slate-400">Load Port</span>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
       <span class="text-slate-400">Storage</span>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
       <span class="text-slate-400">Parking</span>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
       <span class="text-slate-400">Intersection</span>
+    </div>
+  </div>
+  <div class="absolute top-4 right-4 p-3 bg-slate-900/90 backdrop-blur rounded-xl border border-slate-700/50">
+    <div class="flex items-center gap-3 text-xs">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+        <span class="text-slate-400">空闲</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+        <span class="text-slate-400">运行</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+        <span class="text-slate-400">作业</span>
+      </div>
     </div>
   </div>
 </div>
