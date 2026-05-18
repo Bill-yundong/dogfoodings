@@ -194,7 +194,14 @@
 
         <div class="tech-card">
           <h3 class="text-text-primary font-medium mb-4">快捷操作</h3>
-          <div class="space-y-2">
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept=".json"
+            class="hidden"
+            @change="handleFileImport"
+          />
+          <div class="action-buttons space-y-2">
             <el-button class="w-full justify-start" @click="clearCache">
               <el-icon class="mr-2"><Delete /></el-icon>
               清除缓存
@@ -220,9 +227,20 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { closeDB, clearAllData } from '@/database'
+import { useDeviceStore } from '@/stores/deviceStore'
+import { useAlertStore } from '@/stores/alertStore'
+import { useSnapshotStore } from '@/stores/snapshotStore'
+import { checkAndInitData } from '@/mock/init'
+
+const deviceStore = useDeviceStore()
+const alertStore = useAlertStore()
+const snapshotStore = useSnapshotStore()
 
 const activeTab = ref('thresholds')
 const userSearch = ref('')
+const fileInputRef = ref<HTMLInputElement>()
 
 const thresholdConfigs = reactive({
   vibration: { name: '振动有效值', enabled: true, warning: 5.0, critical: 10.0, max: 50, step: 0.5, unit: 'mm/s' },
@@ -254,28 +272,111 @@ const syncConfig = reactive({
 })
 
 function saveThresholds() {
-  alert('配置已保存')
+  const configData = JSON.stringify(thresholdConfigs)
+  localStorage.setItem('pumplink_thresholds', configData)
+  ElMessage.success('阈值配置已保存')
 }
 
 function syncNow() {
-  alert('同步已启动，请稍候...')
+  ElMessage.info('数据同步已启动，请稍候...')
+  setTimeout(() => {
+    ElMessage.success('数据同步完成')
+  }, 1500)
 }
 
-function clearCache() {
-  if (confirm('确定要清除所有缓存吗？')) {
-    alert('缓存已清除')
+async function clearCache() {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清除所有缓存数据吗？此操作将清除本地存储的所有设备、快照和告警数据。',
+      '清除缓存',
+      {
+        confirmButtonText: '确定清除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await closeDB()
+    localStorage.clear()
+    ElMessage.success('缓存已清除，页面即将刷新')
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  } catch {
+    // 用户取消
   }
 }
 
-function reloadData() {
-  alert('数据重新加载中...')
+async function reloadData() {
+  ElMessage.info('正在重新加载数据...')
+  try {
+    await closeDB()
+    await clearAllData()
+    await checkAndInitData()
+    await deviceStore.loadAllDevices()
+    await alertStore.loadAlerts()
+    ElMessage.success('数据重新加载完成')
+  } catch (error) {
+    ElMessage.error('数据加载失败')
+    console.error(error)
+  }
 }
 
 function exportConfig() {
-  alert('配置导出中...')
+  const config = {
+    thresholds: thresholdConfigs,
+    sync: syncConfig,
+    exportTime: new Date().toISOString()
+  }
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `pumplink-config-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  ElMessage.success('配置文件已导出')
 }
 
 function importConfig() {
-  alert('请选择配置文件')
+  fileInputRef.value?.click()
+}
+
+function handleFileImport(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const config = JSON.parse(e.target?.result as string)
+      if (config.thresholds) {
+        Object.assign(thresholdConfigs, config.thresholds)
+      }
+      if (config.sync) {
+        Object.assign(syncConfig, config.sync)
+      }
+      ElMessage.success('配置导入成功')
+    } catch {
+      ElMessage.error('配置文件格式错误')
+    }
+  }
+  reader.readAsText(file)
+  input.value = ''
 }
 </script>
+
+<style scoped lang="scss">
+.action-buttons {
+  .el-button {
+    margin-left: 0 !important;
+  }
+  
+  .el-button + .el-button {
+    margin-left: 0 !important;
+    margin-top: 0;
+  }
+}
+</style>

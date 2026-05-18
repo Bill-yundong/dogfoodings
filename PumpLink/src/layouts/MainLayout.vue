@@ -54,12 +54,62 @@
             <el-input v-model="searchQuery" placeholder="搜索设备..." class="w-64" :prefix-icon="Search" clearable />
           </div>
 
-          <button @click="showAlertPanel = !showAlertPanel" class="relative p-2 text-text-secondary hover:text-tech-accent transition-colors">
-            <el-icon :size="20"><Bell /></el-icon>
-            <span v-if="alertStore.unacknowledgedCount > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-status-critical text-white text-xs rounded-full flex items-center justify-center">
-              {{ alertStore.unacknowledgedCount > 9 ? '9+' : alertStore.unacknowledgedCount }}
-            </span>
-          </button>
+          <div class="relative">
+            <button @click="showAlertPanel = !showAlertPanel" class="relative p-2 text-text-secondary hover:text-tech-accent transition-colors">
+              <el-icon :size="20"><Bell /></el-icon>
+              <span v-if="alertStore.unacknowledgedCount > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-status-critical text-white text-xs rounded-full flex items-center justify-center">
+                {{ alertStore.unacknowledgedCount > 9 ? '9+' : alertStore.unacknowledgedCount }}
+              </span>
+            </button>
+
+            <transition name="dropdown">
+              <div v-if="showAlertPanel" class="absolute right-0 top-full mt-2 w-96 bg-tech-bg-light border border-tech-accent/20 rounded-lg shadow-xl z-50 overflow-hidden">
+                <div class="p-4 border-b border-tech-accent/10 flex items-center justify-between">
+                  <h4 class="text-text-primary font-medium">告警通知</h4>
+                  <button v-if="alertStore.pendingAlerts.length > 0" 
+                          @click="acknowledgeAll"
+                          class="text-xs text-tech-accent hover:text-tech-accent-dark transition-colors">
+                    全部已读
+                  </button>
+                </div>
+                <div class="max-h-80 overflow-y-auto">
+                  <div v-if="alertStore.pendingAlerts.length === 0" class="p-8 text-center text-text-secondary">
+                    <el-icon :size="32" class="mb-2"><Check /></el-icon>
+                    <p>暂无未读告警</p>
+                  </div>
+                  <div v-for="alert in alertStore.pendingAlerts.slice(0, 5)" :key="alert.id"
+                       class="p-3 hover:bg-tech-accent/5 transition-colors cursor-pointer border-b border-tech-accent/5 last:border-0"
+                       @click="handleAlertClick(alert)">
+                    <div class="flex items-start gap-3">
+                      <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
+                           :class="{
+                             'bg-status-normal': alert.severity === 'info',
+                             'bg-status-warning': alert.severity === 'warning',
+                             'bg-status-severe': alert.severity === 'error',
+                             'bg-status-critical animate-pulse': alert.severity === 'critical'
+                           }"></div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="text-text-primary text-sm font-medium truncate">{{ alert.title }}</span>
+                          <el-tag :type="getAlertTagType(alert.severity)" size="small" effect="dark">
+                            {{ getSeverityText(alert.severity) }}
+                          </el-tag>
+                        </div>
+                        <p class="text-text-secondary text-xs mt-1 truncate">{{ alert.deviceName }} · {{ alert.description }}</p>
+                        <p class="text-text-muted text-xs mt-1 font-mono">{{ formatTimestamp(alert.timestamp) }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 border-t border-tech-accent/10">
+                  <button @click="$router.push('/alerts'); showAlertPanel = false" 
+                          class="w-full text-center text-sm text-tech-accent hover:text-tech-accent-dark transition-colors">
+                    查看全部告警 →
+                  </button>
+                </div>
+              </div>
+            </transition>
+          </div>
 
           <div class="flex items-center gap-3 pl-4 border-l border-tech-accent/10">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-tech-accent to-tech-accent-dark flex items-center justify-center">
@@ -82,11 +132,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cpu, Search, Bell, Fold, Expand, Odometer, TrendCharts, Warning, Connection, Camera, Setting } from '@element-plus/icons-vue'
+import { Cpu, Search, Bell, Fold, Expand, Odometer, TrendCharts, Warning, Connection, Camera, Setting, Check } from '@element-plus/icons-vue'
 import { useAlertStore } from '@/stores/alertStore'
 import { useDeviceStore } from '@/stores/deviceStore'
+import type { Alert } from '@/types'
+import { formatTimestamp, getSeverityText } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,9 +166,43 @@ function isActive(path: string): boolean {
   return route.path.startsWith(path)
 }
 
+function closeAlertPanel(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.relative')) {
+    showAlertPanel.value = false
+  }
+}
+
+function getAlertTagType(severity: string): 'success' | 'warning' | 'danger' | 'info' {
+  const map: Record<string, any> = {
+    info: 'info',
+    warning: 'warning',
+    error: 'danger',
+    critical: 'danger'
+  }
+  return map[severity] || 'info'
+}
+
+async function handleAlertClick(alert: Alert) {
+  await alertStore.acknowledgeAlert(alert.id, '管理员')
+  showAlertPanel.value = false
+  router.push('/alerts')
+}
+
+async function acknowledgeAll() {
+  for (const alert of alertStore.pendingAlerts) {
+    await alertStore.acknowledgeAlert(alert.id, '管理员')
+  }
+}
+
 onMounted(async () => {
   await deviceStore.loadAllDevices()
   await alertStore.loadAlerts(20)
+  document.addEventListener('click', closeAlertPanel)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeAlertPanel)
 })
 </script>
 
@@ -158,6 +244,17 @@ onMounted(async () => {
 }
 
 .page-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px);
 }
