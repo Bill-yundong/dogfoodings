@@ -144,4 +144,50 @@ export class DatabaseOperations {
     await Promise.all([...keys.map((k) => tx.store.delete(k)), tx.done]);
     return keys.length;
   }
+
+  async getSensorData(sinceTimestamp?: number): Promise<SensorData[]> {
+    if (sinceTimestamp) {
+      const index = this.db
+        .transaction(STORES.SENSOR_DATA, 'readonly')
+        .store.index('timestamp');
+      const range = IDBKeyRange.lowerBound(sinceTimestamp);
+      return await index.getAll(range) as SensorData[];
+    }
+    return await this.db.getAll(STORES.SENSOR_DATA) as SensorData[];
+  }
+
+  async getAlarmsByTime(sinceTimestamp?: number): Promise<Alarm[]> {
+    if (sinceTimestamp) {
+      const index = this.db
+        .transaction(STORES.ALARMS, 'readonly')
+        .store.index('timestamp');
+      const range = IDBKeyRange.lowerBound(sinceTimestamp);
+      return await index.getAll(range) as Alarm[];
+    }
+    return await this.db.getAll(STORES.ALARMS) as Alarm[];
+  }
+
+  async getWearRecordsByTime(sinceTimestamp?: number): Promise<WearRecord[]> {
+    if (sinceTimestamp) {
+      const index = this.db
+        .transaction(STORES.WEAR_RECORDS, 'readonly')
+        .store.index('date');
+      const dateStr = new Date(sinceTimestamp).toISOString().split('T')[0];
+      const range = IDBKeyRange.lowerBound(dateStr);
+      return await index.getAll(range) as WearRecord[];
+    }
+    return await this.db.getAll(STORES.WEAR_RECORDS) as WearRecord[];
+  }
+
+  async clearSensorData(): Promise<void> {
+    await this.db.clear(STORES.SENSOR_DATA);
+  }
+
+  async clearAlarms(): Promise<void> {
+    await this.db.clear(STORES.ALARMS);
+  }
+
+  async clearWearRecords(): Promise<void> {
+    await this.db.clear(STORES.WEAR_RECORDS);
+  }
 }

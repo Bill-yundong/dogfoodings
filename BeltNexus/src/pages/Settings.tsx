@@ -1,9 +1,79 @@
 import { Component, createSignal } from 'solid-js';
 import { settings, updateSetting } from '@/stores/settingsStore';
 import { alarmState, updateThresholds } from '@/stores/alarmStore';
+import { initDB } from '@/db';
+import { DatabaseOperations } from '@/db/operations';
 
 export const Settings: Component = () => {
   const [activeTab, setActiveTab] = createSignal<'general' | 'thresholds' | 'sensors' | 'database'>('general');
+  const [exportStatus, setExportStatus] = createSignal<string>('');
+  const [clearStatus, setClearStatus] = createSignal<string>('');
+
+  async function handleExportData() {
+    try {
+      setExportStatus('正在导出...');
+      const db = await initDB();
+      const ops = new DatabaseOperations(db);
+      
+      const [sensorData, alarms, wearRecords] = await Promise.all([
+        ops.getSensorData(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        ops.getAlarmsByTime(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        ops.getWearRecordsByTime(Date.now() - 365 * 24 * 60 * 60 * 1000),
+      ]);
+
+      const exportData = {
+        exportTime: new Date().toISOString(),
+        version: '1.0.0',
+        data: {
+          sensorData,
+          alarms,
+          wearRecords,
+        },
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beltnexus-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportStatus('导出成功！');
+      setTimeout(() => setExportStatus(''), 3000);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setExportStatus('导出失败，请重试');
+      setTimeout(() => setExportStatus(''), 3000);
+    }
+  }
+
+  async function handleClearData() {
+    if (!confirm('确定要清除所有历史数据吗？此操作不可撤销！')) {
+      return;
+    }
+
+    try {
+      setClearStatus('正在清除...');
+      const db = await initDB();
+      const ops = new DatabaseOperations(db);
+      
+      await Promise.all([
+        ops.clearSensorData(),
+        ops.clearAlarms(),
+        ops.clearWearRecords(),
+      ]);
+
+      setClearStatus('清除成功！');
+      setTimeout(() => setClearStatus(''), 3000);
+    } catch (error) {
+      console.error('Clear failed:', error);
+      setClearStatus('清除失败，请重试');
+      setTimeout(() => setClearStatus(''), 3000);
+    }
+  }
 
   return (
     <div class="p-6 h-full overflow-auto">
@@ -371,12 +441,32 @@ export const Settings: Component = () => {
           <div class="bg-industrial-800/30 rounded-xl border border-industrial-700/50 p-6">
             <h3 class="text-lg font-semibold text-white mb-4">数据管理</h3>
             <div class="space-y-4">
-              <button class="w-full px-4 py-2 bg-industrial-700 text-white rounded-lg hover:bg-industrial-600 transition-colors">
-                导出历史数据
-              </button>
-              <button class="w-full px-4 py-2 bg-red-900/50 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/70 transition-colors">
-                清除所有数据
-              </button>
+              <div>
+                <button
+                  onClick={handleExportData}
+                  class="w-full px-4 py-2 bg-industrial-700 text-white rounded-lg hover:bg-industrial-600 transition-colors"
+                >
+                  导出历史数据
+                </button>
+                {exportStatus() && (
+                  <div class={`mt-2 text-sm ${exportStatus().includes('成功') ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {exportStatus()}
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
+                  onClick={handleClearData}
+                  class="w-full px-4 py-2 bg-red-900/50 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/70 transition-colors"
+                >
+                  清除所有数据
+                </button>
+                {clearStatus() && (
+                  <div class={`mt-2 text-sm ${clearStatus().includes('成功') ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {clearStatus()}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

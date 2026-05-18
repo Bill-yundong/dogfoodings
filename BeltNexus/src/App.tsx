@@ -15,7 +15,7 @@ import { createDefaultSensors, generateSensorData, interpolateTemperatureProfile
 import { analyzeTension } from '@/services/tensionAnalysis';
 import { detectAlarms, deduplicateAlarms } from '@/services/anomalyDetection';
 import { semanticSync } from '@/services/semanticSync';
-import { settings } from '@/stores/settingsStore';
+import { settings, initSettings } from '@/stores/settingsStore';
 
 let dbOps: DatabaseOperations | null = null;
 let dataInterval: number;
@@ -108,6 +108,7 @@ const App: Component = () => {
   }
 
   onMount(() => {
+    initSettings();
     initializeSystem();
   });
 
