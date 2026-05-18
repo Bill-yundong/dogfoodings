@@ -1,10 +1,33 @@
 import React, { useEffect } from 'react';
 import { usePipelineStore } from '../store/usePipelineStore';
 import { Network, Plus, Trash2, Edit2, MapPin } from 'lucide-react';
+import type { PipelineNode } from '../types';
 
 const NetworkBuilderPage: React.FC = () => {
-  const { nodes, segments, regions, loadDemoPipeline, selectedNodeId, selectNode } =
+  const { nodes, segments, regions, loadDemoPipeline, selectedNodeId, selectNode, addNode } =
     usePipelineStore();
+
+  const handleAddNode = () => {
+    const maxX = nodes.reduce((max, n) => Math.max(max, n.x), 0);
+    const maxY = nodes.reduce((max, n) => Math.max(max, n.y), 0);
+    const nodeCount = nodes.filter((n) => n.type === 'junction').length + 1;
+
+    const newNode: PipelineNode = {
+      id: `junc-new-${Date.now()}`,
+      type: 'junction',
+      name: `新节点 J${nodeCount}`,
+      x: maxX + 100,
+      y: maxY > 0 ? maxY : 200,
+      region: regions[0]?.id || 'region-a',
+      elevation: 20,
+      pressure: 1500000,
+      flowRate: 0,
+      velocity: 0,
+    };
+
+    addNode(newNode);
+    selectNode(newNode.id);
+  };
 
   useEffect(() => {
     loadDemoPipeline();
@@ -20,7 +43,10 @@ const NetworkBuilderPage: React.FC = () => {
           <p className="text-slate-400 text-sm mt-1">配置管线节点、管段参数与行政区域划分</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+          <button
+            onClick={handleAddNode}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+          >
             <Plus size={16} />
             添加节点
           </button>
