@@ -1,12 +1,69 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Search, Filter, TrendingUp, TrendingDown, Minus, Database, RefreshCw, Download, Info, ArrowRight } from 'lucide-react';
+import { Package, Search, TrendingUp, TrendingDown, Minus, Database, RefreshCw, Download, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import useWMSStore from '../../store/useWMSStore';
-import { liquidityEngine } from '../../engines/liquidityEngine';
-import { SKU } from '../../types';
+import { SKU, LiquidityAnalysis } from '../../types';
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+function useVirtualScroll<T>(items: T[], itemHeight: number, containerHeight: number) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const visibleCount = Math.ceil(containerHeight / itemHeight) + 4;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - 2);
+  const endIndex = Math.min(items.length, startIndex + visibleCount);
+  const visibleItems = items.slice(startIndex, endIndex);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  const totalHeight = items.length * itemHeight;
+  const offsetY = startIndex * itemHeight;
+
+  return { containerRef, handleScroll, visibleItems, totalHeight, offsetY };
+}
+
+const getCategoryColor = (category: string) => {
+  const colors: Record<string, string> = {
+    electronics: 'bg-blue-500/20 text-blue-400',
+    clothing: 'bg-pink-500/20 text-pink-400',
+    food: 'bg-green-500/20 text-green-400',
+    cosmetics: 'bg-purple-500/20 text-purple-400',
+    household: 'bg-amber-500/20 text-amber-400',
+    industrial: 'bg-slate-500/20 text-slate-400'
+  };
+  return colors[category] || 'bg-surface-hover text-text-muted';
+};
+
+const getHeatLevel = (score: number): number => {
+  if (score >= 80) return 5;
+  if (score >= 60) return 4;
+  if (score >= 40) return 3;
+  if (score >= 20) return 2;
+  return 1;
+};
+
+const getTrendIcon = (trend: string) => {
+  switch (trend) {
+    case 'increasing': return <TrendingUp className="w-4 h-4 text-accent-green" />;
+    case 'decreasing': return <TrendingDown className="w-4 h-4 text-accent-red" />;
+    default: return <Minus className="w-4 h-4 text-text-muted" />;
+  }
+};
 
 function HeatLevelIndicator({ level }: { level: number }) {
   return (
@@ -25,35 +82,25 @@ function HeatLevelIndicator({ level }: { level: number }) {
   );
 }
 
-function SKUCard({ sku, onClick, isSelected }: { sku: SKU; onClick: () => void; isSelected: boolean }) {
-  const analysis = liquidityEngine.analyzeSKU(sku, [], []);
-  
-  const getTrendIcon = () => {
-    switch (analysis.trend) {
-      case 'increasing': return <TrendingUp className="w-4 h-4 text-accent-green" />;
-      case 'decreasing': return <TrendingDown className="w-4 h-4 text-accent-red" />;
-      default: return <Minus className="w-4 h-4 text-text-muted" />;
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      electronics: 'bg-blue-500/20 text-blue-400',
-      clothing: 'bg-pink-500/20 text-pink-400',
-      food: 'bg-green-500/20 text-green-400',
-      cosmetics: 'bg-purple-500/20 text-purple-400',
-      household: 'bg-amber-500/20 text-amber-400',
-      industrial: 'bg-slate-500/20 text-slate-400'
-    };
-    return colors[category] || 'bg-surface-hover text-text-muted';
-  };
+function SKUCard({ 
+  sku, 
+  analysis, 
+  onClick, 
+  isSelected 
+}: { 
+  sku: SKU; 
+  analysis: LiquidityAnalysis | undefined;
+  onClick: () => void; 
+  isSelected: boolean; 
+}) {
+  const liquidityScore = sku.liquidityScore;
+  const heatLevel = getHeatLevel(liquidityScore);
+  const trend = analysis?.trend || 'stable';
 
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
+    <div
       onClick={onClick}
-      className={`bg-surface rounded-xl border p-4 cursor-pointer transition-all ${
+      className={`bg-surface rounded-xl border p-4 cursor-pointer transition-all hover:border-primary/50 ${
         isSelected ? 'border-primary shadow-lg shadow-primary/20' : 'border-surface-border'
       }`}
     >
@@ -67,38 +114,37 @@ function SKUCard({ sku, onClick, isSelected }: { sku: SKU; onClick: () => void; 
             <p className="text-xs text-text-muted truncate max-w-32">{sku.name}</p>
           </div>
         </div>
-        {getTrendIcon()}
+        {getTrendIcon(trend)}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs text-text-muted">流动性评分</span>
           <span className="text-lg font-bold text-text-primary font-mono">
-            {analysis.overallScore.toFixed(0)}
+            {liquidityScore.toFixed(0)}
           </span>
         </div>
         
         <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${analysis.overallScore}%` }}
+          <div
             className={`h-full rounded-full ${
-              analysis.overallScore >= 80 ? 'bg-accent-red' :
-              analysis.overallScore >= 50 ? 'bg-accent-amber' :
-              analysis.overallScore >= 20 ? 'bg-primary' : 'bg-text-muted'
+              liquidityScore >= 80 ? 'bg-accent-red' :
+              liquidityScore >= 50 ? 'bg-accent-amber' :
+              liquidityScore >= 20 ? 'bg-primary' : 'bg-text-muted'
             }`}
+            style={{ width: `${Math.min(100, liquidityScore)}%` }}
           />
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-xs text-text-muted">热度等级</span>
-          <HeatLevelIndicator level={analysis.heatLevel} />
+          <HeatLevelIndicator level={heatLevel} />
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-xs text-text-muted">分类排名</span>
           <span className="text-xs text-text-primary font-mono">
-            {analysis.categoryRank} / {analysis.categoryTotal}
+            {analysis?.categoryRank || '-'} / {analysis?.categoryTotal || '-'}
           </span>
         </div>
 
@@ -108,26 +154,31 @@ function SKUCard({ sku, onClick, isSelected }: { sku: SKU; onClick: () => void; 
           </span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 function SKUDetail({ sku, onClose }: { sku: SKU; onClose: () => void }) {
-  const { skus, locations } = useWMSStore();
-  const analysis = liquidityEngine.analyzeSKU(sku, skus, []);
+  const { locations, getSKUAnalysis } = useWMSStore();
+  const analysis = getSKUAnalysis(sku.id);
   
-  const location = sku.id ? locations.find(l => l.skuId === sku.id) : undefined;
-  const associatedSKUs = sku.associatedSKUs
-    .map(id => skus.find(s => s.id === id))
-    .filter(Boolean)
-    .slice(0, 5);
+  const location = locations.find(l => l.skuId === sku.id);
+  const liquidityScore = sku.liquidityScore;
 
-  const trendData = Array.from({ length: 30 }).map((_, i) => ({
+  const trendData = useMemo(() => Array.from({ length: 30 }).map((_, i) => ({
     day: `D${30 - i}`,
-    流动性: Math.max(0, Math.min(100, sku.liquidityScore + (Math.random() - 0.5) * 20 - i * 0.5)),
+    流动性: Math.max(0, Math.min(100, liquidityScore + (Math.random() - 0.5) * 20 - i * 0.5)),
     入库量: Math.floor(Math.random() * 50) + 10,
     出库量: Math.floor(Math.random() * 40) + 5
-  }));
+  })), [liquidityScore]);
+
+  const associatedSKUs = useMemo(() => {
+    const { skus } = useWMSStore.getState();
+    return sku.associatedSKUs
+      .map(id => skus.find(s => s.id === id))
+      .filter(Boolean)
+      .slice(0, 5) as SKU[];
+  }, [sku.associatedSKUs]);
 
   return (
     <motion.div
@@ -151,29 +202,31 @@ function SKUDetail({ sku, onClose }: { sku: SKU; onClose: () => void }) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-text-muted">流动性评分</span>
             <span className="text-3xl font-bold text-primary font-mono">
-              {analysis.overallScore.toFixed(1)}
+              {liquidityScore.toFixed(1)}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            {analysis.trend === 'increasing' && (
+            {analysis?.trend === 'increasing' && (
               <span className="flex items-center gap-1 text-accent-green">
                 <TrendingUp className="w-4 h-4" />
                 上升趋势
               </span>
             )}
-            {analysis.trend === 'decreasing' && (
+            {analysis?.trend === 'decreasing' && (
               <span className="flex items-center gap-1 text-accent-red">
                 <TrendingDown className="w-4 h-4" />
                 下降趋势
               </span>
             )}
-            {analysis.trend === 'stable' && (
+            {analysis?.trend === 'stable' && (
               <span className="flex items-center gap-1 text-text-muted">
                 <Minus className="w-4 h-4" />
                 趋势稳定
               </span>
             )}
-            <span className="text-text-muted">强度: {(analysis.trendStrength * 100).toFixed(0)}%</span>
+            {analysis && (
+              <span className="text-text-muted">强度: {(analysis.trendStrength * 100).toFixed(0)}%</span>
+            )}
           </div>
         </div>
 
@@ -237,7 +290,7 @@ function SKUDetail({ sku, onClose }: { sku: SKU; onClose: () => void }) {
           <div>
             <p className="text-sm text-text-muted mb-2">关联 SKU</p>
             <div className="space-y-2">
-              {associatedSKUs.map((assocSku) => assocSku && (
+              {associatedSKUs.map((assocSku) => (
                 <div key={assocSku.id} className="bg-background rounded-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Package className="w-4 h-4 text-text-muted" />
@@ -248,7 +301,9 @@ function SKUDetail({ sku, onClose }: { sku: SKU; onClose: () => void }) {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-text-muted">流动性</p>
-                    <p className="text-sm font-mono text-primary">{assocSku.liquidityScore.toFixed(0)}</p>
+                    <p className="text-sm font-mono text-primary">
+                      {assocSku.liquidityScore.toFixed(0)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -256,33 +311,46 @@ function SKUDetail({ sku, onClose }: { sku: SKU; onClose: () => void }) {
           </div>
         )}
 
-        <div>
-          <p className="text-sm text-text-muted mb-2">优化建议</p>
-          <div className="space-y-2">
-            {analysis.recommendations.map((rec, index) => (
-              <div key={index} className="flex items-start gap-2 p-3 bg-background rounded-lg">
-                <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-text-secondary">{rec}</p>
-              </div>
-            ))}
+        {analysis && analysis.recommendations.length > 0 && (
+          <div>
+            <p className="text-sm text-text-muted mb-2">优化建议</p>
+            <div className="space-y-2">
+              {analysis.recommendations.slice(0, 3).map((rec, index) => (
+                <div key={index} className="flex items-start gap-2 p-3 bg-background rounded-lg">
+                  <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-text-secondary">{rec}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
 }
 
 export default function SKUPage() {
-  const { skus, metrics } = useWMSStore();
+  const { 
+    skus, 
+    metrics, 
+    categoryStats, 
+    liquidityDistribution, 
+    topSKUs, 
+    skuCountByLiquidity,
+    getSKUAnalysis,
+    filterSKUs 
+  } = useWMSStore();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSKUId, setSelectedSKUId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'liquidity' | 'inCount' | 'outCount' | 'name'>('liquidity');
+  const [sortBy, setSortBy] = useState<string>('liquidity');
+
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
   const categories = useMemo(() => {
-    const cats = new Set(skus.map(s => s.category));
-    return ['all', ...Array.from(cats)];
-  }, [skus]);
+    return ['all', 'electronics', 'clothing', 'food', 'cosmetics', 'household', 'industrial'];
+  }, []);
 
   const categoryNames: Record<string, string> = {
     all: '全部分类',
@@ -295,37 +363,21 @@ export default function SKUPage() {
   };
 
   const filteredSKUs = useMemo(() => {
-    let result = [...skus];
-    
-    if (searchTerm) {
-      result = result.filter(s =>
-        s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (selectedCategory !== 'all') {
-      result = result.filter(s => s.category === selectedCategory);
-    }
-    
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'liquidity': return b.liquidityScore - a.liquidityScore;
-        case 'inCount': return b.inCount - a.inCount;
-        case 'outCount': return b.outCount - a.outCount;
-        case 'name': return a.name.localeCompare(b.name);
-        default: return 0;
-      }
-    });
-    
-    return result.slice(0, 100);
-  }, [skus, searchTerm, selectedCategory, sortBy]);
+    return filterSKUs(debouncedSearch, selectedCategory, sortBy, 500);
+  }, [debouncedSearch, selectedCategory, sortBy, filterSKUs]);
 
-  const categoryStats = useMemo(() => liquidityEngine.getCategoryStats(skus), [skus]);
-  const liquidityDistribution = useMemo(() => liquidityEngine.getLiquidityDistribution(skus), [skus]);
-  const topSKUs = useMemo(() => liquidityEngine.getTopSKUs(skus, 5), [skus]);
+  const { containerRef, handleScroll, visibleItems, totalHeight, offsetY } = useVirtualScroll(
+    filteredSKUs,
+    220,
+    600
+  );
 
-  const selectedSKU = selectedSKUId ? skus.find(s => s.id === selectedSKUId) : null;
+  const selectedSKU = useMemo(() => 
+    selectedSKUId ? skus.find(s => s.id === selectedSKUId) : null,
+    [selectedSKUId, skus]
+  );
+
+  const top5SKUs = useMemo(() => topSKUs.slice(0, 5), [topSKUs]);
 
   return (
     <div className="space-y-6">
@@ -349,7 +401,7 @@ export default function SKUPage() {
             <div>
               <p className="text-text-muted text-sm">高流动性</p>
               <p className="text-2xl font-bold text-text-primary font-mono">
-                {skus.filter(s => s.liquidityScore >= 60).length.toLocaleString()}
+                {skuCountByLiquidity.high.toLocaleString()}
               </p>
             </div>
           </div>
@@ -362,7 +414,7 @@ export default function SKUPage() {
             <div>
               <p className="text-text-muted text-sm">中流动性</p>
               <p className="text-2xl font-bold text-text-primary font-mono">
-                {skus.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length.toLocaleString()}
+                {skuCountByLiquidity.medium.toLocaleString()}
               </p>
             </div>
           </div>
@@ -375,7 +427,7 @@ export default function SKUPage() {
             <div>
               <p className="text-text-muted text-sm">低流动性</p>
               <p className="text-2xl font-bold text-text-primary font-mono">
-                {skus.filter(s => s.liquidityScore < 20).length.toLocaleString()}
+                {skuCountByLiquidity.low.toLocaleString()}
               </p>
             </div>
           </div>
@@ -408,13 +460,12 @@ export default function SKUPage() {
                 </select>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="bg-background border border-surface-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary"
                 >
                   <option value="liquidity">按流动性</option>
-                  <option value="inCount">按入库量</option>
-                  <option value="outCount">按出库量</option>
                   <option value="name">按名称</option>
+                  <option value="category">按分类</option>
                 </select>
                 <button className="p-2.5 bg-surface-hover hover:bg-surface rounded-lg transition-colors">
                   <RefreshCw className="w-5 h-5 text-text-muted" />
@@ -426,18 +477,30 @@ export default function SKUPage() {
             </div>
 
             <div className="text-xs text-text-muted mb-3">
-              显示 {filteredSKUs.length} 条结果（共 {skus.length.toLocaleString()} 条）
+              显示 {Math.min(500, filteredSKUs.length)} 条结果（共 {skus.length.toLocaleString()} 条）
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2">
-              {filteredSKUs.map(sku => (
-                <SKUCard
-                  key={sku.id}
-                  sku={sku}
-                  isSelected={selectedSKUId === sku.id}
-                  onClick={() => setSelectedSKUId(selectedSKUId === sku.id ? null : sku.id)}
-                />
-              ))}
+            <div 
+              ref={containerRef}
+              onScroll={handleScroll}
+              className="relative max-h-[600px] overflow-y-auto pr-2"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              <div style={{ height: totalHeight, position: 'relative' }}>
+                <div style={{ transform: `translateY(${offsetY}px)` }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {visibleItems.map(sku => (
+                      <SKUCard
+                        key={sku.id}
+                        sku={sku}
+                        analysis={getSKUAnalysis(sku.id)}
+                        isSelected={selectedSKUId === sku.id}
+                        onClick={() => setSelectedSKUId(selectedSKUId === sku.id ? null : sku.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {filteredSKUs.length === 0 && (
@@ -482,7 +545,7 @@ export default function SKUPage() {
 
                 <h3 className="font-semibold text-text-primary mb-3">热门 SKU</h3>
                 <div className="space-y-2">
-                  {topSKUs.map((sku, index) => (
+                  {top5SKUs.map((sku, index) => (
                     <div key={sku.id} className="flex items-center justify-between p-2 bg-background rounded-lg">
                       <div className="flex items-center gap-2">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -497,7 +560,9 @@ export default function SKUPage() {
                           <p className="text-xs text-text-muted font-mono">{sku.id}</p>
                         </div>
                       </div>
-                      <span className="text-sm font-mono text-primary">{sku.liquidityScore.toFixed(0)}</span>
+                      <span className="text-sm font-mono text-primary">
+                        {sku.liquidityScore.toFixed(0)}
+                      </span>
                     </div>
                   ))}
                 </div>

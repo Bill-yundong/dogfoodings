@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { 
   SKU, Location, Stacker, Task, Metrics, Fragment, 
-  AllocationRecommendation, DefragProgress, RealtimeUpdate 
+  AllocationRecommendation, DefragProgress, RealtimeUpdate,
+  CategoryStats, LiquidityAnalysis
 } from '../types';
 import { allocationEngine } from '../engines/allocationEngine';
 import { defragEngine } from '../engines/defragEngine';
@@ -31,6 +32,12 @@ interface WMSState {
   selectedLocationId: string | null;
   selectedStackerId: string | null;
 
+  skuAnalysisCache: Map<string, LiquidityAnalysis>;
+  categoryStats: CategoryStats[];
+  liquidityDistribution: { range: string; count: number; percentage: number }[];
+  topSKUs: SKU[];
+  skuCountByLiquidity: { high: number; medium: number; low: number };
+
   initData: () => Promise<void>;
   setCurrentPage: (page: string) => void;
   setSelectedSKUId: (id: string | null) => void;
@@ -53,6 +60,9 @@ interface WMSState {
   getLocationById: (id: string) => Location | undefined;
   getTasksByStatus: (status: Task['status']) => Task[];
   getTasksByStacker: (stackerId: string) => Task[];
+
+  getSKUAnalysis: (skuId: string) => LiquidityAnalysis | undefined;
+  filterSKUs: (searchTerm: string, category: string, sortBy: string, limit: number) => SKU[];
 }
 
 export const useWMSStore = create<WMSState>((set, get) => ({
@@ -89,6 +99,12 @@ export const useWMSStore = create<WMSState>((set, get) => ({
   selectedLocationId: null,
   selectedStackerId: null,
 
+  skuAnalysisCache: new Map(),
+  categoryStats: [],
+  liquidityDistribution: [],
+  topSKUs: [],
+  skuCountByLiquidity: { high: 0, medium: 0, low: 0 },
+
   initData: async () => {
     set({ isLoading: true });
     
@@ -117,6 +133,26 @@ export const useWMSStore = create<WMSState>((set, get) => ({
         return loc;
       });
 
+      const maxLiquidity = Math.max(...skus.map(s => s.liquidityScore), 1);
+
+      const categoryStats = liquidityEngine.getCategoryStats(skus);
+
+      const skuAnalysisCache = new Map<string, LiquidityAnalysis>();
+      const sampleSize = Math.min(500, skus.length);
+      for (let i = 0; i < sampleSize; i++) {
+        const sku = skus[i];
+        skuAnalysisCache.set(sku.id, liquidityEngine.analyzeSKU(sku, skus, []));
+      }
+
+      const distribution = liquidityEngine.getLiquidityDistribution(skus);
+      const topSKUs = liquidityEngine.getTopSKUs(skus, 10);
+
+      const skuCountByLiquidity = {
+        high: skus.filter(s => s.liquidityScore >= 60).length,
+        medium: skus.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length,
+        low: skus.filter(s => s.liquidityScore < 20).length
+      };
+
       try {
         await db.transaction('rw', db.skus, db.locations, db.tasks, db.metrics, async () => {
           await db.skus.bulkPut(skus.slice(0, 1000));
@@ -141,6 +177,11 @@ export const useWMSStore = create<WMSState>((set, get) => ({
         },
         historicalMetrics,
         fragments,
+        skuAnalysisCache,
+        categoryStats,
+        liquidityDistribution: distribution,
+        topSKUs,
+        skuCountByLiquidity,
         isLoading: false
       });
     } catch (error) {
@@ -394,7 +435,47 @@ export const useWMSStore = create<WMSState>((set, get) => ({
   getSKUById: (id) => get().skus.find(s => s.id === id),
   getLocationById: (id) => get().locations.find(l => l.id === id),
   getTasksByStatus: (status) => get().tasks.filter(t => t.status === status),
-  getTasksByStacker: (stackerId) => get().tasks.filter(t => t.stackerId === stackerId)
+  getTasksByStacker: (stackerId) => get().tasks.filter(t => t.stackerId === stackerId),
+
+  getSKUAnalysis: (skuId) => {
+    const state = get();
+    const cached = state.skuAnalysisCache.get(skuId);
+    if (cached) return cached;
+
+    const sku = state.skus.find(s => s.id === skuId);
+    if (!sku) return undefined;
+
+    const analysis = liquidityEngine.analyzeSKU(sku, state.skus, []);
+    state.skuAnalysisCache.set(skuId, analysis);
+    return analysis;
+  },
+
+  filterSKUs: (searchTerm, category, sortBy, limit) => {
+    const state = get();
+    let filtered = state.skus;
+
+    if (category !== 'all') {
+      filtered = filtered.filter(s => s.category === category);
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(term) || 
+        s.id.toLowerCase().includes(term)
+      );
+    }
+
+    if (sortBy === 'liquidity') {
+      filtered = [...filtered].sort((a, b) => b.liquidityScore - a.liquidityScore);
+    } else if (sortBy === 'name') {
+      filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'category') {
+      filtered = [...filtered].sort((a, b) => a.category.localeCompare(b.category));
+    }
+
+    return limit > 0 ? filtered.slice(0, limit) : filtered;
+  }
 }));
 
 export default useWMSStore;

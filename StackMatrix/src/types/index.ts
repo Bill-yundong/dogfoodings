@@ -125,3 +125,22 @@ export interface RealtimeUpdate {
   data: any;
   timestamp: number;
 }
+
+export interface LiquidityAnalysis {
+  overallScore: number;
+  categoryRank: number;
+  categoryTotal: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  trendStrength: number;
+  heatLevel: number;
+  recommendations: string[];
+}
+
+export interface CategoryStats {
+  category: string;
+  totalSKUs: number;
+  avgLiquidity: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+}
