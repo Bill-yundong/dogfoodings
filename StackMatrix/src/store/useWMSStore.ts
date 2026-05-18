@@ -1,0 +1,400 @@
+import { create } from 'zustand';
+import { 
+  SKU, Location, Stacker, Task, Metrics, Fragment, 
+  AllocationRecommendation, DefragProgress, RealtimeUpdate 
+} from '../types';
+import { allocationEngine } from '../engines/allocationEngine';
+import { defragEngine } from '../engines/defragEngine';
+import { liquidityEngine } from '../engines/liquidityEngine';
+import { associationEngine } from '../engines/associationEngine';
+import { 
+  generateSKUs, generateLocations, generateStackers, 
+  generateTasks, generateMetrics, generateFragments,
+  generateHistoricalMetrics 
+} from '../db/mockData';
+import db from '../db/indexedDB';
+
+interface WMSState {
+  skus: SKU[];
+  locations: Location[];
+  stackers: Stacker[];
+  tasks: Task[];
+  metrics: Metrics;
+  historicalMetrics: Metrics[];
+  fragments: Fragment[];
+  allocationRecommendations: Map<string, AllocationRecommendation[]>;
+  defragProgress: DefragProgress;
+  realtimeUpdates: RealtimeUpdate[];
+  isLoading: boolean;
+  currentPage: string;
+  selectedSKUId: string | null;
+  selectedLocationId: string | null;
+  selectedStackerId: string | null;
+
+  initData: () => Promise<void>;
+  setCurrentPage: (page: string) => void;
+  setSelectedSKUId: (id: string | null) => void;
+  setSelectedLocationId: (id: string | null) => void;
+  setSelectedStackerId: (id: string | null) => void;
+
+  createInboundTask: (skuId: string, locationId: string) => Promise<Task | null>;
+  allocateLocation: (skuId: string) => AllocationRecommendation[] | null;
+  updateTaskStatus: (taskId: string, status: Task['status']) => void;
+  assignTaskToStacker: (taskId: string, stackerId: string) => void;
+
+  startDefrag: () => void;
+  pauseDefrag: () => void;
+  runDefragStep: () => void;
+
+  refreshMetrics: () => void;
+  addRealtimeUpdate: (update: Omit<RealtimeUpdate, 'timestamp'>) => void;
+
+  getSKUById: (id: string) => SKU | undefined;
+  getLocationById: (id: string) => Location | undefined;
+  getTasksByStatus: (status: Task['status']) => Task[];
+  getTasksByStacker: (stackerId: string) => Task[];
+}
+
+export const useWMSStore = create<WMSState>((set, get) => ({
+  skus: [],
+  locations: [],
+  stackers: [],
+  tasks: [],
+  metrics: {
+    locationUtilization: 0,
+    inboundEfficiency: 0,
+    outboundEfficiency: 0,
+    avgTaskDuration: 0,
+    fragmentRate: 0,
+    timestamp: Date.now(),
+    totalSKUs: 0,
+    activeTasks: 0,
+    completedTasksToday: 0
+  },
+  historicalMetrics: [],
+  fragments: [],
+  allocationRecommendations: new Map(),
+  defragProgress: {
+    isRunning: false,
+    currentStep: 0,
+    totalSteps: 0,
+    fragmentsProcessed: 0,
+    spaceRecovered: 0,
+    startTime: 0
+  },
+  realtimeUpdates: [],
+  isLoading: true,
+  currentPage: 'dashboard',
+  selectedSKUId: null,
+  selectedLocationId: null,
+  selectedStackerId: null,
+
+  initData: async () => {
+    set({ isLoading: true });
+    
+    try {
+      const skus = generateSKUs(10000);
+      const locations = generateLocations(8, 20, 5);
+      const stackers = generateStackers(6);
+      const tasks = generateTasks(200, skus, locations, stackers);
+      const metrics = generateMetrics();
+      const historicalMetrics = generateHistoricalMetrics(48);
+      const fragments = defragEngine.detectFragments(locations);
+
+      const occupiedSKUs = new Set<string>();
+      const updatedLocations = locations.map(loc => {
+        if (loc.status === 'occupied') {
+          const randomSKU = skus[Math.floor(Math.random() * skus.length)];
+          if (!occupiedSKUs.has(randomSKU.id)) {
+            occupiedSKUs.add(randomSKU.id);
+            return {
+              ...loc,
+              skuId: randomSKU.id,
+              skuName: randomSKU.name
+            };
+          }
+        }
+        return loc;
+      });
+
+      try {
+        await db.transaction('rw', db.skus, db.locations, db.tasks, db.metrics, async () => {
+          await db.skus.bulkPut(skus.slice(0, 1000));
+          await db.locations.bulkPut(updatedLocations);
+          await db.tasks.bulkPut(tasks.slice(0, 100));
+          await db.metrics.bulkPut(historicalMetrics);
+        });
+      } catch (e) {
+        console.log('IndexedDB 初始化跳过，使用内存数据');
+      }
+
+      set({
+        skus,
+        locations: updatedLocations,
+        stackers,
+        tasks,
+        metrics: {
+          ...metrics,
+          locationUtilization: updatedLocations.filter(l => l.status === 'occupied').length / updatedLocations.length,
+          fragmentRate: defragEngine.calculateFragmentRate(updatedLocations),
+          totalSKUs: skus.length
+        },
+        historicalMetrics,
+        fragments,
+        isLoading: false
+      });
+    } catch (error) {
+      console.error('初始化数据失败:', error);
+      set({ isLoading: false });
+    }
+  },
+
+  setCurrentPage: (page) => set({ currentPage: page }),
+  setSelectedSKUId: (id) => set({ selectedSKUId: id }),
+  setSelectedLocationId: (id) => set({ selectedLocationId: id }),
+  setSelectedStackerId: (id) => set({ selectedStackerId: id }),
+
+  createInboundTask: async (skuId, locationId) => {
+    const { skus, locations } = get();
+    const sku = skus.find(s => s.id === skuId);
+    const location = locations.find(l => l.id === locationId);
+    
+    if (!sku || !location || location.status !== 'empty') {
+      return null;
+    }
+
+    const newTask: Task = {
+      id: `TSK-${Date.now()}`,
+      type: 'inbound',
+      skuId,
+      skuName: sku.name,
+      toLocation: locationId,
+      status: 'pending',
+      priority: 3,
+      createdAt: Date.now(),
+      progress: 0
+    };
+
+    set(state => ({
+      tasks: [newTask, ...state.tasks],
+      locations: state.locations.map(l => 
+        l.id === locationId ? { ...l, status: 'reserved' as const } : l
+      )
+    }));
+
+    get().addRealtimeUpdate({
+      type: 'task',
+      id: newTask.id,
+      data: newTask
+    });
+
+    return newTask;
+  },
+
+  allocateLocation: (skuId) => {
+    const { skus, locations, stackers } = get();
+    const sku = skus.find(s => s.id === skuId);
+    const idleStacker = stackers.find(s => s.status === 'idle');
+    
+    if (!sku) return null;
+
+    const recommendations = allocationEngine.allocate(
+      sku,
+      locations,
+      skus,
+      idleStacker?.currentPosition || { row: 1, col: 1 }
+    );
+
+    set(state => {
+      const newRecommendations = new Map(state.allocationRecommendations);
+      newRecommendations.set(skuId, recommendations);
+      return { allocationRecommendations: newRecommendations };
+    });
+
+    return recommendations;
+  },
+
+  updateTaskStatus: (taskId, status) => {
+    const now = Date.now();
+    
+    set(state => {
+      const updatedTasks = state.tasks.map(t => {
+        if (t.id === taskId) {
+          const updates: Partial<Task> = { status };
+          if (status === 'executing') {
+            updates.startedAt = now;
+            updates.progress = 10;
+          } else if (status === 'completed') {
+            updates.completedAt = now;
+            updates.progress = 100;
+          }
+          return { ...t, ...updates };
+        }
+        return t;
+      });
+
+      const task = updatedTasks.find(t => t.id === taskId);
+      let updatedLocations = state.locations;
+
+      if (task && status === 'completed') {
+        updatedLocations = state.locations.map(l => {
+          if (l.id === task.toLocation) {
+            return {
+              ...l,
+              status: 'occupied' as const,
+              skuId: task.skuId,
+              skuName: task.skuName,
+              lastAccessTime: now
+            };
+          }
+          if (task.fromLocation && l.id === task.fromLocation) {
+            return {
+              ...l,
+              status: 'empty' as const,
+              skuId: undefined,
+              skuName: undefined,
+              usedCapacity: 0,
+              lastAccessTime: now
+            };
+          }
+          return l;
+        });
+      }
+
+      return {
+        tasks: updatedTasks,
+        locations: updatedLocations
+      };
+    });
+
+    get().addRealtimeUpdate({
+      type: 'task',
+      id: taskId,
+      data: { status }
+    });
+  },
+
+  assignTaskToStacker: (taskId, stackerId) => {
+    set(state => ({
+      tasks: state.tasks.map(t => 
+        t.id === taskId ? { ...t, stackerId, status: 'executing' as const, startedAt: Date.now() } : t
+      ),
+      stackers: state.stackers.map(s => {
+        if (s.id === stackerId) {
+          const task = state.tasks.find(t => t.id === taskId);
+          return { ...s, status: 'running' as const, currentTask: task };
+        }
+        return s;
+      })
+    }));
+
+    get().addRealtimeUpdate({
+      type: 'stacker',
+      id: stackerId,
+      data: { taskId }
+    });
+  },
+
+  startDefrag: () => {
+    const { fragments } = get();
+    set({
+      defragProgress: {
+        isRunning: true,
+        currentStep: 0,
+        totalSteps: fragments.length,
+        fragmentsProcessed: 0,
+        spaceRecovered: 0,
+        startTime: Date.now()
+      }
+    });
+  },
+
+  pauseDefrag: () => {
+    set(state => ({
+      defragProgress: { ...state.defragProgress, isRunning: false }
+    }));
+  },
+
+  runDefragStep: () => {
+    const { fragments, locations, defragProgress } = get();
+    
+    if (!defragProgress.isRunning || defragProgress.currentStep >= fragments.length) {
+      set(state => ({
+        defragProgress: { ...state.defragProgress, isRunning: false }
+      }));
+      return;
+    }
+
+    const result = defragEngine.executeDefragStep(fragments, locations, defragProgress.currentStep);
+    
+    set(state => ({
+      locations: result.updatedLocations,
+      defragProgress: {
+        ...state.defragProgress,
+        currentStep: result.newIndex,
+        fragmentsProcessed: result.newIndex,
+        spaceRecovered: state.defragProgress.spaceRecovered + fragments[defragProgress.currentStep]?.potentialGain || 0
+      }
+    }));
+
+    if (result.newIndex >= fragments.length) {
+      set(state => ({
+        defragProgress: { ...state.defragProgress, isRunning: false },
+        fragments: defragEngine.detectFragments(result.updatedLocations)
+      }));
+    }
+  },
+
+  refreshMetrics: () => {
+    const { locations, tasks, stackers, skus } = get();
+    const now = Date.now();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+
+    const occupiedCount = locations.filter(l => l.status === 'occupied').length;
+    const completedToday = tasks.filter(t => 
+      t.status === 'completed' && (t.completedAt || 0) >= todayStart
+    ).length;
+    const activeTasks = tasks.filter(t => t.status === 'executing').length;
+
+    const completedTasks = tasks.filter(t => t.status === 'completed' && t.startedAt);
+    const avgDuration = completedTasks.length > 0
+      ? completedTasks.reduce((sum, t) => {
+          const duration = ((t.completedAt || 0) - (t.startedAt || 0)) / (1000 * 60);
+          return sum + duration;
+        }, 0) / completedTasks.length
+      : 0;
+
+    const newMetrics: Metrics = {
+      locationUtilization: occupiedCount / locations.length,
+      inboundEfficiency: 80 + Math.random() * 20,
+      outboundEfficiency: 75 + Math.random() * 20,
+      avgTaskDuration: avgDuration,
+      fragmentRate: defragEngine.calculateFragmentRate(locations),
+      timestamp: now,
+      totalSKUs: skus.length,
+      activeTasks,
+      completedTasksToday: completedToday
+    };
+
+    set(state => ({
+      metrics: newMetrics,
+      historicalMetrics: [...state.historicalMetrics.slice(-47), newMetrics]
+    }));
+  },
+
+  addRealtimeUpdate: (update) => {
+    const newUpdate = { ...update, timestamp: Date.now() };
+    set(state => ({
+      realtimeUpdates: [newUpdate, ...state.realtimeUpdates].slice(0, 50)
+    }));
+  },
+
+  getSKUById: (id) => get().skus.find(s => s.id === id),
+  getLocationById: (id) => get().locations.find(l => l.id === id),
+  getTasksByStatus: (status) => get().tasks.filter(t => t.status === status),
+  getTasksByStacker: (stackerId) => get().tasks.filter(t => t.stackerId === stackerId)
+}));
+
+export default useWMSStore;
