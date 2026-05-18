@@ -57,37 +57,37 @@
                selectedForCompare.includes(snapshot.id) ? 'ring-2 ring-tech-accent' : ''
              ]"
              @click="onSnapshotClick(snapshot)">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex items-start gap-4 min-w-0 flex-1">
-              <div class="w-20 h-20 rounded-lg flex flex-col items-center justify-center flex-shrink-0 py-2"
+          <div class="grid grid-cols-12 gap-4 items-start">
+            <div class="col-span-2 flex-shrink-0">
+              <div class="w-full aspect-square rounded-lg flex flex-col items-center justify-center"
                    :style="{ background: getHealthBg(snapshot.healthScore) }">
                 <span class="text-2xl font-bold leading-none" :style="{ color: getHealthColor(snapshot.healthScore) }">
                   {{ snapshot.healthScore }}
                 </span>
                 <span class="text-xs text-text-secondary mt-1">健康分</span>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-text-primary font-medium truncate">
-                  {{ formatTimestamp(snapshot.timestamp) }}
-                </p>
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                  <span class="text-xs text-text-secondary whitespace-nowrap">
-                    气蚀风险: 
-                    <span :style="{ color: getRiskColor(snapshot.cavitationRisk.level) }" class="font-medium">
-                      {{ getRiskText(snapshot.cavitationRisk.level) }}
-                    </span>
-                    ({{ snapshot.cavitationRisk.probability.toFixed(1) }}%)
+            </div>
+            <div class="col-span-7 min-w-0">
+              <p class="text-text-primary font-medium truncate">
+                {{ formatTimestamp(snapshot.timestamp) }}
+              </p>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                <span class="text-xs text-text-secondary whitespace-nowrap">
+                  气蚀风险: 
+                  <span :style="{ color: getRiskColor(snapshot.cavitationRisk.level) }" class="font-medium">
+                    {{ getRiskText(snapshot.cavitationRisk.level) }}
                   </span>
-                  <span class="text-xs text-text-secondary whitespace-nowrap">
-                    RMS: {{ snapshot.vibrationFeatures.rms.toFixed(2) }} mm/s
-                  </span>
-                  <span class="text-xs text-text-secondary whitespace-nowrap">
-                    峭度: {{ snapshot.vibrationFeatures.kurtosis.toFixed(2) }}
-                  </span>
-                </div>
+                  ({{ snapshot.cavitationRisk.probability.toFixed(1) }}%)
+                </span>
+                <span class="text-xs text-text-secondary whitespace-nowrap">
+                  RMS: {{ snapshot.vibrationFeatures.rms.toFixed(2) }} mm/s
+                </span>
+                <span class="text-xs text-text-secondary whitespace-nowrap">
+                  峭度: {{ snapshot.vibrationFeatures.kurtosis.toFixed(2) }}
+                </span>
               </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+            <div class="col-span-3 flex flex-wrap justify-end items-center gap-2">
               <el-tag v-if="snapshot.cavitationRisk.trend === 'deteriorating'" type="danger" size="small">
                 劣化
               </el-tag>
