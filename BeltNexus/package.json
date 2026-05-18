@@ -1,0 +1,27 @@
+{
+  "name": "beltnexus",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.15",
+    "three": "^0.160.0",
+    "echarts": "^5.4.3",
+    "idb": "^8.0.0",
+    "@solidjs/router": "^0.12.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vite-plugin-solid": "^2.8.2",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.33",
+    "autoprefixer": "^10.4.16",
+    "@types/three": "^0.160.0"
+  }
+}
