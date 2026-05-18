@@ -59,12 +59,12 @@
              @click="onSnapshotClick(snapshot)">
           <div class="grid grid-cols-12 gap-4 items-start">
             <div class="col-span-2 flex-shrink-0">
-              <div class="w-full aspect-square rounded-lg flex flex-col items-center justify-center"
+              <div class="w-full min-h-[100px] rounded-lg flex flex-col items-center justify-center p-3"
                    :style="{ background: getHealthBg(snapshot.healthScore) }">
-                <span class="text-2xl font-bold leading-none" :style="{ color: getHealthColor(snapshot.healthScore) }">
+                <span class="text-3xl font-bold leading-tight" :style="{ color: getHealthColor(snapshot.healthScore) }">
                   {{ snapshot.healthScore }}
                 </span>
-                <span class="text-xs text-text-secondary mt-1">健康分</span>
+                <span class="text-xs text-text-secondary mt-2">健康分</span>
               </div>
             </div>
             <div class="col-span-7 min-w-0">
