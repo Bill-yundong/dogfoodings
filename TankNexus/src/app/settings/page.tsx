@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Cpu, Network, Bell, Database, RefreshCw, Save, CheckCircle2 } from 'lucide-react';
+import { Settings, Cpu, Network, Bell, Database, RefreshCw, Save, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { getSystemConfig, saveSystemConfig } from '@/lib/db';
 import type { SystemConfig, RobotController, QualitySystemConfig, AlertRule } from '@/types';
 
@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [config, setConfig] = useState<SystemConfig>(defaultConfig);
   const [activeTab, setActiveTab] = useState<'robots' | 'quality' | 'alerts'>('robots');
   const [saved, setSaved] = useState(false);
+  const [testingRobot, setTestingRobot] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
   useEffect(() => {
     loadConfig();
@@ -54,6 +56,39 @@ export default function SettingsPage() {
         i === index ? { ...robot, ...updates } : robot
       ),
     }));
+  }
+
+  async function handleTestConnection(robotId: string, index: number) {
+    setTestingRobot(robotId);
+    setTestResults((prev) => ({ ...prev, [robotId]: { success: false, message: '正在连接...' } }));
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const success = Math.random() > 0.2;
+    
+    if (success) {
+      updateRobot(index, { status: 'normal', lastSync: Date.now() });
+      setTestResults((prev) => ({
+        ...prev,
+        [robotId]: { success: true, message: `连接成功 - 延迟 ${Math.floor(Math.random() * 50 + 10)}ms` },
+      }));
+    } else {
+      updateRobot(index, { status: 'error' });
+      setTestResults((prev) => ({
+        ...prev,
+        [robotId]: { success: false, message: '连接失败 - 请检查网络配置' },
+      }));
+    }
+
+    setTestingRobot(null);
+
+    setTimeout(() => {
+      setTestResults((prev) => {
+        const updated = { ...prev };
+        delete updated[robotId];
+        return updated;
+      });
+    }, 5000);
   }
 
   function updateQualitySystem(updates: Partial<QualitySystemConfig>) {
@@ -191,11 +226,36 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="flex items-center gap-3 mt-4 pt-4 border-t border-industrial-700/50">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-industrial-700 hover:bg-industrial-600 text-white text-sm rounded-lg transition-colors">
-                      <RefreshCw size={14} />
-                      测试连接
+                    <button
+                      onClick={() => handleTestConnection(robot.id, index)}
+                      disabled={testingRobot === robot.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-industrial-700 hover:bg-industrial-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+                    >
+                      {testingRobot === robot.id ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          连接中...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw size={14} />
+                          测试连接
+                        </>
+                      )}
                     </button>
-                    {robot.lastSync > 0 && (
+                    {testResults[robot.id] && (
+                      <span className={`text-xs flex items-center gap-1 ${
+                        testResults[robot.id].success ? 'text-tech-green' : 'text-tech-red'
+                      }`}>
+                        {testResults[robot.id].success ? (
+                          <CheckCircle2 size={12} />
+                        ) : (
+                          <XCircle size={12} />
+                        )}
+                        {testResults[robot.id].message}
+                      </span>
+                    )}
+                    {!testResults[robot.id] && robot.lastSync > 0 && (
                       <span className="text-xs text-gray-500">
                         最后同步: {new Date(robot.lastSync).toLocaleString('zh-CN')}
                       </span>

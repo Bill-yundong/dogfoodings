@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Search, Filter, Download, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react';
+import { Database, Search, Filter, Download, ChevronLeft, ChevronRight, Eye, Trash2, CheckCircle2 } from 'lucide-react';
 import { getWeldPoints, getWeldPointCount, clearDatabase, getWeldPointsByRisk } from '@/lib/db';
 import WaveformChart from '@/components/WaveformChart';
 import StatusIndicator from '@/components/StatusIndicator';
@@ -17,6 +17,7 @@ export default function WeldsPage() {
   const [riskFilter, setRiskFilter] = useState<DefectRisk | 'all'>('all');
   const [selectedPoint, setSelectedPoint] = useState<WeldPoint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -60,6 +61,42 @@ export default function WeldsPage() {
     }
   }
 
+  async function handleExportData() {
+    setIsExporting(true);
+    try {
+      const allPoints = await getWeldPoints(10000, 0);
+      
+      const exportData = allPoints.map(point => ({
+        id: point.id,
+        timestamp: new Date(point.timestamp).toISOString(),
+        robotId: point.robotId,
+        weldProgram: point.weldProgram,
+        stabilityIndex: point.stabilityIndex,
+        defectRisk: point.defectRisk,
+        defectType: point.defectType,
+        features: point.features,
+        avgTemperature: point.poolTemperature.reduce((a, b) => a + b, 0) / point.poolTemperature.length,
+        avgCurrent: point.current.reduce((a, b) => a + b, 0) / point.current.length,
+        avgVoltage: point.voltage.reduce((a, b) => a + b, 0) / point.voltage.length,
+      }));
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `weld-points-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('导出失败，请重试');
+    } finally {
+      setTimeout(() => setIsExporting(false), 1000);
+    }
+  }
+
   const riskColors: Record<DefectRisk, string> = {
     low: 'bg-tech-green/10 text-tech-green border-tech-green/30',
     medium: 'bg-tech-yellow/10 text-tech-yellow border-tech-yellow/30',
@@ -85,9 +122,22 @@ export default function WeldsPage() {
               <Trash2 size={16} />
               清空数据
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-industrial-800 hover:bg-industrial-700 text-white text-sm rounded-lg transition-colors">
-              <Download size={16} />
-              导出数据
+            <button
+              onClick={handleExportData}
+              disabled={isExporting || totalCount === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-industrial-800 hover:bg-industrial-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+            >
+              {isExporting ? (
+                <>
+                  <CheckCircle2 size={16} className="text-tech-green" />
+                  导出成功
+                </>
+              ) : (
+                <>
+                  <Download size={16} />
+                  导出数据
+                </>
+              )}
             </button>
           </div>
         </div>
