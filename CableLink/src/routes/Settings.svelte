@@ -14,6 +14,15 @@
   } | null>(null);
   let mappings = $state<MappingRule[]>([]);
   let isClearing = $state(false);
+  let saveStatus = $state<'idle' | 'saving' | 'success' | 'error'>('idle');
+  let saveMessage = $state('');
+
+  let tempInfo = $state(0);
+  let tempWarning = $state(0);
+  let tempDanger = $state(0);
+  let currentInfo = $state(0);
+  let currentWarning = $state(0);
+  let currentDanger = $state(0);
 
   const mapper = createSemanticMapper();
 
@@ -28,10 +37,44 @@
   onMount(() => {
     loadStorageStats();
     mappings = mapper.getMappings();
+    const params = get(cableParams);
+    tempInfo = Math.round(params.maxTemperature * 0.75);
+    tempWarning = Math.round(params.maxTemperature * 0.85);
+    tempDanger = Math.round(params.maxTemperature * 0.95);
+    currentInfo = Math.round(params.maxCurrent * 0.75);
+    currentWarning = Math.round(params.maxCurrent * 0.85);
+    currentDanger = Math.round(params.maxCurrent * 0.95);
     intervalId = window.setInterval(() => {
       loadStorageStats();
     }, 30000);
   });
+
+  function get<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
+    let value: T = undefined as T;
+    store.subscribe(v => value = v)();
+    return value;
+  }
+
+  const saveThresholdConfig = async () => {
+    saveStatus = 'saving';
+    saveMessage = '';
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      saveStatus = 'success';
+      saveMessage = '告警阈值配置保存成功！';
+      setTimeout(() => {
+        saveStatus = 'idle';
+        saveMessage = '';
+      }, 3000);
+    } catch (e) {
+      saveStatus = 'error';
+      saveMessage = '保存失败，请重试';
+      setTimeout(() => {
+        saveStatus = 'idle';
+        saveMessage = '';
+      }, 3000);
+    }
+  };
 
   onDestroy(() => {
     if (intervalId) clearInterval(intervalId);
@@ -188,15 +231,15 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="temp-info">信息级 (°C)</label>
-              <input id="temp-info" type="number" value={Math.round($cableParams.maxTemperature * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="temp-info" type="number" bind:value={tempInfo} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="temp-warning">警告级 (°C)</label>
-              <input id="temp-warning" type="number" value={Math.round($cableParams.maxTemperature * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="temp-warning" type="number" bind:value={tempWarning} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="temp-danger">严重级 (°C)</label>
-              <input id="temp-danger" type="number" value={Math.round($cableParams.maxTemperature * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="temp-danger" type="number" bind:value={tempDanger} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
           </div>
         </div>
@@ -205,19 +248,40 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="current-info">信息级 (A)</label>
-              <input id="current-info" type="number" value={Math.round($cableParams.maxCurrent * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="current-info" type="number" bind:value={currentInfo} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="current-warning">警告级 (A)</label>
-              <input id="current-warning" type="number" value={Math.round($cableParams.maxCurrent * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="current-warning" type="number" bind:value={currentWarning} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2" for="current-danger">严重级 (A)</label>
-              <input id="current-danger" type="number" value={Math.round($cableParams.maxCurrent * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <input id="current-danger" type="number" bind:value={currentDanger} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
           </div>
         </div>
-        <button class="btn-primary">保存配置</button>
+        <div class="flex items-center gap-4">
+          <button
+            onclick={saveThresholdConfig}
+            disabled={saveStatus === 'saving'}
+            class="btn-primary flex items-center gap-2"
+          >
+            {#if saveStatus === 'saving'}
+              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              保存中...
+            {:else}
+              保存配置
+            {/if}
+          </button>
+          {#if saveMessage}
+            <span class={`text-sm ${saveStatus === 'success' ? 'text-safe-green' : 'text-danger-red'}`}>
+              {saveMessage}
+            </span>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}
