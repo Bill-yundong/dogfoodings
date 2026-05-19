@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background-color: #0D1117;
+    color: #F1FAEE;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(22, 27, 34, 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(62, 146, 204, 0.5);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(62, 146, 204, 0.8);
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-panel-bg/80 backdrop-blur-md border border-tech-cyan/20 rounded-xl;
+  }
+
+  .panel-glow {
+    @apply bg-panel-bg/90 backdrop-blur-md border border-tech-cyan/30 rounded-xl shadow-lg;
+    box-shadow: 0 0 30px rgba(62, 146, 204, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(62, 146, 204, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(62, 146, 204, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-tech-cyan text-white rounded-lg font-medium transition-all duration-200 hover:bg-tech-cyan/80 hover:shadow-lg hover:shadow-tech-cyan/30 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-space-light text-white rounded-lg font-medium border border-tech-cyan/30 transition-all duration-200 hover:bg-tech-cyan/10 hover:border-tech-cyan/50;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-danger-red text-white rounded-lg font-medium transition-all duration-200 hover:bg-danger-red/80 active:scale-95;
+  }
+
+  .badge {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full;
+  }
+
+  .badge-info {
+    @apply bg-tech-cyan/20 text-tech-cyan;
+  }
+
+  .badge-warning {
+    @apply bg-warning-orange/20 text-warning-orange;
+  }
+
+  .badge-danger {
+    @apply bg-danger-red/20 text-danger-red;
+  }
+
+  .badge-success {
+    @apply bg-safe-green/20 text-safe-green;
+  }
+
+  .stat-value {
+    @apply font-mono text-2xl font-bold;
+  }
+
+  .stat-label {
+    @apply text-xs text-gray-400 uppercase tracking-wider;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .animate-data-flow {
+    background: linear-gradient(90deg, transparent, rgba(62, 146, 204, 0.3), transparent);
+    background-size: 200% 100%;
+    animation: dataFlow 2s linear infinite;
+  }
+
+  @keyframes dataFlow {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
