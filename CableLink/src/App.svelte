@@ -41,7 +41,8 @@
 
     <main class="flex-1 overflow-y-auto grid-bg">
       {#key currentRoute}
-        {renderRoute()}
+        {@const RouteComponent = renderRoute()}
+        <RouteComponent />
       {/key}
     </main>
   </div>
