@@ -32,7 +32,7 @@
         <button 
           class="btn btn-secondary btn-sm" 
           @click="syncSystem(system.key)"
-          :disabled="system.pending === 0 || isSyncing"
+          :disabled="isSyncing || system.isSyncing"
         >
           {{ system.isSyncing ? '同步中...' : '立即同步' }}
         </button>
@@ -292,14 +292,27 @@ async function syncSystem(systemKey) {
   const system = systems.value.find(s => s.key === systemKey)
   if (!system) return
   
+  const status = syncManager.getQueueStatus()
+  const sysStatus = status[systemKey]
+  
+  if (sysStatus && sysStatus.pending === 0) {
+    alert(`${getSystemName(systemKey)} 没有待同步的数据`)
+    return
+  }
+  
   system.isSyncing = true
   isSyncing.value = true
   
   try {
     const results = await syncManager.processQueue(systemKey)
-    addActivity(`已同步 ${results.filter(r => !r.error).length} 条数据到 ${getSystemName(systemKey)}`)
+    const successCount = results.filter(r => !r.error).length
+    addActivity(`已同步 ${successCount} 条数据到 ${getSystemName(systemKey)}`)
+    if (successCount > 0) {
+      alert(`同步成功！已同步 ${successCount} 条数据到 ${getSystemName(systemKey)}`)
+    }
   } catch (e) {
     addActivity(`同步 ${getSystemName(systemKey)} 失败: ${e.message}`, 'error')
+    alert(`同步失败: ${e.message}`)
   } finally {
     system.isSyncing = false
     isSyncing.value = false
@@ -413,6 +426,8 @@ function addActivity(message, type = 'synced') {
 
 function loadActivity() {
   updateSystemStatus()
+  addActivity('已刷新同步状态', 'synced')
+  alert('同步状态已刷新！')
 }
 
 syncManager.addSyncCallback((event) => {

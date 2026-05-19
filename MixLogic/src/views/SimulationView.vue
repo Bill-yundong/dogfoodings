@@ -28,7 +28,7 @@
             <input type="checkbox" v-model="showVelocityVectors" />
             <span>速度矢量</span>
           </label>
-          <button class="btn btn-secondary" @click="captureSnapshot" :disabled="!isRunning">
+          <button class="btn btn-secondary" @click="captureSnapshot" :disabled="!concentrationField">
             📸 保存快照
           </button>
         </div>
@@ -281,9 +281,17 @@ async function saveCurrentSnapshot() {
   }
 }
 
-function captureSnapshot() {
-  if (isRunning.value) {
-    saveCurrentSnapshot()
+async function captureSnapshot() {
+  if (!concentrationField.value) {
+    alert('暂无仿真数据，请先开始仿真')
+    return
+  }
+  try {
+    await saveCurrentSnapshot()
+    alert('快照保存成功！')
+  } catch (e) {
+    console.error('Failed to save snapshot:', e)
+    alert('快照保存失败，请重试')
   }
 }
 

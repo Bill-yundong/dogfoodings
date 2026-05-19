@@ -361,8 +361,13 @@ async function deleteSnapshot(id) {
 }
 
 async function loadSnapshots() {
-  await store.loadSnapshots(filterFluidId.value)
-  updateStorageSize()
+  try {
+    await store.loadSnapshots(filterFluidId.value)
+    updateStorageSize()
+  } catch (e) {
+    console.error('Failed to load snapshots:', e)
+    alert('加载快照失败，请刷新页面重试')
+  }
 }
 
 function viewSnapshot(snapshot) {
@@ -419,14 +424,19 @@ async function syncSnapshot() {
 }
 
 async function exportData() {
-  const data = await db.exportData()
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `mixlogic-export-${Date.now()}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  try {
+    const data = await db.exportData()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `mixlogic-export-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Failed to export data:', e)
+    alert('导出数据失败，请重试')
+  }
 }
 
 async function updateStorageSize() {
@@ -452,10 +462,15 @@ watch(selectedSnapshot, (snap) => {
 })
 
 onMounted(async () => {
-  await store.loadFluids()
-  await store.loadSnapshots()
-  await store.loadSimulations()
-  updateStorageSize()
+  try {
+    await store.loadFluids()
+    await store.loadSnapshots()
+    await store.loadSimulations()
+    updateStorageSize()
+  } catch (e) {
+    console.error('Failed to initialize database view:', e)
+    alert('数据库初始化失败，请刷新页面重试')
+  }
 })
 </script>
 
