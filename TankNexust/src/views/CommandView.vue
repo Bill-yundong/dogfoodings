@@ -76,13 +76,28 @@ function selectTask(taskId: string | null) {
   selectedTask.value = taskId
 }
 
+const massEvacuationTriggered = ref(false)
+
 function triggerMassEvacuation() {
+  let taskCount = 0
+
   for (const terminal of terminalStore.terminals) {
-    if (terminal.alertLevel !== 'normal' && terminal.evacuationStatus === 'idle') {
+    if (terminal.evacuationStatus === 'idle') {
+      if (terminal.alertLevel === 'normal') {
+        terminalStore.updateTerminalAlert(terminal.id, 'evacuate')
+      }
       terminalStore.updateTerminalEvacuationStatus(terminal.id, 'preparing')
       createEvacuationTask(terminal.id, 'shelter-001')
+      taskCount++
     }
   }
+
+  massEvacuationTriggered.value = true
+  setTimeout(() => {
+    massEvacuationTriggered.value = false
+  }, 2000)
+
+  console.log(`[Command] 大规模疏散已启动，创建了 ${taskCount} 个疏散任务`)
 }
 
 function resetAll() {
@@ -139,8 +154,12 @@ onUnmounted(() => {
         </span>
       </div>
       <div class="flex gap-2">
-        <button @click="triggerMassEvacuation" class="btn-warning text-sm">
-          🚨 启动大规模疏散
+        <button 
+          @click="triggerMassEvacuation" 
+          class="btn-warning text-sm transition-all"
+          :class="{ 'scale-95': massEvacuationTriggered }"
+        >
+          🚨 {{ massEvacuationTriggered ? '疏散已启动！' : '启动大规模疏散' }}
         </button>
         <button @click="resetAll" class="btn-secondary text-sm">
           🔄 重置状态

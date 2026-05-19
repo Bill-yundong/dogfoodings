@@ -10,6 +10,11 @@ const simulationStore = useSimulationStore()
 const selectedTerminal = ref<string | null>('term-001')
 const { connect, disconnect, isConnected, onMessage, broadcastDiffusionUpdate } = useWebSocket()
 
+const messageLogs = ref<Array<{ type: string; terminal: string; content: string; time: number }>>([
+  { type: 'system', terminal: '系统', content: '应急终端模拟系统已启动', time: Date.now() },
+  { type: 'system', terminal: '系统', content: 'WebSocket 连接已建立', time: Date.now() }
+])
+
 let syncInterval: ReturnType<typeof setInterval> | null = null
 
 const currentTerminal = computed(() => {
@@ -72,6 +77,14 @@ function selectTerminal(id: string) {
 }
 
 function sendStatusReport(terminalId: string, status: string) {
+  const terminal = terminalStore.terminals.find(t => t.id === terminalId)
+  const terminalName = terminal?.name || '未知终端'
+  messageLogs.value.push({
+    type: 'report',
+    terminal: terminalName,
+    content: status,
+    time: Date.now()
+  })
   console.log(`[Terminal ${terminalId}] Status report: ${status}`)
 }
 
@@ -298,19 +311,16 @@ onUnmounted(() => {
       <div class="w-80 glass-panel p-4 overflow-y-auto scrollbar-thin">
         <h3 class="text-sm font-medium text-text-secondary mb-3">消息日志</h3>
         <div class="space-y-2">
-          <div class="bg-bg-tertiary/50 p-3 rounded-lg text-xs">
+          <div
+            v-for="(log, idx) in messageLogs"
+            :key="idx"
+            class="bg-bg-tertiary/50 p-3 rounded-lg text-xs"
+          >
             <div class="flex justify-between mb-1">
-              <span class="text-accent-cyan">系统</span>
-              <span class="text-text-muted font-mono">{{ new Date().toLocaleTimeString('zh-CN') }}</span>
+              <span :class="log.type === 'report' ? 'text-accent-cyan' : 'text-text-secondary'">{{ log.terminal }}</span>
+              <span class="text-text-muted font-mono">{{ new Date(log.time).toLocaleTimeString('zh-CN') }}</span>
             </div>
-            <div class="text-text-secondary">应急终端模拟系统已启动</div>
-          </div>
-          <div class="bg-bg-tertiary/50 p-3 rounded-lg text-xs">
-            <div class="flex justify-between mb-1">
-              <span class="text-accent-cyan">系统</span>
-              <span class="text-text-muted font-mono">{{ new Date().toLocaleTimeString('zh-CN') }}</span>
-            </div>
-            <div class="text-text-secondary">WebSocket 连接已建立</div>
+            <div class="text-text-secondary">{{ log.content }}</div>
           </div>
           <div
             v-for="terminal in terminalStore.terminals.filter(t => t.alertLevel !== 'normal')"

@@ -102,28 +102,47 @@ function stopSimulationLoop() {
 function updateTerminalAlerts(result: any) {
   for (const terminal of terminalStore.terminals) {
     let highestRisk = 'safe'
+    let minDistance = Infinity
 
     for (const zone of result.riskZones) {
-      const dx = terminal.position.x - zone.polygon[0]?.x || 0
-      const dy = terminal.position.y - zone.polygon[0]?.y || 0
+      if (zone.polygon.length < 3) continue
+
+      let avgX = 0, avgY = 0
+      for (const point of zone.polygon) {
+        avgX += point.x
+        avgY += point.y
+      }
+      avgX /= zone.polygon.length
+      avgY /= zone.polygon.length
+
+      const dx = terminal.position.x - avgX
+      const dy = terminal.position.y - avgY
       const dist = Math.sqrt(dx * dx + dy * dy)
 
-      if (dist < 200) {
+      const radius = Math.max(...zone.polygon.map(p => 
+        Math.sqrt(Math.pow(p.x - avgX, 2) + Math.pow(p.y - avgY, 2))
+      ))
+
+      if (dist < radius * 1.5 && dist < minDistance) {
+        minDistance = dist
         highestRisk = zone.level
-        break
       }
     }
 
     if (highestRisk === 'extreme' || highestRisk === 'danger') {
       terminalStore.updateTerminalAlert(terminal.id, 'evacuate')
-      terminalStore.updateTerminalEvacuationStatus(terminal.id, 'evacuating')
+      if (terminal.evacuationStatus === 'idle') {
+        terminalStore.updateTerminalEvacuationStatus(terminal.id, 'preparing')
+      }
     } else if (highestRisk === 'warning') {
       terminalStore.updateTerminalAlert(terminal.id, 'alert')
-      terminalStore.updateTerminalEvacuationStatus(terminal.id, 'preparing')
+      if (terminal.evacuationStatus === 'idle') {
+        terminalStore.updateTerminalEvacuationStatus(terminal.id, 'preparing')
+      }
     } else if (highestRisk === 'caution') {
       terminalStore.updateTerminalAlert(terminal.id, 'alert')
     } else {
-      if (terminal.alertLevel !== 'normal') {
+      if (terminal.alertLevel !== 'normal' && terminal.evacuationStatus !== 'evacuating' && terminal.evacuationStatus !== 'completed') {
         terminalStore.updateTerminalAlert(terminal.id, 'normal')
         terminalStore.updateTerminalEvacuationStatus(terminal.id, 'idle')
       }
