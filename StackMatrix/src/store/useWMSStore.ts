@@ -2,14 +2,14 @@ import { create } from 'zustand';
 import { 
   SKU, Location, Stacker, Task, Metrics, Fragment, 
   AllocationRecommendation, DefragProgress, RealtimeUpdate,
-  CategoryStats, LiquidityAnalysis
+  CategoryStats, LiquidityAnalysis, SKUCategory
 } from '../types';
 import { allocationEngine } from '../engines/allocationEngine';
 import { defragEngine } from '../engines/defragEngine';
 import { liquidityEngine } from '../engines/liquidityEngine';
 import { associationEngine } from '../engines/associationEngine';
 import { 
-  generateSKUs, generateLocations, generateStackers, 
+  generateSKUBatch, generateAssociatedSKUs, generateLocations, generateStackers, 
   generateTasks, generateMetrics, generateFragments,
   generateHistoricalMetrics 
 } from '../db/mockData';
@@ -109,10 +109,20 @@ export const useWMSStore = create<WMSState>((set, get) => ({
     set({ isLoading: true });
     
     try {
-      const skus = generateSKUs(10000);
+      const CATEGORIES: SKUCategory[] = ['electronics', 'clothing', 'food', 'cosmetics', 'household', 'industrial'];
+      const TOTAL_SKUS = 10000;
+      const INITIAL_BATCH = 1000;
+      const BATCH_SIZE = 1000;
+      
+      const now = Date.now();
+      const categoryIdMap = new Map<SKUCategory, string[]>();
+      CATEGORIES.forEach(cat => categoryIdMap.set(cat, []));
+      
+      const initialSKUs = generateSKUBatch(0, INITIAL_BATCH, now, categoryIdMap);
+      
       const locations = generateLocations(8, 20, 5);
       const stackers = generateStackers(6);
-      const tasks = generateTasks(200, skus, locations, stackers);
+      const tasks = generateTasks(200, initialSKUs, locations, stackers);
       const metrics = generateMetrics();
       const historicalMetrics = generateHistoricalMetrics(48);
       const fragments = defragEngine.detectFragments(locations);
@@ -120,7 +130,7 @@ export const useWMSStore = create<WMSState>((set, get) => ({
       const occupiedSKUs = new Set<string>();
       const updatedLocations = locations.map(loc => {
         if (loc.status === 'occupied') {
-          const randomSKU = skus[Math.floor(Math.random() * skus.length)];
+          const randomSKU = initialSKUs[Math.floor(Math.random() * initialSKUs.length)];
           if (!occupiedSKUs.has(randomSKU.id)) {
             occupiedSKUs.add(randomSKU.id);
             return {
@@ -133,15 +143,15 @@ export const useWMSStore = create<WMSState>((set, get) => ({
         return loc;
       });
 
-      const skuCountByLiquidity = {
-        high: skus.filter(s => s.liquidityScore >= 60).length,
-        medium: skus.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length,
-        low: skus.filter(s => s.liquidityScore < 20).length
+      const initialSkuCountByLiquidity = {
+        high: initialSKUs.filter(s => s.liquidityScore >= 60).length,
+        medium: initialSKUs.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length,
+        low: initialSKUs.filter(s => s.liquidityScore < 20).length
       };
 
       try {
         await db.transaction('rw', db.skus, db.locations, db.tasks, db.metrics, async () => {
-          await db.skus.bulkPut(skus.slice(0, 1000));
+          await db.skus.bulkPut(initialSKUs);
           await db.locations.bulkPut(updatedLocations);
           await db.tasks.bulkPut(tasks.slice(0, 100));
           await db.metrics.bulkPut(historicalMetrics);
@@ -151,7 +161,7 @@ export const useWMSStore = create<WMSState>((set, get) => ({
       }
 
       set({
-        skus,
+        skus: initialSKUs,
         locations: updatedLocations,
         stackers,
         tasks,
@@ -159,25 +169,53 @@ export const useWMSStore = create<WMSState>((set, get) => ({
           ...metrics,
           locationUtilization: updatedLocations.filter(l => l.status === 'occupied').length / updatedLocations.length,
           fragmentRate: defragEngine.calculateFragmentRate(updatedLocations),
-          totalSKUs: skus.length
+          totalSKUs: TOTAL_SKUS
         },
         historicalMetrics,
         fragments,
-        skuCountByLiquidity,
+        skuCountByLiquidity: initialSkuCountByLiquidity,
         isLoading: false
       });
 
-      setTimeout(() => {
-        const categoryStats = liquidityEngine.getCategoryStats(skus);
-        const distribution = liquidityEngine.getLiquidityDistribution(skus);
-        const topSKUs = liquidityEngine.getTopSKUs(skus, 10);
+      const generateRemainingSKUs = async () => {
+        let allSKUs = [...initialSKUs];
+        let currentIndex = INITIAL_BATCH;
         
-        set({
-          categoryStats,
-          liquidityDistribution: distribution,
-          topSKUs
-        });
-      }, 100);
+        while (currentIndex < TOTAL_SKUS) {
+          const batchCount = Math.min(BATCH_SIZE, TOTAL_SKUS - currentIndex);
+          const batch = generateSKUBatch(currentIndex, batchCount, now, categoryIdMap);
+          allSKUs = [...allSKUs, ...batch];
+          currentIndex += batchCount;
+          
+          set({
+            skus: allSKUs,
+            skuCountByLiquidity: {
+              high: allSKUs.filter(s => s.liquidityScore >= 60).length,
+              medium: allSKUs.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length,
+              low: allSKUs.filter(s => s.liquidityScore < 20).length
+            }
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+        
+        generateAssociatedSKUs(allSKUs, categoryIdMap);
+        set({ skus: [...allSKUs] });
+        
+        setTimeout(() => {
+          const categoryStats = liquidityEngine.getCategoryStats(allSKUs);
+          const distribution = liquidityEngine.getLiquidityDistribution(allSKUs);
+          const topSKUs = liquidityEngine.getTopSKUs(allSKUs, 10);
+          
+          set({
+            categoryStats,
+            liquidityDistribution: distribution,
+            topSKUs
+          });
+        }, 100);
+      };
+      
+      generateRemainingSKUs();
 
     } catch (error) {
       console.error('初始化数据失败:', error);
