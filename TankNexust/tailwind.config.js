@@ -17,6 +17,9 @@ export default {
         'risk-warning': '#FF7F50',
         'risk-danger': '#FF4757',
         'risk-extreme': '#8B0000',
+        'text-primary': '#FFFFFF',
+        'text-secondary': '#E2E8F0',
+        'text-muted': '#64748B',
       },
       fontFamily: {
         'mono': ['JetBrains Mono', 'Consolas', 'monospace'],
