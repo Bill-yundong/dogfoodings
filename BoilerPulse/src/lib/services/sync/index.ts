@@ -147,6 +147,15 @@ export class SemanticSyncEngine {
       status.status = 'offline';
     }
   }
+
+  reset(): void {
+    this.syncStatus.forEach((status) => {
+      status.lastSync = 0;
+      status.status = 'offline';
+      status.latency = 0;
+      status.dataPoints = 0;
+    });
+  }
 }
 
 export const syncEngine = new SemanticSyncEngine();

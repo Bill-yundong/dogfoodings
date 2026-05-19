@@ -64,6 +64,10 @@ export class AnomalyDetector {
     this.thresholds = { ...this.thresholds, ...thresholds };
   }
 
+  getThresholds(): DetectionThresholds {
+    return { ...this.thresholds };
+  }
+
   processOxygenData(data: OxygenData): AnomalyEvent | null {
     const { value, timestamp } = data;
     const { oxygenMin, oxygenMax, oxygenRateOfChange } = this.thresholds;

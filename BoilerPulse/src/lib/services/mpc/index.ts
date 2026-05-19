@@ -262,6 +262,10 @@ export class MPCController {
     this.predictionCount = 0;
     this.errorSum = 0;
   }
+
+  getDataCount(): number {
+    return this.oxygenHistory.length;
+  }
 }
 
 export const mpcController = new MPCController();
