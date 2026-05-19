@@ -2,6 +2,7 @@ import { onMount, onCleanup, createEffect } from 'solid-js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { BeltState, TensionAnalysisResult, SensorData } from '@/types';
+import { settings } from '@/stores/settingsStore';
 
 interface BeltSceneProps {
   beltState: BeltState | null;
@@ -304,6 +305,15 @@ export function BeltScene(props: BeltSceneProps) {
   createEffect(() => {
     if (props.sensorData.length > 0) {
       updateSensorStates(props.sensorData);
+    }
+  });
+
+  createEffect(() => {
+    if (scene) {
+      const isDark = settings.theme === 'dark';
+      const bgColor = isDark ? 0x0d1117 : 0xf0f4f8;
+      scene.background = new THREE.Color(bgColor);
+      scene.fog = new THREE.Fog(bgColor, 15, 40);
     }
   });
 

@@ -80,14 +80,8 @@ export function updateSettings(newSettings: Partial<SettingsStoreState>) {
 export function applyTheme(theme: 'dark' | 'light') {
   const root = document.documentElement;
   root.classList.remove('theme-dark', 'theme-light');
-  root.classList.add(`theme-${theme}`);
-  
   if (theme === 'light') {
-    document.body.style.backgroundColor = '#f8fafc';
-    document.body.style.color = '#1e293b';
-  } else {
-    document.body.style.backgroundColor = '#0d1117';
-    document.body.style.color = '#e2e8f0';
+    root.classList.add('theme-light');
   }
 }
 
