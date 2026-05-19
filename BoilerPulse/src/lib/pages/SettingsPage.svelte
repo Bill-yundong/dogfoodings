@@ -5,11 +5,13 @@
   import { anomalyDetector } from '$lib/services/detector';
   import { DEFAULT_MPC_CONFIG, type MPCConfig } from '$lib/services/mpc';
   import { mpcController } from '$lib/services/mpc';
+  import { boilerStore } from '$lib/stores/boiler';
 
   let storageInfo = $state({ used: 0, quota: 0, usageDetails: {} as Record<string, number> });
   let thresholds = $state<DetectionThresholds>({ ...DEFAULT_THRESHOLDS });
   let mpcConfig = $state<MPCConfig>({ ...DEFAULT_MPC_CONFIG });
   let saveStatus = $state('');
+  let isClearing = $state(false);
 
   const loadStorageInfo = async () => {
     storageInfo = await getStorageInfo();
@@ -24,10 +26,34 @@
   };
 
   const handleClearDB = async () => {
-    if (confirm('确定要清空所有本地存储数据吗？此操作不可恢复！')) {
+    if (isClearing) return;
+    if (!confirm('确定要清空所有本地存储数据吗？\n\n此操作将删除：\n• 所有历史异常波形快照\n• 语义同步映射数据\n• 历史运行数据\n• 分析报告\n\n此操作不可恢复！')) {
+      return;
+    }
+
+    isClearing = true;
+    try {
       await clearDB();
-      loadStorageInfo();
-      alert('数据已清空');
+
+      anomalyDetector.reset();
+      anomalyDetector.updateThresholds(DEFAULT_THRESHOLDS);
+      thresholds = { ...DEFAULT_THRESHOLDS };
+
+      mpcController.reset();
+      mpcController.updateConfig(DEFAULT_MPC_CONFIG);
+      mpcConfig = JSON.parse(JSON.stringify(DEFAULT_MPC_CONFIG));
+
+      boilerStore.reset();
+
+      await loadStorageInfo();
+
+      saveStatus = '所有数据已清空并重置为默认配置';
+      setTimeout(() => (saveStatus = ''), 3000);
+    } catch (error) {
+      console.error('Failed to clear database:', error);
+      alert('清空数据失败，请查看控制台了解详情');
+    } finally {
+      isClearing = false;
     }
   };
 
@@ -92,13 +118,14 @@
 
         <div class="pt-4 border-t border-slate-700/50">
           <button
-            class="w-full px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg text-sm font-medium transition-all"
+            class="w-full px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             onclick={handleClearDB}
+            disabled={isClearing}
           >
-            清空所有本地数据
+            {isClearing ? '清空中...' : '清空所有本地数据'}
           </button>
           <p class="text-xs text-slate-500 mt-2">
-            此操作将删除所有历史快照、配置和分析数据。
+            此操作将删除所有历史快照、配置和分析数据，并重置为默认设置。
           </p>
         </div>
       </div>

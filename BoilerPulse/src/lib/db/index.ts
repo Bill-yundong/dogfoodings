@@ -56,17 +56,20 @@ export async function closeDB(): Promise<void> {
 
 export async function clearDB(): Promise<void> {
   const db = await getDB();
-  const tx = db.transaction(
-    [STORES.WAVEFORM_SNAPSHOTS, STORES.SEMANTIC_MAPPINGS, STORES.HISTORY_DATA, STORES.ANALYSIS_REPORTS],
-    'readwrite'
+  const stores = [STORES.WAVEFORM_SNAPSHOTS, STORES.SEMANTIC_MAPPINGS, STORES.HISTORY_DATA, STORES.ANALYSIS_REPORTS];
+  const tx = db.transaction(stores, 'readwrite');
+  await Promise.all(
+    stores.map((storeName) => tx.objectStore(storeName).clear())
   );
-  await Promise.all([
-    tx.store.clear(),
-    tx.objectStore(STORES.SEMANTIC_MAPPINGS).clear(),
-    tx.objectStore(STORES.HISTORY_DATA).clear(),
-    tx.objectStore(STORES.ANALYSIS_REPORTS).clear()
-  ]);
   await tx.done;
+
+  if ('storage' in navigator && 'persist' in navigator.storage) {
+    try {
+      await navigator.storage.persist();
+    } catch (e) {
+      console.warn('Failed to persist storage after clear:', e);
+    }
+  }
 }
 
 export async function getStorageInfo(): Promise<{
