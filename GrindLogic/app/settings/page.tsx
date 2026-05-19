@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Database, AlertTriangle, Palette, Zap, Save } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { updateSystemConfig, getSystemConfig } from '@/lib/db';
+import { useTheme } from '@/components/ThemeProvider';
 
 export default function SettingsPage() {
   const { systemConfig, setSystemConfig } = useAppStore();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'datasource' | 'thresholds' | 'model' | 'display'>('datasource');
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setSystemConfig({
+      ...systemConfig,
+      displayConfig: { ...systemConfig.displayConfig, theme },
+    });
+  }, [theme]);
 
   const handleSave = async () => {
     try {
@@ -40,8 +49,8 @@ export default function SettingsPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">系统设置</h1>
-          <p className="text-dark-400 mt-1">配置系统参数与阈值</p>
+          <h1 className="text-2xl font-bold font-display" style={{ color: 'var(--text-primary)' }}>系统设置</h1>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>配置系统参数与阈值</p>
         </div>
         <button onClick={handleSave} className="btn-primary flex items-center gap-2">
           <Save className="w-4 h-4" />
@@ -367,18 +376,13 @@ export default function SettingsPage() {
             exit={{ opacity: 0, y: -10 }}
             className="glass-card p-6"
           >
-            <h2 className="text-lg font-semibold text-white mb-6">显示设置</h2>
+            <h2 className="text-lg font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>显示设置</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm text-dark-300 mb-2">主题</label>
+                <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>主题</label>
                 <select
-                  value={systemConfig.displayConfig.theme}
-                  onChange={(e) =>
-                    setSystemConfig({
-                      ...systemConfig,
-                      displayConfig: { ...systemConfig.displayConfig, theme: e.target.value as any },
-                    })
-                  }
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as 'dark' | 'light')}
                   className="input-field"
                 >
                   <option value="dark">深色主题</option>
@@ -386,7 +390,7 @@ export default function SettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">数据刷新频率 (ms)</label>
+                <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>数据刷新频率 (ms)</label>
                 <input
                   type="number"
                   value={systemConfig.displayConfig.refreshRate}
@@ -402,7 +406,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">图表最大数据点</label>
+                <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>图表最大数据点</label>
                 <input
                   type="number"
                   value={systemConfig.displayConfig.chartPoints}

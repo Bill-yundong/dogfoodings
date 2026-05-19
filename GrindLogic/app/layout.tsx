@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter } from 'next/font/google';
 import './globals.css';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -29,13 +30,15 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body>
-        <div className="min-h-screen bg-dark-900">
-          <Sidebar />
-          <Header />
-          <main className="pl-72 pt-16 min-h-screen">
-            <div className="p-6">{children}</div>
-          </main>
-        </div>
+        <ThemeProvider>
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+            <Sidebar />
+            <Header />
+            <main className="pl-72 pt-16 min-h-screen">
+              <div className="p-6">{children}</div>
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

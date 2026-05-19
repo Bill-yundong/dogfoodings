@@ -53,16 +53,20 @@ export function Sidebar() {
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed left-0 top-0 bottom-0 w-72 bg-dark-800/90 backdrop-blur-xl border-r border-dark-700/50 z-40 flex flex-col"
+      className="fixed left-0 top-0 bottom-0 w-72 backdrop-blur-xl border-r z-40 flex flex-col"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--bg-secondary) 90%, transparent)',
+        borderRightColor: 'var(--border-color)',
+      }}
     >
-      <div className="p-6 border-b border-dark-700/50">
+      <div className="p-6" style={{ borderBottomColor: 'var(--border-color)' }}>
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:shadow-primary-500/40 transition-all duration-300">
             <Zap className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white font-display">GrindLogic</h1>
-            <p className="text-xs text-dark-400">精密磨削智能预测系统</p>
+            <h1 className="text-xl font-bold font-display" style={{ color: 'var(--text-primary)' }}>GrindLogic</h1>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>精密磨削智能预测系统</p>
           </div>
         </Link>
       </div>
@@ -84,8 +88,11 @@ export function Sidebar() {
                 className={`flex items-start gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
                     ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30 shadow-lg shadow-primary-500/10'
-                    : 'text-dark-300 hover:text-white hover:bg-dark-700/50 border border-transparent'
+                    : 'border border-transparent'
                 }`}
+                style={{
+                  color: isActive ? undefined : 'var(--text-secondary)',
+                }}
               >
                 <Icon
                   className={`w-5 h-5 mt-0.5 flex-shrink-0 transition-transform duration-200 ${
@@ -94,7 +101,7 @@ export function Sidebar() {
                 />
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{item.label}</div>
-                  <div className="text-xs text-dark-500 mt-0.5">{item.description}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{item.description}</div>
                 </div>
                 {isActive && (
                   <motion.div
@@ -108,16 +115,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-dark-700/50">
+      <div className="p-4" style={{ borderTopColor: 'var(--border-color)' }}>
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-accent-400 animate-pulse" />
-            <span className="text-sm text-dark-300">系统运行中</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>系统运行中</span>
           </div>
-          <div className="mt-3 text-xs text-dark-500">
+          <div className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
             <div className="flex justify-between">
               <span>模型版本</span>
-              <span className="text-dark-300">v1.2.0</span>
+              <span style={{ color: 'var(--text-secondary)' }}>v1.2.0</span>
             </div>
             <div className="flex justify-between mt-1">
               <span>数据延迟</span>

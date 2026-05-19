@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database, Search, Filter, Download, Trash2, Eye, Clock, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { useAppStore } from '@/store';
@@ -9,8 +10,11 @@ import { generateMockFingerprints } from '@/lib/mock';
 import type { PartFingerprint } from '@/types';
 
 export default function FingerprintPage() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get('search');
+  
   const { fingerprints, setFingerprints, addFingerprint } = useAppStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery || '');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PASS' | 'FAIL' | 'PENDING'>('ALL');
   const [selectedFingerprint, setSelectedFingerprint] = useState<PartFingerprint | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +23,32 @@ export default function FingerprintPage() {
   useEffect(() => {
     loadFingerprints();
   }, []);
+
+  useEffect(() => {
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+      handleSearchWithQuery(urlSearchQuery);
+    }
+  }, [urlSearchQuery]);
+
+  const handleSearchWithQuery = async (query: string) => {
+    if (!query.trim()) {
+      loadFingerprints();
+      return;
+    }
+    try {
+      const results = await searchFingerprints(query);
+      setFingerprints(results);
+    } catch (e) {
+      const allFingerprints = await getFingerprints(50);
+      const filtered = allFingerprints.filter(
+        (fp) =>
+          fp.partNumber.toLowerCase().includes(query.toLowerCase()) ||
+          fp.batchId.toLowerCase().includes(query.toLowerCase())
+      );
+      setFingerprints(filtered);
+    }
+  };
 
   const loadFingerprints = async () => {
     setIsLoading(true);
