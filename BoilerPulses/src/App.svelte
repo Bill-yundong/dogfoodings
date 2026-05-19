@@ -1,9 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { boilerState, systemStatus } from '../lib/stores/boilerStore.js';
-  import { boilerSimulator } from '../lib/simulator/BoilerDataSimulator.js';
-  import { mpcEngine } from '../lib/mpc/ModelPredictiveControl.js';
-  import { semanticSync } from '../lib/sync/SemanticSynchronizer.js';
+  import { boilerState, systemStatus } from './lib/stores/boilerStore.js';
+  import { boilerSimulator } from './lib/simulator/BoilerDataSimulator.js';
+  import { mpcEngine } from './lib/mpc/ModelPredictiveControl.js';
+  import { semanticSync } from './lib/sync/SemanticSynchronizer.js';
   import MonitorPanel from './MonitorPanel.svelte';
   import ControlPanel from './ControlPanel.svelte';
   import EfficiencyDashboard from './EfficiencyDashboard.svelte';
