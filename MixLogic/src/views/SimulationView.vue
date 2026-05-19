@@ -28,7 +28,7 @@
             <input type="checkbox" v-model="showVelocityVectors" />
             <span>速度矢量</span>
           </label>
-          <button class="btn btn-secondary" @click="captureSnapshot" :disabled="!concentrationField">
+          <button class="btn btn-secondary" @click="captureSnapshot" :disabled="!canSaveSnapshot">
             📸 保存快照
           </button>
         </div>
@@ -171,6 +171,9 @@ const showDeadZones = ref(true)
 const showVelocityVectors = ref(false)
 
 const gridSize = computed(() => ({ x: gridResolution.value, y: gridResolution.value }))
+const canSaveSnapshot = computed(() => {
+  return isRunning.value || (concentrationField.value !== null)
+})
 
 const concentrationField = ref(null)
 const velocityX = ref(null)
@@ -252,24 +255,31 @@ function resetSimulation() {
 }
 
 async function saveCurrentSnapshot() {
+  if (!concentrationField.value) {
+    throw new Error('浓度场数据为空')
+  }
+  if (!selectedFluidId.value) {
+    throw new Error('请先选择流体类型')
+  }
+  
   const fluid = store.fluids.find(f => f.id === selectedFluidId.value)
   
   const snapshot = {
     fluidId: selectedFluidId.value,
     fluidName: fluid?.name || 'Unknown',
     concentration: Array.from(concentrationField.value),
-    velocityX: Array.from(velocityX.value),
-    velocityY: Array.from(velocityY.value),
-    deadZone: Array.from(deadZoneField.value),
-    mixingQuality: mixingQuality.value,
-    deadZoneRatio: deadZoneRatio.value,
-    reynoldsNumber: reynoldsNumber.value,
-    step: currentStep.value,
+    velocityX: velocityX.value ? Array.from(velocityX.value) : [],
+    velocityY: velocityY.value ? Array.from(velocityY.value) : [],
+    deadZone: deadZoneField.value ? Array.from(deadZoneField.value) : [],
+    mixingQuality: mixingQuality.value || 0,
+    deadZoneRatio: deadZoneRatio.value || 0,
+    reynoldsNumber: reynoldsNumber.value || 0,
+    step: currentStep.value || 0,
     parameters: {
       impellerSpeed: impellerSpeed.value,
       gridSize: gridSize.value,
-      viscosity: fluid?.viscosity,
-      density: fluid?.density
+      viscosity: fluid?.viscosity || 0.001,
+      density: fluid?.density || 1000
     }
   }
   
@@ -277,21 +287,33 @@ async function saveCurrentSnapshot() {
   
   if (snapshotId) {
     snapshot.id = snapshotId
-    syncManager.broadcastSnapshot(snapshot)
+    try {
+      syncManager.broadcastSnapshot(snapshot)
+    } catch (e) {
+      console.warn('Broadcast failed, but snapshot saved:', e)
+    }
   }
+  
+  return snapshotId
 }
 
 async function captureSnapshot() {
-  if (!concentrationField.value) {
+  if (!concentrationField.value && !isRunning.value) {
     alert('暂无仿真数据，请先开始仿真')
     return
   }
+  
+  if (!concentrationField.value && isRunning.value) {
+    alert('仿真正在初始化，请稍候再试...')
+    return
+  }
+  
   try {
     await saveCurrentSnapshot()
-    alert('快照保存成功！')
+    alert('✅ 快照保存成功！已同步至数据库')
   } catch (e) {
     console.error('Failed to save snapshot:', e)
-    alert('快照保存失败，请重试')
+    alert('❌ 快照保存失败: ' + (e.message || '未知错误'))
   }
 }
 

@@ -70,17 +70,21 @@ class IndexedDBManager {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(STORE_SNAPSHOTS, 'readonly')
       const store = transaction.objectStore(STORE_SNAPSHOTS)
-      let request
-
-      if (fluidId) {
-        const index = store.index('fluidId')
-        request = index.getAll(IDBKeyRange.only(fluidId), limit)
-      } else {
-        request = store.getAll(null, limit)
-      }
+      const request = store.getAll()
 
       request.onsuccess = () => {
-        const results = request.result.sort((a, b) => b.timestamp - a.timestamp)
+        let results = request.result || []
+        
+        if (fluidId !== null) {
+          results = results.filter(s => s.fluidId === fluidId)
+        }
+        
+        results = results.sort((a, b) => b.timestamp - a.timestamp)
+        
+        if (limit && limit < Infinity) {
+          results = results.slice(0, limit)
+        }
+        
         resolve(results)
       }
       request.onerror = (e) => reject(e.target.error)

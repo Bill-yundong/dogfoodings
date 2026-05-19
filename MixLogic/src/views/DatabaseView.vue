@@ -82,10 +82,10 @@
                 {{ fluid.name }}
               </option>
             </select>
-            <button class="btn btn-secondary btn-sm" @click="loadSnapshots">
-              🔄 刷新
+            <button class="btn btn-secondary btn-sm" @click="loadSnapshots" :disabled="isLoading">
+              {{ isLoading ? '⏳ 加载中...' : '🔄 刷新' }}
             </button>
-            <button class="btn btn-secondary btn-sm" @click="exportData">
+            <button class="btn btn-secondary btn-sm" @click="exportData" :disabled="isLoading">
               📤 导出
             </button>
           </div>
@@ -290,6 +290,7 @@ const showAddFluid = ref(false)
 const selectedSnapshot = ref(null)
 const previewCanvas = ref(null)
 const storageSize = ref('计算中...')
+const isLoading = ref(false)
 
 const newFluid = ref({
   name: '',
@@ -361,12 +362,16 @@ async function deleteSnapshot(id) {
 }
 
 async function loadSnapshots() {
+  isLoading.value = true
   try {
     await store.loadSnapshots(filterFluidId.value)
-    updateStorageSize()
+    await updateStorageSize()
+    console.log('Snapshots loaded:', snapshots.value.length)
   } catch (e) {
     console.error('Failed to load snapshots:', e)
-    alert('加载快照失败，请刷新页面重试')
+    alert('加载快照失败: ' + (e.message || '未知错误'))
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -424,18 +429,31 @@ async function syncSnapshot() {
 }
 
 async function exportData() {
+  isLoading.value = true
   try {
     const data = await db.exportData()
+    console.log('Export data:', data)
+    
+    if (!data || !data.data) {
+      throw new Error('导出数据为空')
+    }
+    
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `mixlogic-export-${Date.now()}.json`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    
+    alert('✅ 数据导出成功！')
   } catch (e) {
     console.error('Failed to export data:', e)
-    alert('导出数据失败，请重试')
+    alert('❌ 导出数据失败: ' + (e.message || '未知错误'))
+  } finally {
+    isLoading.value = false
   }
 }
 
