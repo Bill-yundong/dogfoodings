@@ -134,7 +134,14 @@ export default function DataManage() {
           </motion.div>
         )}
         
-        {stats && (
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-slate-400">正在加载数据...</p>
+          </div>
+        )}
+        
+        {stats && !isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,8 +164,8 @@ export default function DataManage() {
                 </div>
                 <span className="text-sm text-slate-400">光伏板</span>
               </div>
-              <p className="text-2xl font-bold text-white">{stats.storeStats.solarPanels.count}</p>
-              <p className="text-xs text-slate-500 mt-1">{(stats.storeStats.solarPanels.size / 1024).toFixed(1)} KB</p>
+              <p className="text-2xl font-bold text-white">{stats.storeStats.solarPanels?.count || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">{((stats.storeStats.solarPanels?.size || 0) / 1024).toFixed(1)} KB</p>
             </div>
             <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl border border-slate-700/50 p-5">
               <div className="flex items-center gap-3 mb-3">
@@ -167,8 +174,8 @@ export default function DataManage() {
                 </div>
                 <span className="text-sm text-slate-400">建筑物</span>
               </div>
-              <p className="text-2xl font-bold text-white">{stats.storeStats.buildings.count}</p>
-              <p className="text-xs text-slate-500 mt-1">{(stats.storeStats.buildings.size / 1024).toFixed(1)} KB</p>
+              <p className="text-2xl font-bold text-white">{stats.storeStats.buildings?.count || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">{((stats.storeStats.buildings?.size || 0) / 1024).toFixed(1)} KB</p>
             </div>
             <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl border border-slate-700/50 p-5">
               <div className="flex items-center gap-3 mb-3">
@@ -177,13 +184,14 @@ export default function DataManage() {
                 </div>
                 <span className="text-sm text-slate-400">发电记录</span>
               </div>
-              <p className="text-2xl font-bold text-white">{stats.storeStats.powerGenerations.count}</p>
-              <p className="text-xs text-slate-500 mt-1">{(stats.storeStats.powerGenerations.size / 1024).toFixed(1)} KB</p>
+              <p className="text-2xl font-bold text-white">{stats.storeStats.powerGeneration?.count || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">{((stats.storeStats.powerGeneration?.size || 0) / 1024).toFixed(1)} KB</p>
             </div>
           </motion.div>
         )}
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -263,9 +271,10 @@ export default function DataManage() {
               </div>
             </div>
           </motion.div>
-        </div>
+          </div>
+        )}
         
-        {stats && (
+        {stats && !isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -288,8 +297,8 @@ export default function DataManage() {
                   {Object.entries(stats.storeStats).map(([name, data]) => (
                     <tr key={name} className="hover:bg-slate-800/30 transition-colors">
                       <td className="px-4 py-3 text-sm text-white">{name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-400 text-right font-mono">{data.count}</td>
-                      <td className="px-4 py-3 text-sm text-slate-400 text-right font-mono">{(data.size / 1024).toFixed(2)} KB</td>
+                      <td className="px-4 py-3 text-sm text-slate-400 text-right font-mono">{data?.count || 0}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400 text-right font-mono">{((data?.size || 0) / 1024).toFixed(2)} KB</td>
                     </tr>
                   ))}
                 </tbody>
