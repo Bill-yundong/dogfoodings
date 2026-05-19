@@ -1,5 +1,5 @@
 <script lang="ts">
-  
+  import { onMount, onDestroy } from 'svelte';
   import { realtimeStore } from '@/stores/realtime';
   import { predictTemperature } from '@/engine/coupling';
   import { generateLoadProfile } from '@/engine/prediction';
@@ -18,13 +18,21 @@
     hotspotProbability: number;
   } | null>(null);
 
+  let intervalId: number | null = null;
+
+  const { sensorData, avgCurrent, cableParams } = realtimeStore;
+
   const runPrediction = async () => {
     isPredicting = true;
     try {
-      const loadProfile = generateLoadProfile(realtimeStore.getTotalCurrent(), horizonHours);
+      const currentData = get(sensorData);
+      const currentAvg = get(avgCurrent);
+      const params = get(cableParams);
+
+      const loadProfile = generateLoadProfile(currentAvg, horizonHours);
       const result = await predictTemperature(
-        realtimeStore.sensorData,
-        realtimeStore.cableParams,
+        currentData,
+        params,
         horizonHours,
         loadProfile
       );
@@ -42,9 +50,22 @@
     }
   };
 
-  $effect(() => {
+  onMount(() => {
     runPrediction();
+    intervalId = window.setInterval(() => {
+      runPrediction();
+    }, 60000);
   });
+
+  onDestroy(() => {
+    if (intervalId) clearInterval(intervalId);
+  });
+
+  function get<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
+    let value: T = undefined as T;
+    store.subscribe(v => value = v)();
+    return value;
+  }
 </script>
 
 <div class="p-6 space-y-6">
@@ -56,6 +77,7 @@
     <div class="flex items-center gap-3">
       <select
         bind:value={horizonHours}
+        onchange={runPrediction}
         class="px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
       >
         <option value={6}>未来 6 小时</option>
@@ -203,11 +225,11 @@
           </div>
           <div class="flex justify-between py-2 border-b border-gray-700/50">
             <span class="text-gray-400">空间分辨率</span>
-            <span class="text-white font-mono">{(realtimeStore.cableParams.length / realtimeStore.sensorData.length).toFixed(0)} m</span>
+            <span class="text-white font-mono">250 m</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-700/50">
             <span class="text-gray-400">环境温度</span>
-            <span class="text-white font-mono">{formatTemperature(realtimeStore.cableParams.ambientTemperature)}</span>
+            <span class="text-white font-mono">{formatTemperature($cableParams.ambientTemperature)}</span>
           </div>
           <div class="flex justify-between py-2">
             <span class="text-gray-400">预测置信度</span>

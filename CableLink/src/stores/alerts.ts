@@ -1,45 +1,54 @@
-
+import { writable, get, derived, type Readable, type Writable } from 'svelte/store';
 import type { AlertRecord, AlertSeverity, AlertStatus } from '@/types';
 import { realtimeStore } from './realtime';
 import { insertAlert, getAlerts, updateAlertStatus as dbUpdateAlertStatus } from '@/db/alerts';
 
-export class AlertStore {
-  alerts = $state<AlertRecord[]>([]);
-  unreadCount = $state(0);
-  isLoading = $state(false);
+export interface AlertStore {
+  alerts: Writable<AlertRecord[]>;
+  unreadCount: Readable<number>;
+  isLoading: Writable<boolean>;
+  updateAlertStatus: (alertId: string, status: AlertStatus, acknowledgedBy?: string) => Promise<void>;
+  loadMore: (limit?: number) => Promise<void>;
+  getAlertsByStatus: (status: AlertStatus) => AlertRecord[];
+  getAlertsBySeverity: (severity: AlertSeverity) => AlertRecord[];
+  destroy: () => void;
+}
 
-  private checkInterval: number | null = null;
-  private lastCheckTime = 0;
+function createAlertStore(): AlertStore {
+  const alerts = writable<AlertRecord[]>([]);
+  const isLoading = writable(false);
 
-  constructor() {
-    this.loadInitialAlerts();
-    this.startAlertChecking();
-  }
+  const unreadCount = derived(alerts, $alerts => {
+    return $alerts.filter(a => a.status === 'active').length;
+  });
 
-  async loadInitialAlerts(): Promise<void> {
-    this.isLoading = true;
+  let checkInterval: number | null = null;
+  let lastCheckTime = 0;
+
+  async function loadInitialAlerts(): Promise<void> {
+    isLoading.set(true);
     try {
-      const alerts = await getAlerts({ limit: 50 });
-      this.alerts = alerts;
-      this.updateUnreadCount();
+      const alertList = await getAlerts({ limit: 50 });
+      alerts.set(alertList);
     } catch (e) {
       console.error('Failed to load alerts:', e);
     } finally {
-      this.isLoading = false;
+      isLoading.set(false);
     }
   }
 
-  private startAlertChecking(): void {
-    this.checkInterval = window.setInterval(() => {
-      this.checkForAlerts();
+  function startAlertChecking(): void {
+    checkInterval = window.setInterval(() => {
+      checkForAlerts();
     }, 2000);
   }
 
-  private checkForAlerts(): void {
+  function checkForAlerts(): void {
     const now = Date.now();
-    const cableParams = realtimeStore.cableParams;
+    const cableParams = get(realtimeStore.cableParams);
+    const sensorData = get(realtimeStore.sensorData);
 
-    for (const point of realtimeStore.sensorData) {
+    for (const point of sensorData) {
       const tempRatio = point.temperature / cableParams.maxTemperature;
       const currentRatio = point.current / cableParams.maxCurrent;
 
@@ -77,15 +86,16 @@ export class AlertStore {
         message = '温度电流协同异常，可能存在热击穿风险';
       }
 
-      if (severity && alertType && now - this.lastCheckTime > 5000) {
-        const recentAlert = this.alerts.find((a: AlertRecord) =>
+      if (severity && alertType && now - lastCheckTime > 5000) {
+        const currentAlerts = get(alerts);
+        const recentAlert = currentAlerts.find((a: AlertRecord) =>
           a.sensorId === point.sensorId &&
           a.type === alertType &&
           now - a.timestamp < 30000
         );
 
         if (!recentAlert) {
-          this.createAlert({
+          createAlert({
             id: `alert-${now}-${point.sensorId}`,
             timestamp: now,
             type: alertType,
@@ -101,67 +111,78 @@ export class AlertStore {
       }
     }
 
-    this.lastCheckTime = now;
+    lastCheckTime = now;
   }
 
-  private async createAlert(alert: AlertRecord): Promise<void> {
+  async function createAlert(alert: AlertRecord): Promise<void> {
     try {
       await insertAlert(alert);
-      this.alerts = [alert, ...this.alerts].slice(0, 100);
-      this.updateUnreadCount();
+      alerts.update(current => [alert, ...current].slice(0, 100));
     } catch (e) {
       console.error('Failed to create alert:', e);
     }
   }
 
-  private updateUnreadCount(): void {
-    this.unreadCount = this.alerts.filter((a: AlertRecord) => a.status === 'active').length;
-  }
-
-  async updateAlertStatus(alertId: string, status: AlertStatus, acknowledgedBy?: string): Promise<void> {
+  async function updateAlertStatusFunc(alertId: string, status: AlertStatus, acknowledgedBy?: string): Promise<void> {
     try {
       await dbUpdateAlertStatus(alertId, status, acknowledgedBy);
-      this.alerts = this.alerts.map((a: AlertRecord) =>
-        a.id === alertId
-          ? { ...a, status, acknowledgedBy, resolvedAt: status === 'resolved' ? Date.now() : a.resolvedAt }
-          : a
+      alerts.update(current =>
+        current.map((a: AlertRecord) =>
+          a.id === alertId
+            ? { ...a, status, acknowledgedBy, resolvedAt: status === 'resolved' ? Date.now() : a.resolvedAt }
+            : a
+        )
       );
-      this.updateUnreadCount();
     } catch (e) {
       console.error('Failed to update alert status:', e);
     }
   }
 
-  async loadMore(limit: number = 20): Promise<void> {
-    if (this.isLoading) return;
-    this.isLoading = true;
+  async function loadMoreFunc(limit: number = 20): Promise<void> {
+    if (get(isLoading)) return;
+    isLoading.set(true);
     try {
+      const currentAlerts = get(alerts);
       const olderAlerts = await getAlerts({
         limit,
-        offset: this.alerts.length
+        offset: currentAlerts.length
       });
-      this.alerts = [...this.alerts, ...olderAlerts];
+      alerts.update(current => [...current, ...olderAlerts]);
     } catch (e) {
       console.error('Failed to load more alerts:', e);
     } finally {
-      this.isLoading = false;
+      isLoading.set(false);
     }
   }
 
-  getAlertsByStatus(status: AlertStatus): AlertRecord[] {
-    return this.alerts.filter((a: AlertRecord) => a.status === status);
+  function getAlertsByStatus(status: AlertStatus): AlertRecord[] {
+    return get(alerts).filter((a: AlertRecord) => a.status === status);
   }
 
-  getAlertsBySeverity(severity: AlertSeverity): AlertRecord[] {
-    return this.alerts.filter((a: AlertRecord) => a.severity === severity);
+  function getAlertsBySeverity(severity: AlertSeverity): AlertRecord[] {
+    return get(alerts).filter((a: AlertRecord) => a.severity === severity);
   }
 
-  destroy(): void {
-    if (this.checkInterval !== null) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
+  function destroyFunc(): void {
+    if (checkInterval !== null) {
+      clearInterval(checkInterval);
+      checkInterval = null;
     }
   }
+
+  loadInitialAlerts();
+  startAlertChecking();
+
+  return {
+    alerts,
+    unreadCount,
+    isLoading,
+    updateAlertStatus: updateAlertStatusFunc,
+    loadMore: loadMoreFunc,
+    getAlertsByStatus,
+    getAlertsBySeverity,
+    destroy: destroyFunc
+  };
 }
 
-export const alertStore = new AlertStore();
+export const alertStore = createAlertStore();

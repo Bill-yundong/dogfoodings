@@ -40,13 +40,14 @@
         <li>
           <button
             onclick={() => onNavigate(item.id)}
+            aria-label={item.label}
             class={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
               currentRoute === item.id
                 ? 'bg-tech-cyan/20 text-tech-cyan shadow-lg shadow-tech-cyan/10'
                 : 'text-gray-400 hover:bg-space-light hover:text-white'
             }`}
           >
-            <span class="text-xl">{item.icon}</span>
+            <span class="text-xl" aria-hidden="true">{item.icon}</span>
             {#if !isCollapsed}
               <span class="font-medium text-sm">{item.label}</span>
             {/if}
@@ -59,6 +60,7 @@
   <div class="p-4 border-t border-tech-cyan/10">
     <button
       onclick={() => isCollapsed = !isCollapsed}
+      aria-label={isCollapsed ? '展开侧边栏' : '收起侧边栏'}
       class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-space-light hover:text-white transition-colors"
     >
       <svg
@@ -66,6 +68,7 @@
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
       </svg>

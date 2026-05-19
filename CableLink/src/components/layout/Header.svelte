@@ -1,15 +1,23 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
   import { realtimeStore } from '@/stores/realtime';
   import { alertStore } from '@/stores/alerts';
   import { formatTime } from '@/utils/format';
 
   let currentTime = $state(new Date());
+  let intervalId: number | null = null;
 
-  $effect(() => {
-    const interval = setInterval(() => {
+  const { cableParams } = realtimeStore;
+  const { unreadCount } = alertStore;
+
+  onMount(() => {
+    intervalId = window.setInterval(() => {
       currentTime = new Date();
     }, 1000);
-    return () => clearInterval(interval);
+  });
+
+  onDestroy(() => {
+    if (intervalId) clearInterval(intervalId);
   });
 </script>
 
@@ -27,18 +35,18 @@
 
   <div class="flex items-center gap-4">
     <div class="text-right">
-      <p class="text-xs text-gray-400">{realtimeStore.cableParams.name}</p>
-      <p class="text-sm text-white font-medium">{realtimeStore.cableParams.length.toFixed(0)}m 海缆</p>
+      <p class="text-xs text-gray-400">{$cableParams.name}</p>
+      <p class="text-sm text-white font-medium">{$cableParams.length.toFixed(0)}m 海缆</p>
     </div>
 
     <div class="relative">
-      <button class="relative p-2 rounded-lg hover:bg-space-light transition-colors">
+      <button class="relative p-2 rounded-lg hover:bg-space-light transition-colors" aria-label="告警通知">
         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        {#if alertStore.unreadCount > 0}
+        {#if $unreadCount > 0}
           <span class="absolute -top-1 -right-1 w-5 h-5 bg-danger-red text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
-            {alertStore.unreadCount > 99 ? '99+' : alertStore.unreadCount}
+            {$unreadCount > 99 ? '99+' : $unreadCount}
           </span>
         {/if}
       </button>

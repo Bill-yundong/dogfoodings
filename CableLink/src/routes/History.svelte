@@ -1,12 +1,12 @@
 <script lang="ts">
-  
+  import { onMount, onDestroy } from 'svelte';
   import { getSensorDataAggregates, getDistinctSensorIds } from '@/db/sensor';
   import { getStorageStats } from '@/db';
   import { formatTemperature, formatDateTime, formatBytes } from '@/utils/format';
   import LineChart from '@/components/charts/LineChart.svelte';
 
-  let selectedSensor = $state<string>('all');
-  let timeRange = $state<string>('24h');
+  let selectedSensor = $state('all');
+  let timeRange = $state('24h');
   let isLoading = $state(false);
   let sensorIds = $state<string[]>([]);
   let aggregates = $state<Array<{
@@ -55,8 +55,17 @@
     }
   };
 
-  $effect(() => {
+  let intervalId: number | null = null;
+
+  onMount(() => {
     loadData();
+    intervalId = window.setInterval(() => {
+      loadData();
+    }, 60000);
+  });
+
+  onDestroy(() => {
+    if (intervalId) clearInterval(intervalId);
   });
 
   const exportData = () => {
@@ -100,8 +109,9 @@
 
   <div class="flex flex-wrap items-center gap-4">
     <div class="flex items-center gap-2">
-      <label class="text-sm text-gray-400">传感器:</label>
+      <label class="text-sm text-gray-400" for="sensor-select">传感器:</label>
       <select
+        id="sensor-select"
         bind:value={selectedSensor}
         onchange={loadData}
         class="px-3 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white text-sm focus:outline-none focus:border-tech-cyan"
@@ -113,8 +123,8 @@
       </select>
     </div>
     <div class="flex items-center gap-2">
-      <label class="text-sm text-gray-400">时间范围:</label>
-      <div class="flex bg-space-light rounded-lg p-1">
+      <span class="text-sm text-gray-400">时间范围:</span>
+      <div class="flex bg-space-light rounded-lg p-1" role="group">
         {#each timeRangeOptions as opt}
           <button
             onclick={() => { timeRange = opt.value; loadData(); }}
@@ -123,6 +133,7 @@
                 ? 'bg-tech-cyan text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
+            aria-pressed={timeRange === opt.value}
           >
             {opt.label}
           </button>

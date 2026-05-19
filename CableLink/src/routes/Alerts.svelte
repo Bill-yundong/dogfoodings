@@ -1,10 +1,13 @@
 <script lang="ts">
+  import 'svelte';
   import { alertStore } from '@/stores/alerts';
   import type { AlertStatus, AlertSeverity, AlertRecord } from '@/types';
   import AlertItem from '@/components/alerts/AlertItem.svelte';
 
   let filterStatus = $state<AlertStatus | 'all'>('all');
   let filterSeverity = $state<AlertSeverity | 'all'>('all');
+
+  const { alerts, isLoading } = alertStore;
 
   const statusOptions: Array<{ value: AlertStatus | 'all'; label: string }> = [
     { value: 'all', label: '全部状态' },
@@ -20,12 +23,8 @@
     { value: 'info', label: '信息' }
   ];
 
-  $effect(() => {
-    alertStore.loadInitialAlerts();
-  });
-
   const filteredAlerts = () => {
-    return alertStore.alerts.filter((alert: AlertRecord) => {
+    return $alerts.filter((alert: AlertRecord) => {
       if (filterStatus !== 'all' && alert.status !== filterStatus) return false;
       if (filterSeverity !== 'all' && alert.severity !== filterSeverity) return false;
       return true;
@@ -33,7 +32,7 @@
   };
 
   const countBySeverity = (severity: AlertSeverity) =>
-    alertStore.alerts.filter((a: AlertRecord) => a.severity === severity && a.status === 'active').length;
+    $alerts.filter((a: AlertRecord) => a.severity === severity && a.status === 'active').length;
 </script>
 
 <div class="p-6 space-y-6">
@@ -99,7 +98,7 @@
       <div>
         <p class="text-xs text-gray-400">告警总数</p>
         <p class="text-2xl font-bold text-tech-cyan font-mono">
-          {alertStore.alerts.length}
+          {$alerts.length}
         </p>
       </div>
     </div>
@@ -107,8 +106,9 @@
 
   <div class="flex flex-wrap items-center gap-4">
     <div class="flex items-center gap-2">
-      <label class="text-sm text-gray-400">状态:</label>
+      <label class="text-sm text-gray-400" for="status-filter">状态:</label>
       <select
+        id="status-filter"
         bind:value={filterStatus}
         class="px-3 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white text-sm focus:outline-none focus:border-tech-cyan"
       >
@@ -118,8 +118,9 @@
       </select>
     </div>
     <div class="flex items-center gap-2">
-      <label class="text-sm text-gray-400">级别:</label>
+      <label class="text-sm text-gray-400" for="severity-filter">级别:</label>
       <select
+        id="severity-filter"
         bind:value={filterSeverity}
         class="px-3 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white text-sm focus:outline-none focus:border-tech-cyan"
       >
@@ -130,7 +131,7 @@
     </div>
     <button
       onclick={() => alertStore.loadMore()}
-      disabled={alertStore.isLoading}
+      disabled={$isLoading}
       class="btn-secondary text-sm"
     >
       加载更多
@@ -143,7 +144,7 @@
       <span class="text-sm text-gray-400">显示 {filteredAlerts().length} 条记录</span>
     </div>
 
-    {#if alertStore.isLoading && alertStore.alerts.length === 0}
+    {#if $isLoading && $alerts.length === 0}
       <div class="text-center py-12">
         <div class="animate-spin w-8 h-8 border-2 border-tech-cyan border-t-transparent rounded-full mx-auto mb-4"></div>
         <p class="text-gray-400">正在加载告警数据...</p>

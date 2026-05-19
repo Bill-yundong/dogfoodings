@@ -1,5 +1,5 @@
 <script lang="ts">
-  
+  import { onMount, onDestroy } from 'svelte';
   import { realtimeStore } from '@/stores/realtime';
   import { getStorageStats, clearOldData } from '@/db';
   import { createSemanticMapper } from '@/alignment/mapping';
@@ -17,14 +17,25 @@
 
   const mapper = createSemanticMapper();
 
-  $effect(() => {
-    loadStorageStats();
-    mappings = mapper.getMappings();
-  });
+  const { cableParams, updateRate, setUpdateRate, setCableParams } = realtimeStore;
 
   const loadStorageStats = async () => {
     storageStats = await getStorageStats();
   };
+
+  let intervalId: number | null = null;
+
+  onMount(() => {
+    loadStorageStats();
+    mappings = mapper.getMappings();
+    intervalId = window.setInterval(() => {
+      loadStorageStats();
+    }, 30000);
+  });
+
+  onDestroy(() => {
+    if (intervalId) clearInterval(intervalId);
+  });
 
   const handleClearOldData = async (days: number) => {
     if (!confirm(`确定要清除 ${days} 天前的历史数据吗？此操作不可撤销。`)) return;
@@ -37,8 +48,8 @@
     }
   };
 
-  const updateCableParam = (key: keyof typeof realtimeStore.cableParams, value: number) => {
-    realtimeStore.setCableParams({ [key]: value });
+  const updateCableParam = (key: keyof typeof $cableParams, value: number | string) => {
+    setCableParams({ [key]: value } as any);
   };
 
   const tabs = [
@@ -56,9 +67,11 @@
     <p class="text-gray-400 mt-1">系统参数配置与管理</p>
   </div>
 
-  <div class="flex flex-wrap gap-2 border-b border-gray-700 pb-2">
+  <div class="flex flex-wrap gap-2 border-b border-gray-700 pb-2" role="tablist">
     {#each tabs as tab}
       <button
+        role="tab"
+        aria-selected={activeTab === tab.id}
         onclick={() => activeTab = tab.id}
         class={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
           activeTab === tab.id
@@ -77,80 +90,88 @@
       <h3 class="text-lg font-semibold text-white mb-6">海缆物理参数</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div>
-          <label class="block text-sm text-gray-400 mb-2">海缆名称</label>
+          <label class="block text-sm text-gray-400 mb-2" for="cable-name">海缆名称</label>
           <input
+            id="cable-name"
             type="text"
-            value={realtimeStore.cableParams.name}
-            onchange={(e) => realtimeStore.setCableParams({ name: (e.target as HTMLInputElement).value })}
+            value={$cableParams.name}
+            onchange={(e) => setCableParams({ name: (e.target as HTMLInputElement).value })}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">海缆长度 (m)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="cable-length">海缆长度 (m)</label>
           <input
+            id="cable-length"
             type="number"
-            value={realtimeStore.cableParams.length}
+            value={$cableParams.length}
             onchange={(e) => updateCableParam('length', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">额定电流 (A)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="max-current">额定电流 (A)</label>
           <input
+            id="max-current"
             type="number"
-            value={realtimeStore.cableParams.maxCurrent}
+            value={$cableParams.maxCurrent}
             onchange={(e) => updateCableParam('maxCurrent', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">最高允许温度 (°C)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="max-temp">最高允许温度 (°C)</label>
           <input
+            id="max-temp"
             type="number"
-            value={realtimeStore.cableParams.maxTemperature}
+            value={$cableParams.maxTemperature}
             onchange={(e) => updateCableParam('maxTemperature', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">热阻系数 (K·m/W)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="thermal-resistance">热阻系数 (K·m/W)</label>
           <input
+            id="thermal-resistance"
             type="number"
             step="0.01"
-            value={realtimeStore.cableParams.thermalResistance}
+            value={$cableParams.thermalResistance}
             onchange={(e) => updateCableParam('thermalResistance', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">环境温度 (°C)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="ambient-temp">环境温度 (°C)</label>
           <input
+            id="ambient-temp"
             type="number"
             step="0.1"
-            value={realtimeStore.cableParams.ambientTemperature}
+            value={$cableParams.ambientTemperature}
             onchange={(e) => updateCableParam('ambientTemperature', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">导体电阻 (Ω/km)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="conductor-resistance">导体电阻 (Ω/km)</label>
           <input
+            id="conductor-resistance"
             type="number"
             step="0.001"
-            value={realtimeStore.cableParams.conductorResistance}
+            value={$cableParams.conductorResistance}
             onchange={(e) => updateCableParam('conductorResistance', Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-2">数据更新频率 (ms)</label>
+          <label class="block text-sm text-gray-400 mb-2" for="update-rate">数据更新频率 (ms)</label>
           <input
+            id="update-rate"
             type="number"
             min="100"
             max="5000"
             step="100"
-            value={realtimeStore.updateRate}
-            onchange={(e) => realtimeStore.setUpdateRate(Number((e.target as HTMLInputElement).value))}
+            value={$updateRate}
+            onchange={(e) => setUpdateRate(Number((e.target as HTMLInputElement).value))}
             class="w-full px-4 py-2 bg-space-light border border-tech-cyan/30 rounded-lg text-white focus:outline-none focus:border-tech-cyan"
           />
         </div>
@@ -166,16 +187,16 @@
           <h4 class="font-medium text-white mb-4">温度告警阈值</h4>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-2">信息级 (°C)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxTemperature * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="temp-info">信息级 (°C)</label>
+              <input id="temp-info" type="number" value={Math.round($cableParams.maxTemperature * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-2">警告级 (°C)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxTemperature * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="temp-warning">警告级 (°C)</label>
+              <input id="temp-warning" type="number" value={Math.round($cableParams.maxTemperature * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-2">严重级 (°C)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxTemperature * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="temp-danger">严重级 (°C)</label>
+              <input id="temp-danger" type="number" value={Math.round($cableParams.maxTemperature * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
           </div>
         </div>
@@ -183,16 +204,16 @@
           <h4 class="font-medium text-white mb-4">电流告警阈值</h4>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm text-gray-400 mb-2">信息级 (A)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxCurrent * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="current-info">信息级 (A)</label>
+              <input id="current-info" type="number" value={Math.round($cableParams.maxCurrent * 0.75)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-2">警告级 (A)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxCurrent * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="current-warning">警告级 (A)</label>
+              <input id="current-warning" type="number" value={Math.round($cableParams.maxCurrent * 0.85)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
             <div>
-              <label class="block text-sm text-gray-400 mb-2">严重级 (A)</label>
-              <input type="number" value={Math.round(realtimeStore.cableParams.maxCurrent * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
+              <label class="block text-sm text-gray-400 mb-2" for="current-danger">严重级 (A)</label>
+              <input id="current-danger" type="number" value={Math.round($cableParams.maxCurrent * 0.95)} class="w-full px-3 py-2 bg-space-dark border border-gray-600 rounded text-white" />
             </div>
           </div>
         </div>
