@@ -15,14 +15,20 @@ export function generateSKUs(count: number): SKU[] {
   const skus: SKU[] = [];
   const now = Date.now();
   
+  const categoryIdMap = new Map<SKUCategory, string[]>();
+  CATEGORIES.forEach(cat => categoryIdMap.set(cat, []));
+  
   for (let i = 0; i < count; i++) {
     const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const names = CATEGORY_NAMES[category];
     const baseName = names[Math.floor(Math.random() * names.length)];
     const liquidityScore = Math.random() * 100;
+    const id = `SKU-${String(i + 1).padStart(6, '0')}`;
+    
+    categoryIdMap.get(category)!.push(id);
     
     skus.push({
-      id: `SKU-${String(i + 1).padStart(6, '0')}`,
+      id,
       name: `${baseName}-${Math.floor(Math.random() * 1000)}`,
       category,
       liquidityScore,
@@ -37,10 +43,21 @@ export function generateSKUs(count: number): SKU[] {
   }
   
   for (const sku of skus) {
-    const sameCategory = skus.filter(s => s.category === sku.category && s.id !== sku.id);
-    const assocCount = Math.min(Math.floor(Math.random() * 5) + 1, sameCategory.length);
-    const shuffled = sameCategory.sort(() => Math.random() - 0.5);
-    sku.associatedSKUs = shuffled.slice(0, assocCount).map(s => s.id);
+    const categoryIds = categoryIdMap.get(sku.category)!;
+    const assocCount = Math.min(Math.floor(Math.random() * 5) + 1, categoryIds.length - 1);
+    const result: string[] = [];
+    const used = new Set<string>();
+    used.add(sku.id);
+    
+    while (result.length < assocCount) {
+      const randomId = categoryIds[Math.floor(Math.random() * categoryIds.length)];
+      if (!used.has(randomId)) {
+        used.add(randomId);
+        result.push(randomId);
+      }
+    }
+    
+    sku.associatedSKUs = result;
   }
   
   return skus;

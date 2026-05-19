@@ -133,20 +133,6 @@ export const useWMSStore = create<WMSState>((set, get) => ({
         return loc;
       });
 
-      const maxLiquidity = Math.max(...skus.map(s => s.liquidityScore), 1);
-
-      const categoryStats = liquidityEngine.getCategoryStats(skus);
-
-      const skuAnalysisCache = new Map<string, LiquidityAnalysis>();
-      const sampleSize = Math.min(500, skus.length);
-      for (let i = 0; i < sampleSize; i++) {
-        const sku = skus[i];
-        skuAnalysisCache.set(sku.id, liquidityEngine.analyzeSKU(sku, skus, []));
-      }
-
-      const distribution = liquidityEngine.getLiquidityDistribution(skus);
-      const topSKUs = liquidityEngine.getTopSKUs(skus, 10);
-
       const skuCountByLiquidity = {
         high: skus.filter(s => s.liquidityScore >= 60).length,
         medium: skus.filter(s => s.liquidityScore >= 20 && s.liquidityScore < 60).length,
@@ -177,13 +163,22 @@ export const useWMSStore = create<WMSState>((set, get) => ({
         },
         historicalMetrics,
         fragments,
-        skuAnalysisCache,
-        categoryStats,
-        liquidityDistribution: distribution,
-        topSKUs,
         skuCountByLiquidity,
         isLoading: false
       });
+
+      setTimeout(() => {
+        const categoryStats = liquidityEngine.getCategoryStats(skus);
+        const distribution = liquidityEngine.getLiquidityDistribution(skus);
+        const topSKUs = liquidityEngine.getTopSKUs(skus, 10);
+        
+        set({
+          categoryStats,
+          liquidityDistribution: distribution,
+          topSKUs
+        });
+      }, 100);
+
     } catch (error) {
       console.error('初始化数据失败:', error);
       set({ isLoading: false });
