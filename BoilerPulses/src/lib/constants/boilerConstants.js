@@ -32,11 +32,11 @@ export const COMBUSTION_PARAMS = [
 
 export const MONITOR_PARAMS = [
   { id: 'oxygen', label: '烟气氧含量', unit: '%', color: '#3b82f6',
-    optimal: { min: 3.5, max: 5.0 },
+    optimal: { min: 3.5, max: 5.0 } },
   { id: 'temperature', label: '炉膛温度', unit: '°C', color: '#ef4444',
-    optimal: { min: 850, max: 950 },
+    optimal: { min: 850, max: 950 } },
   { id: 'pressure', label: '炉膛负压', unit: 'Pa', color: '#10b981',
-    optimal: { min: 12, max: 16 },
+    optimal: { min: 12, max: 16 } },
   { id: 'co', label: 'CO排放', unit: 'ppm', color: '#f59e0b',
     optimal: { min: 0, max: 50 } },
   { id: 'nox', label: 'NOx排放', unit: 'mg/m³', color: '#8b5cf6',

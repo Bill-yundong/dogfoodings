@@ -1,6 +1,4 @@
 <script>
-  import { boilerState } from '../lib/stores/boilerStore.js';
-
   export let param;
   export let value;
 
