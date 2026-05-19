@@ -6,7 +6,8 @@
   import FanControlPanel from '$lib/components/controls/FanControlPanel.svelte';
   import MPCPanel from '$lib/components/mpc/MPCPanel.svelte';
   import AnomalyList from '$lib/components/dashboard/AnomalyList.svelte';
-  import type { FanControl, ControlMode } from '$lib/types';
+  import type { FanControl, ControlMode, OxygenData, EfficiencyData, MPCPrediction } from '$lib/types';
+  import type { AnomalyEvent } from '$lib/services/detector';
 
   const handleModeChange = (mode: ControlMode) => {
     boilerStore.setControlMode(mode);
@@ -20,13 +21,13 @@
     }
   };
 
-  const oxygenData = $derived($boilerStore.oxygenData);
-  const efficiencyData = $derived($boilerStore.efficiencyData);
-  const currentOxygen = $derived($boilerStore.currentOxygen);
-  const currentEfficiency = $derived($boilerStore.currentEfficiency);
-  const mpcPrediction = $derived($boilerStore.mpcPrediction);
-  const anomalies = $derived($boilerStore.anomalies);
-  const controlMode = $derived($boilerStore.controlMode);
+  let oxygenData = $state<OxygenData[]>([]);
+  let efficiencyData = $state<EfficiencyData[]>([]);
+  let currentOxygen = $state<OxygenData | null>(null);
+  let currentEfficiency = $state<EfficiencyData | null>(null);
+  let mpcPrediction = $state<MPCPrediction | null>(null);
+  let anomalies = $state<AnomalyEvent[]>([]);
+  let controlMode = $state<ControlMode>('manual');
 
   const oxygenValues = $derived(oxygenData.slice(-60).map((d) => d.value));
   const efficiencyValues = $derived(efficiencyData.slice(-60).map((d) => d.value));
@@ -41,12 +42,34 @@
 
   const syncStatus = $derived(syncEngine.getAllSyncStatus());
 
-  const efficiencyTrend = $derived(() => {
-    if (efficiencyData.length < 2) return 0;
-    const recent = efficiencyData.slice(-30);
-    const first = recent[0].value;
-    const last = recent[recent.length - 1].value;
-    return ((last - first) / first) * 100;
+  const efficiencyTrend = $derived(
+    efficiencyData.length < 2
+      ? 0
+      : (() => {
+          const recent = efficiencyData.slice(-30);
+          const first = recent[0].value;
+          const last = recent[recent.length - 1].value;
+          return ((last - first) / first) * 100;
+        })()
+  );
+
+  $effect(() => {
+    const unsub1 = boilerStore.oxygenData.subscribe((v) => (oxygenData = v));
+    const unsub2 = boilerStore.efficiencyData.subscribe((v) => (efficiencyData = v));
+    const unsub3 = boilerStore.currentOxygen.subscribe((v) => (currentOxygen = v));
+    const unsub4 = boilerStore.currentEfficiency.subscribe((v) => (currentEfficiency = v));
+    const unsub5 = boilerStore.mpcPrediction.subscribe((v) => (mpcPrediction = v));
+    const unsub6 = boilerStore.anomalies.subscribe((v) => (anomalies = v));
+    const unsub7 = boilerStore.controlMode.subscribe((v) => (controlMode = v));
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+      unsub4();
+      unsub5();
+      unsub6();
+      unsub7();
+    };
   });
 </script>
 

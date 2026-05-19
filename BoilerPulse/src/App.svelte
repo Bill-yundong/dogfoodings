@@ -7,18 +7,29 @@
   import SettingsPage from '$lib/pages/SettingsPage.svelte';
 
   let currentPage = $state('dashboard');
+  let systemStatus = $state('offline');
+  let isRunning = $state(false);
 
   const handleStart = () => boilerStore.start();
   const handleStop = () => boilerStore.stop();
   const handleTriggerAnomaly = () => boilerStore.triggerAnomaly();
   const handleReset = () => boilerStore.reset();
   const handleNavChange = (id: string) => (currentPage = id);
+
+  $effect(() => {
+    const unsub1 = boilerStore.systemStatus.subscribe((v) => (systemStatus = v));
+    const unsub2 = boilerStore.isRunning.subscribe((v) => (isRunning = v));
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  });
 </script>
 
 <div class="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
   <Header
-    systemStatus={$boilerStore.systemStatus}
-    isRunning={$boilerStore.isRunning}
+    systemStatus={systemStatus}
+    isRunning={isRunning}
     onStart={handleStart}
     onStop={handleStop}
     onTriggerAnomaly={handleTriggerAnomaly}
