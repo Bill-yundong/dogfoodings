@@ -56,6 +56,8 @@ export function useGaussianPlume() {
       gridConfig.width,
       gridConfig.height,
       gridConfig.resolution,
+      0,
+      0,
       currentTime.value
     )
 

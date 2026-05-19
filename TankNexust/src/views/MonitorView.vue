@@ -75,7 +75,7 @@ function startSimulationLoop() {
   stopSimulationLoop()
 
   simulationInterval = setInterval(() => {
-    if (simulationStore.isRunning) {
+    if (simulationStore.isRunning && leakTank.value) {
       simulationStore.setTime(simulationStore.currentTime + 0.5 * simulationStore.simulationSpeed)
 
       const result = runGaussianSimulation(
@@ -83,6 +83,8 @@ function startSimulationLoop() {
         200,
         200,
         5,
+        leakTank.value.position.x,
+        leakTank.value.position.y,
         simulationStore.currentTime
       )
 
@@ -109,8 +111,8 @@ function updateTerminalAlerts(result: any) {
 
       let avgX = 0, avgY = 0
       for (const point of zone.polygon) {
-        avgX += point.x
-        avgY += point.y
+        avgX += result.origin.x + point.x
+        avgY += result.origin.y + point.y
       }
       avgX /= zone.polygon.length
       avgY /= zone.polygon.length
@@ -119,8 +121,8 @@ function updateTerminalAlerts(result: any) {
       const dy = terminal.position.y - avgY
       const dist = Math.sqrt(dx * dx + dy * dy)
 
-      const radius = Math.max(...zone.polygon.map(p => 
-        Math.sqrt(Math.pow(p.x - avgX, 2) + Math.pow(p.y - avgY, 2))
+      const radius = Math.max(...zone.polygon.map((p: { x: number; y: number }) => 
+        Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2))
       ))
 
       if (dist < radius * 1.5 && dist < minDistance) {

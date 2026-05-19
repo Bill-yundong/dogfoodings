@@ -44,7 +44,9 @@ export function calculateConcentration(
     return calculateStaticConcentration(x, y, z, params, time)
   }
 
-  const distance = Math.max(Math.abs(x), 1)
+  if (x < 0) return 0
+
+  const distance = Math.max(x, 1)
   const { sigmaY, sigmaZ } = calculateDiffusionParameters(distance, params.atmosphericStability)
 
   const term1 = sourceStrength / (Math.pow(2 * Math.PI, 1.5) * sigmaY * sigmaZ * windSpeed)
@@ -86,8 +88,8 @@ export function generateConcentrationGrid(
   gridWidth: number,
   gridHeight: number,
   resolution: number,
-  originX: number,
-  originY: number,
+  sourceX: number,
+  sourceY: number,
   time: number
 ): number[][] {
   const grid: number[][] = []
@@ -99,8 +101,11 @@ export function generateConcentrationGrid(
       const worldX = (i - gridWidth / 2) * resolution
       const worldY = (j - gridHeight / 2) * resolution
 
-      const rotatedX = worldX * Math.cos(windRad) + worldY * Math.sin(windRad)
-      const rotatedY = -worldX * Math.sin(windRad) + worldY * Math.cos(windRad)
+      const relX = worldX - sourceX
+      const relY = worldY - sourceY
+
+      const rotatedX = relX * Math.cos(windRad) + relY * Math.sin(windRad)
+      const rotatedY = -relX * Math.sin(windRad) + relY * Math.cos(windRad)
 
       const concentration = calculateConcentration(rotatedX, rotatedY, 1.5, params, time)
 
@@ -113,12 +118,14 @@ export function generateConcentrationGrid(
 
 export function extractRiskZones(
   concentrationGrid: number[][],
-  resolution: number
+  resolution: number,
+  sourceX: number = 0,
+  sourceY: number = 0
 ): RiskZone[] {
   const zones: RiskZone[] = []
 
   for (const threshold of RISK_THRESHOLDS) {
-    const polygon = findContour(concentrationGrid, threshold.concentration, resolution)
+    const polygon = findContour(concentrationGrid, threshold.concentration, resolution, sourceX, sourceY)
     if (polygon.length > 2) {
       zones.push({
         level: threshold.level,
@@ -135,7 +142,9 @@ export function extractRiskZones(
 function findContour(
   grid: number[][],
   threshold: number,
-  resolution: number
+  resolution: number,
+  sourceX: number = 0,
+  sourceY: number = 0
 ): Array<{ x: number; y: number }> {
   const points: Array<{ x: number; y: number }> = []
   const height = grid.length
@@ -149,9 +158,11 @@ function findContour(
 
       if (i >= 0 && i < width && j >= 0 && j < height) {
         if (grid[j][i] >= threshold) {
+          const worldX = (i - width / 2) * resolution
+          const worldY = (j - height / 2) * resolution
           points.push({
-            x: (i - width / 2) * resolution,
-            y: (j - height / 2) * resolution
+            x: worldX - sourceX,
+            y: worldY - sourceY
           })
           break
         }
@@ -209,6 +220,8 @@ export function runGaussianSimulation(
   gridWidth: number,
   gridHeight: number,
   resolution: number,
+  sourceX: number,
+  sourceY: number,
   time: number
 ): DiffusionResult {
   const concentrationGrid = generateConcentrationGrid(
@@ -216,8 +229,8 @@ export function runGaussianSimulation(
     gridWidth,
     gridHeight,
     resolution,
-    0,
-    0,
+    sourceX,
+    sourceY,
     time
   )
 
@@ -232,7 +245,7 @@ export function runGaussianSimulation(
       height: gridHeight,
       resolution
     },
-    origin: { x: 0, y: 0 },
+    origin: { x: sourceX, y: sourceY },
     concentrationGrid,
     riskZones,
     maxConcentration,
