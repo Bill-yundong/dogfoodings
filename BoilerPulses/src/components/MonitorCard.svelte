@@ -8,7 +8,7 @@
   $: statusColor = isOptimal ? 'text-green-400' : value < param.optimal.min ? 'text-blue-400' : 'text-red-400';
   $: bgColor = isOptimal ? 'bg-green-500/10' : value < param.optimal.min ? 'bg-blue-500/10' : 'bg-red-500/10';
   $: borderColor = isOptimal ? 'border-green-500/30' : value < param.optimal.min ? 'border-blue-500/30' : 'border-red-500/30';
-  $: progressPercent = Math.min(100, Math.max(0, ((value - param.optimal.min) / (param.optimal.max - param.optimal.min)) * 100);
+  $: progressPercent = Math.min(100, Math.max(0, ((value - param.optimal.min) / (param.optimal.max - param.optimal.min)) * 100));
 </script>
 
 <div class="monitor-card {bgColor} border {borderColor} rounded-xl p-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02]">
