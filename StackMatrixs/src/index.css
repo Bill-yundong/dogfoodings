@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "JetBrains Mono", monospace;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #0F172A;
+  color: #F1F5F9;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .wms-panel {
+    @apply bg-wms-panel border border-wms-border rounded-lg p-4 shadow-lg;
+  }
+
+  .wms-card {
+    @apply bg-wms-panel/50 border border-wms-border/50 rounded-lg p-4 transition-all duration-300 hover:border-wms-primary/50 hover:shadow-lg;
+  }
+
+  .wms-btn {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .wms-btn-primary {
+    @apply wms-btn bg-wms-primary text-white hover:bg-wms-primary/80 active:bg-wms-primary/70;
+  }
+
+  .wms-btn-success {
+    @apply wms-btn bg-wms-success text-white hover:bg-wms-success/80 active:bg-wms-success/70;
+  }
+
+  .wms-btn-warning {
+    @apply wms-btn bg-wms-warning text-white hover:bg-wms-warning/80 active:bg-wms-warning/70;
+  }
+
+  .wms-btn-danger {
+    @apply wms-btn bg-wms-danger text-white hover:bg-wms-danger/80 active:bg-wms-danger/70;
+  }
+
+  .wms-input {
+    @apply w-full px-3 py-2 bg-wms-bg border border-wms-border rounded-md text-wms-text placeholder-wms-subtext focus:outline-none focus:border-wms-primary focus:ring-1 focus:ring-wms-primary transition-all;
+  }
+
+  .wms-status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .wms-status-idle {
+    @apply wms-status-dot bg-wms-subtext;
+  }
+
+  .wms-status-running {
+    @apply wms-status-dot bg-wms-success animate-pulse;
+  }
+
+  .wms-status-paused {
+    @apply wms-status-dot bg-wms-warning;
+  }
+
+  .wms-status-fault {
+    @apply wms-status-dot bg-wms-danger animate-pulse;
+  }
+
+  .wms-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  .wms-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .wms-scrollbar::-webkit-scrollbar-track {
+    background: #1E293B;
+    border-radius: 3px;
+  }
+
+  .wms-scrollbar::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+  }
+
+  .wms-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748B;
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .grid-pattern {
+    background-image: 
+      linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
