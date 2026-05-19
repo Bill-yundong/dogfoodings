@@ -4,10 +4,10 @@
   import { boilerSimulator } from './lib/simulator/BoilerDataSimulator.js';
   import { mpcEngine } from './lib/mpc/ModelPredictiveControl.js';
   import { semanticSync } from './lib/sync/SemanticSynchronizer.js';
-  import MonitorPanel from './MonitorPanel.svelte';
-  import ControlPanel from './ControlPanel.svelte';
-  import EfficiencyDashboard from './EfficiencyDashboard.svelte';
-  import AnomalyAnalysis from './AnomalyAnalysis.svelte';
+  import MonitorPanel from './components/MonitorPanel.svelte';
+  import ControlPanel from './components/ControlPanel.svelte';
+  import EfficiencyDashboard from './components/EfficiencyDashboard.svelte';
+  import AnomalyAnalysis from './components/AnomalyAnalysis.svelte';
 
   let activeTab = 'monitor';
   let startTime = Date.now();
