@@ -154,7 +154,10 @@ export const SafetyPanel = () => {
             导出历史数据
           </button>
           <button
-            onClick={() => robotDB.clearAll()}
+            onClick={async () => {
+              await robotDB.clearAll();
+              await actions.syncSnapshotCount();
+            }}
             className="w-full bg-accent-red/20 hover:bg-accent-red/30 text-accent-red px-4 py-2 rounded-lg text-sm transition-colors"
           >
             清空存储
