@@ -93,9 +93,9 @@ const App: Component = () => {
           <div class="sidebar-section">
             <h2>卫星列表 ({store.satellites().filter(s => s.active).length}/{store.satellites().length})</h2>
             <SatelliteList
-              satellites={store.satellites()}
-              positions={store.positions()}
-              selectedId={store.selectedSatelliteId()}
+              getSatellites={store.satellites}
+              getPositions={store.positions}
+              getSelectedId={store.selectedSatelliteId}
               onSelect={store.setSelectedSatelliteId}
               onToggle={store.toggleSatellite}
             />
@@ -104,16 +104,16 @@ const App: Component = () => {
           <div class="sidebar-section">
             <h2>卫星详情</h2>
             <SatelliteInfo
-              satellite={store.selectedSatellite()}
-              position={selectedSatellitePosition()}
+              getSatellite={store.selectedSatellite}
+              getPosition={selectedSatellitePosition}
             />
           </div>
 
           <div class="sidebar-section">
             <h2>地面测控站 ({store.stations().length})</h2>
             <GroundStationList
-              stations={store.stations()}
-              selectedId={store.selectedStationId()}
+              getStations={store.stations}
+              getSelectedId={store.selectedStationId}
               onSelect={store.setSelectedStationId}
             />
           </div>

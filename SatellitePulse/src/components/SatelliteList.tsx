@@ -1,24 +1,28 @@
 import type { Component } from 'solid-js'
-import { For } from 'solid-js'
+import { For, createMemo } from 'solid-js'
 import type { Satellite, SatellitePosition } from '../core/types'
 import { formatAltitude, formatVelocity } from '../utils/format'
 
 interface SatelliteListProps {
-  satellites: Satellite[]
-  positions: SatellitePosition[]
-  selectedId: string | null
+  getSatellites: () => Satellite[]
+  getPositions: () => SatellitePosition[]
+  getSelectedId: () => string | null
   onSelect: (id: string | null) => void
   onToggle: (id: string) => void
 }
 
 export const SatelliteList: Component<SatelliteListProps> = (props) => {
+  const satellites = createMemo(() => props.getSatellites())
+  const positions = createMemo(() => props.getPositions())
+  const selectedId = createMemo(() => props.getSelectedId())
+
   const getPosition = (satId: string) => {
-    return props.positions.find(p => p.satelliteId === satId)
+    return positions().find(p => p.satelliteId === satId)
   }
 
   const handleClick = (satId: string) => {
-    console.log('[SatelliteList] 点击卫星:', satId, '当前选中:', props.selectedId)
-    if (satId === props.selectedId) {
+    console.log('[SatelliteList] 点击卫星:', satId, '当前选中:', selectedId())
+    if (satId === selectedId()) {
       console.log('[SatelliteList] 取消选择卫星')
       props.onSelect(null)
     } else {
@@ -29,14 +33,18 @@ export const SatelliteList: Component<SatelliteListProps> = (props) => {
 
   return (
     <div class="satellite-list">
-      <For each={props.satellites}>
+      <For each={satellites()}>
         {(sat) => {
           const pos = getPosition(sat.id)
-          const isSelected = sat.id === props.selectedId
+          const isSelected = createMemo(() => sat.id === selectedId())
 
           return (
             <div
-              class={`satellite-item ${isSelected ? 'active' : ''} ${!sat.active ? 'opacity-50' : ''}`}
+              classList={{
+                'satellite-item': true,
+                'active': isSelected(),
+                'opacity-50': !sat.active
+              }}
               onClick={() => handleClick(sat.id)}
             >
               <div
