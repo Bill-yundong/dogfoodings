@@ -2,6 +2,13 @@ import { Component, createSignal } from 'solid-js';
 import { User, Bell, Database, Palette, Save, RotateCcw, Trash2 } from 'lucide-solid';
 import { clearAllData } from '@/db';
 
+const themes = [
+  { name: '深蓝（默认）', color: '#1e40af', cssVar: '#3b82f6' },
+  { name: '青绿', color: '#0891b2', cssVar: '#06b6d4' },
+  { name: '紫色', color: '#7c3aed', cssVar: '#8b5cf6' },
+  { name: '橙色', color: '#ea580c', cssVar: '#f97316' },
+];
+
 const SystemSettings: Component = () => {
   const [activeTab, setActiveTab] = createSignal<'profile' | 'notifications' | 'database' | 'appearance'>('profile');
   const [autoSave, setAutoSave] = createSignal(true);
@@ -10,6 +17,7 @@ const SystemSettings: Component = () => {
   const [pushNotifications, setPushNotifications] = createSignal(false);
   const [showGrid, setShowGrid] = createSignal(true);
   const [animationQuality, setAnimationQuality] = createSignal<'low' | 'medium' | 'high'>('high');
+  const [activeTheme, setActiveTheme] = createSignal(0);
 
   const tabs = [
     { id: 'profile' as const, label: '个人设置', icon: User },
@@ -20,8 +28,13 @@ const SystemSettings: Component = () => {
 
   const handleClearData = async () => {
     if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
-      await clearAllData();
-      alert('数据已清空');
+      try {
+        await clearAllData();
+        alert('数据已清空');
+      } catch (error) {
+        console.error('Failed to clear data:', error);
+        alert('清空数据失败，请查看控制台');
+      }
     }
   };
 
@@ -279,18 +292,20 @@ const SystemSettings: Component = () => {
                 <div class="pt-4 border-t border-dark-100">
                   <h3 class="text-lg font-semibold text-gray-100 mb-4">主题颜色</h3>
                   <div class="flex gap-3">
-                    {[
-                      { name: '深蓝（默认）', color: '#1e40af' },
-                      { name: '青绿', color: '#0891b2' },
-                      { name: '紫色', color: '#7c3aed' },
-                      { name: '橙色', color: '#ea580c' },
-                    ].map((theme) => (
-                      <button class="flex flex-col items-center gap-1.5 group">
+                    {themes.map((theme, index) => (
+                      <button 
+                        onClick={() => {
+                          setActiveTheme(index);
+                          document.documentElement.style.setProperty('--color-primary', theme.cssVar);
+                          alert(`已切换到"${theme.name}"主题`);
+                        }}
+                        class="flex flex-col items-center gap-1.5 group"
+                      >
                         <div
-                          class="w-12 h-12 rounded-xl border-2 border-transparent hover:border-gray-400 transition-all group-hover:scale-110"
+                          class={`w-12 h-12 rounded-xl border-2 transition-all group-hover:scale-110 ${activeTheme() === index ? 'border-white ring-2 ring-primary-500' : 'border-transparent hover:border-gray-400'}`}
                           style={{ 'background-color': theme.color }}
                         />
-                        <span class="text-xs text-gray-500 group-hover:text-gray-300">{theme.name}</span>
+                        <span class={`text-xs ${activeTheme() === index ? 'text-primary-400' : 'text-gray-500 group-hover:text-gray-300'}`}>{theme.name}</span>
                       </button>
                     ))}
                   </div>

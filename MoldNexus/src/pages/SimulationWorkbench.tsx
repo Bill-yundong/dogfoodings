@@ -252,13 +252,6 @@ const SimulationWorkbench: Component = () => {
     return stats;
   };
 
-  const handleManualSave = () => {
-    if (!lastResult) {
-      return;
-    }
-    saveSnapshot(lastResult);
-  };
-
   return (
     <div class="h-[calc(100vh-56px-48px)] flex flex-col gap-4">
       <div class="flex items-center justify-between">
@@ -268,7 +261,15 @@ const SimulationWorkbench: Component = () => {
         </div>
         <div class="flex items-center gap-3">
           <button
-            onClick={() => !simState.isRunning ? (simState.isPaused ? resumeSimulation : pauseSimulation) : startSimulation}
+            onClick={() => {
+              if (!simState.isRunning) {
+                startSimulation();
+              } else if (simState.isPaused) {
+                resumeSimulation();
+              } else {
+                pauseSimulation();
+              }
+            }}
             class={`btn ${simState.isRunning && !simState.isPaused ? 'btn-secondary' : 'btn-primary'}`}
           >
             {simState.isRunning && !simState.isPaused ? (
@@ -280,10 +281,16 @@ const SimulationWorkbench: Component = () => {
           <button onClick={resetSimulation} class="btn btn-secondary">
             <RotateCcw class="w-4 h-4" /> 重置
           </button>
-          <button onClick={handleManualSave} class="btn btn-secondary">
+          <button 
+            onClick={() => lastResult && saveSnapshot(lastResult)}
+            class="btn btn-secondary"
+          >
             <Save class="w-4 h-4" /> 保存快照
           </button>
-          <button class="btn btn-secondary">
+          <button 
+            onClick={() => alert('导出数据功能开发中...')}
+            class="btn btn-secondary"
+          >
             <Download class="w-4 h-4" /> 导出数据
           </button>
         </div>

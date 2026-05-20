@@ -95,7 +95,10 @@ const AnalyticsReport: Component = () => {
               </button>
             ))}
           </div>
-          <button class="btn btn-secondary">
+          <button 
+            onClick={() => alert('导出报告功能开发中...')}
+            class="btn btn-secondary"
+          >
             <Download class="w-4 h-4" /> 导出报告
           </button>
         </div>

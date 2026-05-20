@@ -76,10 +76,16 @@ const ParameterManager: Component = () => {
               class="w-64 pl-10 pr-4 py-2 bg-dark-100 border border-dark-100 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-primary-500"
             />
           </div>
-          <button class="btn btn-secondary">
+          <button 
+            onClick={() => alert('筛选功能开发中...')}
+            class="btn btn-secondary"
+          >
             <Filter class="w-4 h-4" /> 筛选
           </button>
-          <button class="btn btn-secondary">
+          <button 
+            onClick={() => alert('导出功能开发中...')}
+            class="btn btn-secondary"
+          >
             <Download class="w-4 h-4" /> 导出
           </button>
         </div>

@@ -39,7 +39,10 @@ const Header: Component = () => {
           </span>
         </div>
 
-        <button class="relative p-2 text-gray-400 hover:text-gray-200 hover:bg-dark-100 rounded-lg transition-colors">
+        <button 
+          onClick={() => alert('通知功能开发中...')}
+          class="relative p-2 text-gray-400 hover:text-gray-200 hover:bg-dark-100 rounded-lg transition-colors"
+        >
           <Bell class="w-5 h-5" />
           <span class="absolute top-1 right-1 w-2 h-2 bg-accent-red rounded-full" />
         </button>
