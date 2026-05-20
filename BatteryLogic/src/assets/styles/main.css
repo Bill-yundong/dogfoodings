@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #165DFF;
+  --color-warning: #FF7D00;
+  --color-success: #00B42A;
+  --color-danger: #F53F3F;
+  --color-bg-dark: #1D2129;
+  --color-bg-card: #272E3B;
+  --color-border: #4E5969;
+  --color-text-primary: #F2F3F5;
+  --color-text-secondary: #C9CDD4;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-dark-500/80 backdrop-blur-sm border border-dark-400/50 rounded-lg;
+  }
+  
+  .data-card {
+    @apply glass-card p-4 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded font-medium transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-95;
+  }
+  
+  .btn-ghost {
+    @apply px-4 py-2 bg-transparent text-dark-100 rounded font-medium border border-dark-400 transition-all duration-200 hover:bg-dark-400/30 hover:text-white;
+  }
+  
+  .status-indicator {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .status-normal {
+    @apply bg-success shadow-lg shadow-success/50;
+  }
+  
+  .status-warning {
+    @apply bg-warning shadow-lg shadow-warning/50 animate-pulse;
+  }
+  
+  .status-danger {
+    @apply bg-danger shadow-lg shadow-danger/50 animate-blink;
+  }
+}
