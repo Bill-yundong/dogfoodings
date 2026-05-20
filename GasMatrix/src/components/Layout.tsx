@@ -38,7 +38,7 @@ export default function Layout({ children }: LayoutProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isConnected, logout } = useGasMatrixStore();
+  const { user, isConnected, logout, settings } = useGasMatrixStore();
 
   const handleLogout = () => {
     logout();
@@ -46,7 +46,12 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 text-dark-100">
+    <div className={cn(
+      'min-h-screen',
+      settings.theme === 'light' 
+        ? 'bg-slate-50 text-slate-900' 
+        : 'bg-dark-950 text-dark-100'
+    )} data-theme={settings.theme}>
       <div className="fixed inset-0 bg-grid-pattern bg-[size:50px_50px] pointer-events-none opacity-30" />
       
       <aside

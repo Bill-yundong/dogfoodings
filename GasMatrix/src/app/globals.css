@@ -123,3 +123,111 @@ body {
 .glow-animation {
   animation: glow-pulse 2s ease-in-out infinite;
 }
+
+[data-theme="light"] .bg-grid-pattern {
+  background-image: linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+}
+
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #1e293b;
+}
+
+[data-theme="light"] .bg-dark-900\/95 {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme="light"] .border-dark-700\/50 {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme="light"] .text-dark-100 {
+  color: #1e293b;
+}
+
+[data-theme="light"] .text-dark-200 {
+  color: #334155;
+}
+
+[data-theme="light"] .text-dark-300 {
+  color: #475569;
+}
+
+[data-theme="light"] .text-dark-400 {
+  color: #64748b;
+}
+
+[data-theme="light"] .text-dark-500 {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .bg-dark-700\/50 {
+  background-color: rgba(226, 232, 240, 0.5);
+}
+
+[data-theme="light"] .bg-dark-700 {
+  background-color: #e2e8f0;
+}
+
+[data-theme="light"] .bg-dark-800 {
+  background-color: #f1f5f9;
+}
+
+[data-theme="light"] .bg-dark-800\/50 {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+[data-theme="light"] .bg-dark-900\/80 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .bg-dark-900\/60 {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .border-dark-600 {
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .border-dark-700 {
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .hover\:bg-dark-700\/50:hover {
+  background-color: rgba(226, 232, 240, 0.7);
+}
+
+[data-theme="light"] .hover\:bg-dark-600:hover {
+  background-color: #cbd5e1;
+}
+
+[data-theme="light"] .input-field {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+[data-theme="light"] .input-field::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .btn-secondary {
+  background-color: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background-color: #cbd5e1;
+}
+
+[data-theme="light"] .leaflet-container {
+  background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .leaflet-tile-pane {
+  filter: brightness(1) contrast(1) saturate(1);
+}
