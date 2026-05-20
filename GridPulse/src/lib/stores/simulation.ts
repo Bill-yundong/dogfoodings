@@ -117,7 +117,7 @@ export function createSimulationStore() {
       );
       
       availableWorker.worker.postMessage({
-        type: 'simulate',
+        type: 'start-simulation',
         params: get(params),
         config: get(config),
         taskId

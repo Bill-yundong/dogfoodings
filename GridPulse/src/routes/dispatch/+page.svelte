@@ -138,10 +138,107 @@
     return 10 + (140 * (90 / maxLoad));
   }
 
+  let notificationMessage = '';
+  let showNotification = false;
+
+  function showNotificationFn(message: string) {
+    notificationMessage = message;
+    showNotification = true;
+    setTimeout(() => {
+      showNotification = false;
+    }, 3000);
+  }
+
+  function handleExecutePeakShaving() {
+    const newCmd: DispatchCommand = {
+      id: `cmd-${Date.now()}`,
+      source: 'dispatch-center',
+      target: 'all-controllers',
+      controlSignal: {
+        type: 'load-shed',
+        powerAdjustment: -15.0,
+        duration: 7200,
+        priority: 1
+      },
+      issuedAt: new Date(),
+      status: 'sent'
+    };
+    commands = [newCmd, ...commands];
+    syncStatus = { ...syncStatus, loadController3: 'syncing' };
+    setTimeout(() => {
+      syncStatus = { ...syncStatus, loadController3: 'connected' };
+      commands = commands.map(c => c.id === newCmd.id ? { ...c, status: 'executed' } : c);
+    }, 2000);
+    showNotificationFn('削峰策略已执行，正在同步至所有控制器...');
+  }
+
+  function handleGenerateReport() {
+    showNotificationFn('正在生成调控报告，请稍候...');
+    setTimeout(() => {
+      showNotificationFn('调控报告生成完成！');
+    }, 2000);
+  }
+
+  function handleViewHistory() {
+    showNotificationFn('正在加载历史记录...');
+  }
+
+  function handleSyncAll() {
+    syncStatus = {
+      dispatchCenter: 'syncing',
+      loadController1: 'syncing',
+      loadController2: 'syncing',
+      loadController3: 'syncing'
+    };
+    setTimeout(() => {
+      syncStatus = {
+        dispatchCenter: 'connected',
+        loadController1: 'connected',
+        loadController2: 'connected',
+        loadController3: 'connected'
+      };
+      showNotificationFn('所有控制器同步完成！');
+    }, 1500);
+  }
+
+  function handlePublishCommand() {
+    const newCmd: DispatchCommand = {
+      id: `cmd-${Date.now()}`,
+      source: 'dispatch-center',
+      target: `load-controller-${Math.floor(Math.random() * 3) + 1}`,
+      controlSignal: {
+        type: Math.random() > 0.5 ? 'load-shed' : 'frequency-support',
+        powerAdjustment: (Math.random() > 0.5 ? -1 : 1) * (2 + Math.random() * 8),
+        duration: Math.floor(600 + Math.random() * 3600),
+        priority: Math.floor(1 + Math.random() * 3)
+      },
+      issuedAt: new Date(),
+      status: 'sent'
+    };
+    commands = [newCmd, ...commands];
+    showNotificationFn('新指令已发布！');
+    setTimeout(() => {
+      commands = commands.map(c => c.id === newCmd.id ? { ...c, status: 'acknowledged' } : c);
+    }, 1000);
+    setTimeout(() => {
+      commands = commands.map(c => c.id === newCmd.id ? { ...c, status: 'executed' } : c);
+    }, 2500);
+  }
+
   const maxLoad = Math.max(...peakForecast.map(p => p.load));
 </script>
 
 <div class="space-y-6">
+  {#if showNotification}
+    <div class="fixed top-24 right-6 z-50 glass-panel px-6 py-4 shadow-xl">
+      <div class="flex items-center gap-3">
+        <svg class="w-5 h-5 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span class="text-white">{notificationMessage}</span>
+      </div>
+    </div>
+  {/if}
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="card">
       <h3 class="text-lg font-bold text-white mb-4">数据同步状态</h3>
@@ -265,7 +362,7 @@
   <div class="card">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-bold text-white">调度指令队列</h3>
-      <button class="btn-primary">发布新指令</button>
+      <button class="btn-primary" onclick={handlePublishCommand}>发布新指令</button>
     </div>
     
     <div class="overflow-x-auto">
@@ -375,10 +472,10 @@
     <div class="card">
       <h3 class="text-lg font-bold text-white mb-4">快速操作</h3>
       <div class="space-y-3">
-        <button class="btn-primary w-full">执行削峰策略</button>
-        <button class="btn-secondary w-full">生成调控报告</button>
-        <button class="btn-secondary w-full">查看历史记录</button>
-        <button class="btn-accent w-full">同步所有控制器</button>
+        <button class="btn-primary w-full" onclick={handleExecutePeakShaving}>执行削峰策略</button>
+        <button class="btn-secondary w-full" onclick={handleGenerateReport}>生成调控报告</button>
+        <button class="btn-secondary w-full" onclick={handleViewHistory}>查看历史记录</button>
+        <button class="btn-accent w-full" onclick={handleSyncAll}>同步所有控制器</button>
       </div>
     </div>
   </div>

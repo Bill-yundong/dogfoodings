@@ -83,9 +83,9 @@
     loadData();
   });
 
-  $effect(() => {
+  $: selectedPattern, currentPage, (() => {
     loadData();
-  });
+  })();
 </script>
 
 <div class="space-y-6">
