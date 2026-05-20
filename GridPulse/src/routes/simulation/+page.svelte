@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { SolverConfig } from '$lib/types';
   import { simulationStore } from '$lib/stores/simulation';
   import FrequencyChart from '$lib/components/charts/FrequencyChart.svelte';
   import PhaseSpaceChart from '$lib/components/charts/PhaseSpaceChart.svelte';
@@ -42,9 +43,9 @@
            status === 'failed' ? 'text-red-400' : 'text-dark-400';
   }
 
-  $: chartData = currentResult ? Array.from({ length: Math.min(currentResult.timeSeries.length, 2000) }, (_, i) => ({
-    time: currentResult.timeSeries[i],
-    frequency: currentResult.frequencySeries[i]
+  $: chartData = $currentResult ? Array.from({ length: Math.min($currentResult.timeSeries.length, 2000) }, (_, i) => ({
+    time: $currentResult.timeSeries[i],
+    frequency: $currentResult.frequencySeries[i]
   })) : [];
 </script>
 
@@ -61,7 +62,7 @@
               type="number" 
               class="input-field w-full"
               step="0.1"
-              bind:value={params.M}
+              value={$params.M}
               onchange={(e) => updateParams({ M: Number(e.target.value) })}
             />
           </div>
@@ -72,7 +73,7 @@
               type="number" 
               class="input-field w-full"
               step="0.1"
-              bind:value={params.D}
+              value={$params.D}
               onchange={(e) => updateParams({ D: Number(e.target.value) })}
             />
           </div>
@@ -83,7 +84,7 @@
               type="number" 
               class="input-field w-full"
               step="0.01"
-              bind:value={params.Pm}
+              value={$params.Pm}
               onchange={(e) => updateParams({ Pm: Number(e.target.value) })}
             />
           </div>
@@ -94,7 +95,7 @@
               type="number" 
               class="input-field w-full"
               step="0.01"
-              bind:value={params.Pl}
+              value={$params.Pl}
               onchange={(e) => updateParams({ Pl: Number(e.target.value) })}
             />
           </div>
@@ -106,7 +107,7 @@
                 type="number" 
                 class="input-field w-full"
                 step="0.01"
-                bind:value={params.E}
+                value={$params.E}
                 onchange={(e) => updateParams({ E: Number(e.target.value) })}
               />
             </div>
@@ -116,7 +117,7 @@
                 type="number" 
                 class="input-field w-full"
                 step="0.01"
-                bind:value={params.V}
+                value={$params.V}
                 onchange={(e) => updateParams({ V: Number(e.target.value) })}
               />
             </div>
@@ -128,7 +129,7 @@
               type="number" 
               class="input-field w-full"
               step="0.01"
-              bind:value={params.X}
+              value={$params.X}
               onchange={(e) => updateParams({ X: Number(e.target.value) })}
             />
           </div>
@@ -143,7 +144,7 @@
             <label class="block text-sm text-dark-300 mb-2">数值积分方法</label>
             <select 
               class="input-field w-full"
-              bind:value={config.method}
+              value={$config.method}
               onchange={(e) => updateConfig({ method: e.target.value as SolverConfig['method'] })}
             >
               {#each integrationMethods as method}
@@ -158,7 +159,7 @@
               type="number" 
               class="input-field w-full"
               step="0.001"
-              bind:value={config.dt}
+              value={$config.dt}
               onchange={(e) => updateConfig({ dt: Number(e.target.value) })}
             />
           </div>
@@ -169,7 +170,7 @@
               type="number" 
               class="input-field w-full"
               step="1"
-              bind:value={config.tEnd}
+              value={$config.tEnd}
               onchange={(e) => updateConfig({ tEnd: Number(e.target.value) })}
             />
           </div>
@@ -179,9 +180,9 @@
       <button 
         class="btn-primary w-full py-3 text-lg"
         onclick={handleStartSimulation}
-        disabled={isSimulating || runningTasks.length > 0}
+        disabled={isSimulating || $runningTasks.length > 0}
       >
-        {#if isSimulating || runningTasks.length > 0}
+        {#if isSimulating || $runningTasks.length > 0}
           <span class="flex items-center justify-center gap-2">
             <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -196,52 +197,52 @@
     </div>
 
     <div class="lg:col-span-2 space-y-6">
-      {#if currentResult}
+      {#if $currentResult}
         <div class="card">
           <h3 class="text-lg font-bold text-white mb-4">稳定性分析结果</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="text-center p-3 bg-dark-800/50 rounded-lg">
               <p class="text-xs text-dark-400">稳定裕度</p>
               <p class={`text-xl font-mono font-bold ${
-                currentResult.stabilityMargin.margin > 0.2 ? 'text-green-400' : 
-                currentResult.stabilityMargin.margin > 0.1 ? 'text-yellow-400' : 'text-red-400'
+                $currentResult.stabilityMargin.margin > 0.2 ? 'text-green-400' : 
+                $currentResult.stabilityMargin.margin > 0.1 ? 'text-yellow-400' : 'text-red-400'
               }`}>
-                {(currentResult.stabilityMargin.margin * 100).toFixed(1)}%
+                {($currentResult.stabilityMargin.margin * 100).toFixed(1)}%
               </p>
             </div>
             <div class="text-center p-3 bg-dark-800/50 rounded-lg">
               <p class="text-xs text-dark-400">频率最低点</p>
               <p class="text-xl font-mono font-bold text-accent-400">
-                {currentResult.stabilityMargin.nadir.toFixed(3)} Hz
+                {$currentResult.stabilityMargin.nadir.toFixed(3)} Hz
               </p>
             </div>
             <div class="text-center p-3 bg-dark-800/50 rounded-lg">
               <p class="text-xs text-dark-400">最大偏差</p>
               <p class="text-xl font-mono font-bold text-yellow-400">
-                {currentResult.stabilityMargin.maxDeviation.toFixed(3)} Hz
+                {$currentResult.stabilityMargin.maxDeviation.toFixed(3)} Hz
               </p>
             </div>
             <div class="text-center p-3 bg-dark-800/50 rounded-lg">
               <p class="text-xs text-dark-400">恢复时间</p>
               <p class="text-xl font-mono font-bold text-white">
-                {currentResult.stabilityMargin.recoveryTime.toFixed(2)} s
+                {$currentResult.stabilityMargin.recoveryTime.toFixed(2)} s
               </p>
             </div>
           </div>
           
           <div class="flex items-center gap-4 mb-4">
             <span class={`px-3 py-1 rounded-full text-sm font-medium ${
-              currentResult.stabilityMargin.isStable 
+              $currentResult.stabilityMargin.isStable 
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                 : 'bg-red-500/20 text-red-400 border border-red-500/30'
             }`}>
-              {currentResult.stabilityMargin.isStable ? '✓ 系统稳定' : '✗ 系统失稳'}
+              {$currentResult.stabilityMargin.isStable ? '✓ 系统稳定' : '✗ 系统失稳'}
             </span>
             <span class="text-sm text-dark-400">
-              ROCOF: {currentResult.stabilityMargin.rocof.toFixed(3)} Hz/s
+              ROCOF: {$currentResult.stabilityMargin.rocof.toFixed(3)} Hz/s
             </span>
             <span class="text-sm text-dark-400">
-              稳态频率: {currentResult.stabilityMargin.settlingFrequency.toFixed(3)} Hz
+              稳态频率: {$currentResult.stabilityMargin.settlingFrequency.toFixed(3)} Hz
             </span>
           </div>
         </div>
@@ -261,8 +262,8 @@
           <div class="card">
             <h3 class="text-lg font-bold text-white mb-4">相空间轨迹</h3>
             <PhaseSpaceChart
-              deltaData={currentResult.deltaSeries}
-              omegaData={currentResult.omegaSeries}
+              deltaData={$currentResult.deltaSeries}
+              omegaData={$currentResult.omegaSeries}
               width={300}
               height={300}
             />
@@ -292,7 +293,7 @@
               </tr>
             </thead>
             <tbody class="text-sm">
-              {#each tasks.slice(0, 10) as task}
+              {#each $tasks.slice(0, 10) as task}
                 <tr class="border-b border-dark-800 hover:bg-dark-800/30">
                   <td class="py-3 font-mono text-xs text-accent-400">{task.id}</td>
                   <td class="py-3">
@@ -308,7 +309,7 @@
                   <td class="py-3 text-dark-400">{formatTaskTime(task.createdAt)}</td>
                 </tr>
               {/each}
-              {#if tasks.length === 0}
+              {#if $tasks.length === 0}
                 <tr>
                   <td colspan="4" class="py-8 text-center text-dark-500">暂无仿真任务</td>
                 </tr>

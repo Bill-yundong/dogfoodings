@@ -1,14 +1,14 @@
 <script lang="ts">
   import type { DispatchCommand } from '$lib/types';
 
-  let syncStatus = $state({
+  let syncStatus = {
     dispatchCenter: 'connected',
     loadController1: 'connected',
     loadController2: 'connected',
     loadController3: 'syncing'
-  });
+  };
 
-  const commands = $state<DispatchCommand[]>([
+  let commands: DispatchCommand[] = [
     {
       id: 'cmd-001',
       source: 'dispatch-center',
@@ -61,9 +61,9 @@
       issuedAt: new Date(Date.now() - 10000),
       status: 'pending'
     }
-  ]);
+  ];
 
-  const peakForecast = $state([
+  let peakForecast = [
     { hour: 8, load: 85 },
     { hour: 9, load: 92 },
     { hour: 10, load: 95 },
@@ -80,7 +80,7 @@
     { hour: 21, load: 106 },
     { hour: 22, load: 98 },
     { hour: 23, load: 88 }
-  ]);
+  ];
 
   function getStatusColor(status: string) {
     return status === 'connected' ? 'text-green-400' : 
@@ -112,6 +112,30 @@
 
   function formatTime(date: Date) {
     return new Date(date).toLocaleTimeString('zh-CN');
+  }
+
+  function getPeakPoints() {
+    const maxLoad = Math.max(...peakForecast.map(p => p.load));
+    return peakForecast.map((p, i) => `${40 + (i * 640 / (peakForecast.length - 1))},${150 - (p.load / maxLoad) * 140}`).join(' ');
+  }
+
+  function getPeakPolygonPoints() {
+    const points = getPeakPoints();
+    return `40,150 ${points} 680,150`;
+  }
+
+  function getCircleY(load: number) {
+    const maxLoad = Math.max(...peakForecast.map(p => p.load));
+    return 150 - (load / maxLoad) * 140;
+  }
+
+  function getCircleX(index: number) {
+    return 40 + (index * 640 / (peakForecast.length - 1));
+  }
+
+  function getSafeThresholdY() {
+    const maxLoad = Math.max(...peakForecast.map(p => p.load));
+    return 10 + (140 * (90 / maxLoad));
   }
 
   const maxLoad = Math.max(...peakForecast.map(p => p.load));
@@ -180,22 +204,20 @@
             
             <line 
               x1="40" 
-              y1={10 + (140 * (90 / maxLoad))} 
+              y1={getSafeThresholdY()} 
               x2="680" 
-              y2={10 + (140 * (90 / maxLoad))} 
+              y2={getSafeThresholdY()} 
               stroke="#22c55e" 
               stroke-width="1" 
               stroke-dasharray="5,5"
             />
             
-            {#const points = peakForecast.map((p, i) => `${40 + (i * 640 / (peakForecast.length - 1))},${150 - (p.load / maxLoad) * 140}`).join(' ')}
-            
             <polygon 
-              points={`40,150 ${points} 680,150`} 
+              points={getPeakPolygonPoints()} 
               fill="url(#peakGradient)"
             />
             <polyline 
-              points={points} 
+              points={getPeakPoints()} 
               fill="none" 
               stroke="#f97316" 
               stroke-width="2"
@@ -203,8 +225,8 @@
             
             {#each peakForecast as p, i}
               <circle 
-                cx={40 + (i * 640 / (peakForecast.length - 1))} 
-                cy={150 - (p.load / maxLoad) * 140} 
+                cx={getCircleX(i)} 
+                cy={getCircleY(p.load)} 
                 r="3" 
                 fill={p.load > 95 ? "#ef4444" : "#f97316"}
               />
@@ -213,7 +235,7 @@
             {#each peakForecast as p, i}
               {#if i % 2 === 0}
                 <text 
-                  x={40 + (i * 640 / (peakForecast.length - 1))} 
+                  x={getCircleX(i)} 
                   y="155" 
                   text-anchor="middle" 
                   fill="#64748b" 

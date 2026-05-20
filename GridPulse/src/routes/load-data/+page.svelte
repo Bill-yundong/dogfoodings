@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { 
     getUserSnapshots, 
     getUserSnapshotCount, 
@@ -7,12 +8,12 @@
   } from '$lib/db/indexed-db';
   import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
 
-  let snapshots = $state<UserSnapshot[]>([]);
-  let totalCount = $state(0);
-  let isLoading = $state(true);
-  let currentPage = $state(1);
+  let snapshots: UserSnapshot[] = [];
+  let totalCount = 0;
+  let isLoading = true;
+  let currentPage = 1;
   const pageSize = 20;
-  let selectedPattern = $state<string>('all');
+  let selectedPattern: string = 'all';
 
   const patternLabels: Record<string, string> = {
     'all': '全部',
@@ -39,8 +40,8 @@
         (options as any).patternType = selectedPattern;
       }
       
-      snapshots.value = await getUserSnapshots(options);
-      totalCount.value = await getUserSnapshotCount();
+      snapshots = await getUserSnapshots(options);
+      totalCount = await getUserSnapshotCount();
     } finally {
       isLoading = false;
     }
@@ -62,6 +63,20 @@
 
   function getFlexibilityColor(score: number) {
     return score > 0.7 ? 'text-green-400' : score > 0.4 ? 'text-yellow-400' : 'text-red-400';
+  }
+
+  function getChartPoints(data: number[]) {
+    const maxVal = Math.max(...data);
+    return data.map((val, i) => `${50 + (i * 730 / 23)},${180 - (val / maxVal) * 160}`).join(' ');
+  }
+
+  function getChartPolygonPoints(data: number[]) {
+    const points = getChartPoints(data);
+    return `50,180 ${points} 780,180`;
+  }
+
+  function getCircleY(val: number, maxVal: number) {
+    return 180 - (val / maxVal) * 160;
   }
 
   onMount(() => {
@@ -192,7 +207,7 @@
     {/if}
   </div>
 
-  {#if snapshots.length > 0}
+  {#if snapshots.length > 0 && snapshots[0]}
     <div class="card">
       <h3 class="text-lg font-bold text-white mb-4">24小时用电曲线 - {snapshots[0]?.userId}</h3>
       <div class="h-64 relative">
@@ -215,43 +230,37 @@
             />
           {/each}
           
-          {#if snapshots[0]}
-            {#const data = snapshots[0].loadFeatures.hourlyConsumption}
-            {#const maxVal = Math.max(...data)}
-            {#const points = data.map((val, i) => `${50 + (i * 730 / 23)},${180 - (val / maxVal) * 160}`).join(' ')}
-            
-            <polygon 
-              points={`50,180 ${points} 780,180`} 
-              fill="url(#lineGradient)"
+          {#each snapshots[0].loadFeatures.hourlyConsumption as val, i}
+            <circle 
+              cx={50 + (i * 730 / 23)} 
+              cy={getCircleY(val, Math.max(...snapshots[0].loadFeatures.hourlyConsumption))} 
+              r="3" 
+              fill="#06b6d4"
             />
-            <polyline 
-              points={points} 
-              fill="none" 
-              stroke="#06b6d4" 
-              stroke-width="2"
-            />
-            
-            {#each data as val, i}
-              <circle 
-                cx={50 + (i * 730 / 23)} 
-                cy={180 - (val / maxVal) * 160} 
-                r="3" 
-                fill="#06b6d4"
-              />
-            {/each}
-            
-            {#each Array.from({ length: 9 }, (_, i) => i * 3) as hour}
-              <text 
-                x={50 + (hour * 730 / 23)} 
-                y="195" 
-                text-anchor="middle" 
-                fill="#64748b" 
-                font-size="10"
-              >
-                {hour}:00
-              </text>
-            {/each}
-          {/if}
+          {/each}
+          
+          <polygon 
+            points={getChartPolygonPoints(snapshots[0].loadFeatures.hourlyConsumption)} 
+            fill="url(#lineGradient)"
+          />
+          <polyline 
+            points={getChartPoints(snapshots[0].loadFeatures.hourlyConsumption)} 
+            fill="none" 
+            stroke="#06b6d4" 
+            stroke-width="2"
+          />
+          
+          {#each Array.from({ length: 9 }, (_, i) => i * 3) as hour}
+            <text 
+              x={50 + (hour * 730 / 23)} 
+              y="195" 
+              text-anchor="middle" 
+              fill="#64748b" 
+              font-size="10"
+            >
+              {hour}:00
+            </text>
+          {/each}
         </svg>
       </div>
     </div>
