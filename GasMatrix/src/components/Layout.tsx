@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +40,10 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const { user, isConnected, logout, settings } = useGasMatrixStore();
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
+
   const handleLogout = () => {
     logout();
     router.push('/login');
@@ -51,7 +55,7 @@ export default function Layout({ children }: LayoutProps) {
       settings.theme === 'light' 
         ? 'bg-slate-50 text-slate-900' 
         : 'bg-dark-950 text-dark-100'
-    )} data-theme={settings.theme}>
+    )}>
       <div className="fixed inset-0 bg-grid-pattern bg-[size:50px_50px] pointer-events-none opacity-30" />
       
       <aside

@@ -230,7 +230,11 @@ export default function SettingsPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setLocalSettings({ ...localSettings, theme: 'dark' })}
+                onClick={() => {
+                  const newSettings = { ...localSettings, theme: 'dark' };
+                  setLocalSettings(newSettings);
+                  updateSettings(newSettings);
+                }}
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm transition-all',
                   localSettings.theme === 'dark'
@@ -241,7 +245,11 @@ export default function SettingsPage() {
                 深色
               </button>
               <button
-                onClick={() => setLocalSettings({ ...localSettings, theme: 'light' })}
+                onClick={() => {
+                  const newSettings = { ...localSettings, theme: 'light' };
+                  setLocalSettings(newSettings);
+                  updateSettings(newSettings);
+                }}
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm transition-all',
                   localSettings.theme === 'light'
