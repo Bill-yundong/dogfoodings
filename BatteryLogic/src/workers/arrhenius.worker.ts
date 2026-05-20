@@ -4,12 +4,12 @@ import type {
   ThermalRunawayPrediction,
   WorkerMessage,
   WorkerResult
-} from '@/types'
+} from '../types'
 import {
   simulateThermalRunaway,
   calculateThermalPropagation,
   DEFAULT_ARRHENIUS_PARAMS
-} from '@/utils/arrhenius'
+} from '../utils/arrhenius'
 
 interface CalculationTask {
   cells: CellData[]

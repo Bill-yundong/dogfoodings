@@ -91,15 +91,18 @@ export const useBatteryStore = defineStore('battery', () => {
 
     try {
       const worker = new Worker(
-        new URL('@/workers/arrhenius.worker.ts', import.meta.url),
+        new URL('../workers/arrhenius.worker.ts', import.meta.url),
         { type: 'module' }
       )
 
+      const cellsData = JSON.parse(JSON.stringify(allCells.value))
+      const paramsData = JSON.parse(JSON.stringify(arrheniusParams.value))
+      
       worker.postMessage({
         type: 'calculate',
         payload: {
-          cells: allCells.value,
-          params: arrheniusParams.value,
+          cells: cellsData,
+          params: paramsData,
           timeHorizon: 3600,
           timeStep: 5,
           criticalTemp: 180,
@@ -121,12 +124,21 @@ export const useBatteryStore = defineStore('battery', () => {
         } else if (type === 'error') {
           console.error('Calculation error:', payload.message)
           isCalculating.value = false
+          calculationProgress.value = 0
           worker.terminate()
         }
+      }
+      
+      worker.onerror = (error) => {
+        console.error('Worker error:', error)
+        isCalculating.value = false
+        calculationProgress.value = 0
+        worker.terminate()
       }
     } catch (error) {
       console.error('Failed to start worker:', error)
       isCalculating.value = false
+      calculationProgress.value = 0
     }
   }
 

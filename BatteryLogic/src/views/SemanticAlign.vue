@@ -80,7 +80,19 @@ function testRules() {
       sourceCellId: 'test'
     }))
   
-  batteryStore.fireSignals = [...testSignals, ...batteryStore.fireSignals].slice(0, 50)
+  if (testSignals.length === 0) {
+    testSignals.push({
+      id: `test_${Date.now()}_0`,
+      target: 'fire_alarm',
+      action: 'TEST_TRIGGER',
+      value: 1,
+      level: 'info',
+      timestamp: Date.now(),
+      sourceCellId: 'test'
+    })
+  }
+  
+  batteryStore.fireSignals = [...testSignals, ...batteryStore.fireSignals].slice(0, 50);
 }
 
 const activeRulesCount = computed(() => 
@@ -89,8 +101,8 @@ const activeRulesCount = computed(() =>
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-4 overflow-hidden">
-    <div class="flex items-center justify-between">
+  <div class="h-full flex flex-col gap-4">
+    <div class="flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-3">
         <button
           @click="addRule"
@@ -112,14 +124,14 @@ const activeRulesCount = computed(() =>
       </div>
     </div>
 
-    <div class="flex-1 grid grid-cols-3 gap-4 min-h-0 overflow-hidden">
-      <div class="glass-card p-4 flex flex-col">
-        <h3 class="text-white font-semibold mb-3">BMS 数据点</h3>
-        <div class="space-y-2 flex-1 overflow-y-auto">
+    <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
+      <div class="glass-card p-4 flex flex-col min-h-0">
+        <h3 class="text-white font-semibold mb-3 flex-shrink-0">BMS 数据点</h3>
+        <div class="space-y-2 overflow-y-auto">
           <div
             v-for="tag in BMS_TAGS"
             :key="tag.id"
-            class="p-3 rounded-lg bg-dark-600/50 border border-primary/30"
+            class="p-3 rounded-lg bg-dark-600/50 border border-primary/30 flex-shrink-0"
           >
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-primary">{{ tag.label }}</span>
@@ -148,13 +160,13 @@ const activeRulesCount = computed(() =>
         </div>
       </div>
 
-      <div class="glass-card p-4 flex flex-col">
-        <h3 class="text-white font-semibold mb-3">映射规则</h3>
-        <div class="space-y-2 flex-1 overflow-y-auto">
+      <div class="glass-card p-4 flex flex-col min-h-0">
+        <h3 class="text-white font-semibold mb-3 flex-shrink-0">映射规则</h3>
+        <div class="space-y-2 overflow-y-auto">
           <div
             v-for="rule in batteryStore.mappingRules"
             :key="rule.id"
-            class="p-3 rounded-lg bg-dark-600/50 border border-dark-400/30 hover:border-primary/50 transition-colors"
+            class="p-3 rounded-lg bg-dark-600/50 border border-dark-400/30 hover:border-primary/50 transition-colors flex-shrink-0"
             :class="{ 'opacity-50': !rule.enabled }"
           >
             <div class="flex items-center gap-2 mb-2">
@@ -196,13 +208,13 @@ const activeRulesCount = computed(() =>
         </div>
       </div>
 
-      <div class="glass-card p-4 flex flex-col">
-        <h3 class="text-white font-semibold mb-3">消防设备标签</h3>
-        <div class="space-y-2 flex-1 overflow-y-auto">
+      <div class="glass-card p-4 flex flex-col min-h-0">
+        <h3 class="text-white font-semibold mb-3 flex-shrink-0">消防设备标签</h3>
+        <div class="space-y-2 overflow-y-auto">
           <div
             v-for="tag in FIRE_TAGS"
             :key="tag.id"
-            class="p-3 rounded-lg bg-dark-600/50 border border-danger/30"
+            class="p-3 rounded-lg bg-dark-600/50 border border-danger/30 flex-shrink-0"
           >
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-danger">{{ tag.label }}</span>
@@ -232,7 +244,7 @@ const activeRulesCount = computed(() =>
 
     <div class="glass-card p-4 flex-shrink-0">
       <h3 class="text-white font-semibold mb-3">联动信号日志</h3>
-      <div class="h-48 overflow-y-auto">
+      <div class="h-40 overflow-y-auto">
         <table class="w-full text-sm">
           <thead class="text-dark-400 text-xs uppercase">
             <tr>

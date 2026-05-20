@@ -157,6 +157,10 @@ function clearSelection() {
   selectedCellIds.value = [];
 }
 
+function runPrediction() {
+  batteryStore.runThermalPrediction();
+}
+
 function clearResults() {
   batteryStore.predictions = [];
   batteryStore.propagationMap = new Map();
@@ -178,7 +182,7 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <button
-          @click="batteryStore.runThermalPrediction()"
+          @click="runPrediction"
           :disabled="batteryStore.isCalculating"
           class="btn-primary flex items-center gap-2"
         >
