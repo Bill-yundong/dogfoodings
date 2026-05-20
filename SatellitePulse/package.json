@@ -1,0 +1,29 @@
+{
+  "name": "satellite-pulse",
+  "version": "1.0.0",
+  "description": "基于 SolidJS 的近地轨道卫星星座过境通视状态仿真系统",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.15",
+    "satellite.js": "^5.0.0",
+    "idb": "^8.0.0",
+    "date-fns": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-plugin-solid": "^2.8.2",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-solid": "^0.13.1"
+  }
+}
