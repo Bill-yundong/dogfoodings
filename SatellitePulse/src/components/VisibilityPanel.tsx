@@ -6,6 +6,8 @@ import { formatTime, formatDuration, formatElevation, getVisibilityStatus } from
 interface VisibilityPanelProps {
   windows: VisibilityWindow[]
   currentTime: number
+  onPredictVisibility?: () => void
+  isLoading?: boolean
 }
 
 export const VisibilityPanel: Component<VisibilityPanelProps> = (props) => {
@@ -29,9 +31,19 @@ export const VisibilityPanel: Component<VisibilityPanelProps> = (props) => {
         {upcomingWindows().length === 0 ? (
           <div style={{ 'text-align': 'center', padding: '20px', color: 'var(--text-secondary)' }}>
             暂无通视时间窗数据
-            <div style={{ 'font-size': '11px', 'margin-top': '8px' }}>
-              点击"预测通视时间窗"开始计算
+            <div style={{ 'font-size': '11px', 'margin-top': '8px', 'margin-bottom': '12px' }}>
+              点击下方按钮开始计算
             </div>
+            {props.onPredictVisibility && (
+              <button
+                class="btn btn-primary"
+                onClick={props.onPredictVisibility}
+                disabled={props.isLoading}
+                style={{ width: '100%' }}
+              >
+                {props.isLoading ? '计算中...' : '🔭 预测通视时间窗'}
+              </button>
+            )}
           </div>
         ) : (
           <For each={upcomingWindows()}>

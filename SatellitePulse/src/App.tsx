@@ -153,6 +153,8 @@ const App: Component = () => {
           <VisibilityPanel
             windows={store.visibilityWindows()}
             currentTime={store.currentTime()}
+            onPredictVisibility={handlePredictVisibility}
+            isLoading={store.isLoading()}
           />
         </div>
       </main>
