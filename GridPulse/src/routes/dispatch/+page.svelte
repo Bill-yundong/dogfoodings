@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { $state } from 'svelte';
   import type { DispatchCommand } from '$lib/types';
 
   let syncStatus = $state({

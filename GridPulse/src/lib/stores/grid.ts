@@ -1,8 +1,8 @@
-import { $state, $derived, $effect } from 'svelte';
+import { writable, derived, get } from 'svelte/store';
 import type { SystemStatus, Alert, GridSystem, Generator } from '$lib/types';
 
 export function createGridStore() {
-  const systemStatus = $state<SystemStatus>({
+  const systemStatus = writable<SystemStatus>({
     currentFrequency: 50.0,
     frequencyDeviation: 0.0,
     totalGeneration: 100,
@@ -13,7 +13,7 @@ export function createGridStore() {
     lastUpdate: new Date()
   });
 
-  const alerts = $state<Alert[]>([
+  const alerts = writable<Alert[]>([
     {
       id: 'alert-1',
       type: 'frequency',
@@ -32,7 +32,7 @@ export function createGridStore() {
     }
   ]);
 
-  const gridSystem = $state<GridSystem>({
+  const gridSystem = writable<GridSystem>({
     id: 'grid-001',
     name: '示范微电网系统',
     baseFrequency: 50,
@@ -58,21 +58,25 @@ export function createGridStore() {
       const freqDrift = Math.sin(Date.now() / 10000) * 0.03;
       const newFreq = baseFreq + noise + freqDrift;
       
-      systemStatus.currentFrequency = Math.round(newFreq * 1000) / 1000;
-      systemStatus.frequencyDeviation = Math.round((newFreq - baseFreq) * 1000) / 1000;
-      systemStatus.totalLoad = 95 + Math.random() * 10;
-      systemStatus.totalGeneration = systemStatus.totalLoad + (Math.random() - 0.5) * 2;
-      systemStatus.spinningReserve = Math.max(5, 15 + (Math.random() - 0.5) * 5);
-      systemStatus.stabilityMargin = Math.max(0.1, 0.35 + (Math.random() - 0.5) * 0.1);
-      systemStatus.lastUpdate = new Date();
+      systemStatus.update(status => ({
+        ...status,
+        currentFrequency: Math.round(newFreq * 1000) / 1000,
+        frequencyDeviation: Math.round((newFreq - baseFreq) * 1000) / 1000,
+        totalLoad: 95 + Math.random() * 10,
+        totalGeneration: status.totalLoad + (Math.random() - 0.5) * 2,
+        spinningReserve: Math.max(5, 15 + (Math.random() - 0.5) * 5),
+        stabilityMargin: Math.max(0.1, 0.35 + (Math.random() - 0.5) * 0.1),
+        lastUpdate: new Date()
+      }));
       
-      const dev = Math.abs(systemStatus.frequencyDeviation);
+      const status = get(systemStatus);
+      const dev = Math.abs(status.frequencyDeviation);
       if (dev > 0.2) {
-        systemStatus.systemState = 'emergency';
+        systemStatus.update(s => ({ ...s, systemState: 'emergency' }));
       } else if (dev > 0.1) {
-        systemStatus.systemState = 'alert';
+        systemStatus.update(s => ({ ...s, systemState: 'alert' }));
       } else {
-        systemStatus.systemState = 'normal';
+        systemStatus.update(s => ({ ...s, systemState: 'normal' }));
       }
     }, 100);
   }
@@ -85,43 +89,43 @@ export function createGridStore() {
   }
 
   function addAlert(alert: Omit<Alert, 'id' | 'timestamp' | 'acknowledged'>) {
-    alerts.unshift({
-      ...alert,
-      id: `alert-${Date.now()}`,
-      timestamp: new Date(),
-      acknowledged: false
+    alerts.update(list => {
+      const newList = [
+        {
+          ...alert,
+          id: `alert-${Date.now()}`,
+          timestamp: new Date(),
+          acknowledged: false
+        },
+        ...list
+      ];
+      return newList.slice(0, 50);
     });
-    
-    if (alerts.length > 50) {
-      alerts.pop();
-    }
   }
 
   function acknowledgeAlert(id: string) {
-    const alert = alerts.find(a => a.id === id);
-    if (alert) {
-      alert.acknowledged = true;
-    }
+    alerts.update(list => 
+      list.map(a => a.id === id ? { ...a, acknowledged: true } : a)
+    );
   }
 
-  const unacknowledgedCount = $derived(alerts.filter(a => !a.acknowledged).length);
+  const unacknowledgedCount = derived(alerts, $alerts => 
+    $alerts.filter(a => !a.acknowledged).length
+  );
   
-  const totalInertia = $derived(
-    gridSystem.generators
+  const totalInertia = derived(gridSystem, $grid =>
+    $grid.generators
       .filter(g => g.status === 'online')
-      .reduce((sum, g) => sum + g.inertia * (g.ratedPower / gridSystem.totalCapacity), 0)
+      .reduce((sum, g) => sum + g.inertia * (g.ratedPower / $grid.totalCapacity), 0)
   );
 
-  const onlineGeneration = $derived(
-    gridSystem.generators
+  const onlineGeneration = derived(gridSystem, $grid =>
+    $grid.generators
       .filter(g => g.status === 'online')
       .reduce((sum, g) => sum + g.ratedPower, 0)
   );
 
-  $effect(() => {
-    startSimulation();
-    return () => stopSimulation();
-  });
+  startSimulation();
 
   return {
     systemStatus,

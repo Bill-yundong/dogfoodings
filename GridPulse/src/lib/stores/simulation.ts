@@ -1,4 +1,4 @@
-import { $state, $derived } from 'svelte';
+import { writable, derived, get } from 'svelte/store';
 import type { SimulationTask, SimulationResult, SwingEquationParams, SolverConfig } from '$lib/types';
 import { generateDefaultParams, generateDefaultConfig } from '$lib/engine/swing-solver';
 import { addSimulationTask, updateSimulationTask, addSimulationResult } from '$lib/db/indexed-db';
@@ -9,14 +9,14 @@ interface WorkerPool {
 }
 
 export function createSimulationStore() {
-  const tasks = $state<SimulationTask[]>([]);
-  const results = $state<Map<string, SimulationResult>>(new Map());
-  let currentResult = $state<SimulationResult | null>(null);
-  const workers = $state<WorkerPool[]>([]);
+  const tasks = writable<SimulationTask[]>([]);
+  const results = writable<Map<string, SimulationResult>>(new Map());
+  const currentResult = writable<SimulationResult | null>(null);
+  const workers = writable<WorkerPool[]>([]);
   const maxWorkers = Math.min(navigator.hardwareConcurrency || 2, 4);
 
-  const params = $state<SwingEquationParams>(generateDefaultParams());
-  const config = $state<SolverConfig>(generateDefaultConfig());
+  const params = writable<SwingEquationParams>(generateDefaultParams());
+  const config = writable<SolverConfig>(generateDefaultConfig());
 
   function initWorkers() {
     for (let i = 0; i < maxWorkers; i++) {
@@ -28,40 +28,56 @@ export function createSimulationStore() {
         handleWorkerMessage(e, worker);
       };
       
-      workers.push({ worker, busy: false });
+      workers.update(list => [...list, { worker, busy: false }]);
     }
   }
 
   function handleWorkerMessage(e: MessageEvent, worker: Worker) {
     const data = e.data;
-    const pool = workers.find(w => w.worker === worker);
+    const workerList = get(workers);
+    const pool = workerList.find(w => w.worker === worker);
     if (!pool) return;
     
     if (data.type === 'progress') {
-      const task = tasks.find(t => t.id === data.taskId);
-      if (task) {
-        task.progress = data.progress;
-      }
+      tasks.update(list => 
+        list.map(t => t.id === data.taskId ? { ...t, progress: data.progress } : t)
+      );
     } else if (data.type === 'result') {
-      const task = tasks.find(t => t.id === data.taskId);
+      tasks.update(list => 
+        list.map(t => t.id === data.taskId ? { 
+          ...t, 
+          status: 'completed', 
+          progress: 100, 
+          completedAt: new Date() 
+        } : t)
+      );
+      
+      const task = get(tasks).find(t => t.id === data.taskId);
       if (task) {
-        task.status = 'completed';
-        task.progress = 100;
-        task.completedAt = new Date();
         updateSimulationTask(task);
       }
       
-      results.set(data.taskId, data.result);
+      results.update(map => {
+        const newMap = new Map(map);
+        newMap.set(data.taskId, data.result);
+        return newMap;
+      });
       addSimulationResult(data.result);
-      currentResult = data.result;
-      pool.busy = false;
+      currentResult.set(data.result);
+      workers.update(list => 
+        list.map(w => w.worker === worker ? { ...w, busy: false } : w)
+      );
     } else if (data.type === 'error') {
-      const task = tasks.find(t => t.id === data.taskId);
+      tasks.update(list => 
+        list.map(t => t.id === data.taskId ? { ...t, status: 'failed' } : t)
+      );
+      const task = get(tasks).find(t => t.id === data.taskId);
       if (task) {
-        task.status = 'failed';
         updateSimulationTask(task);
       }
-      pool.busy = false;
+      workers.update(list => 
+        list.map(w => w.worker === worker ? { ...w, busy: false } : w)
+      );
     }
   }
 
@@ -73,33 +89,37 @@ export function createSimulationStore() {
       systemId: 'grid-001',
       status: 'pending',
       parameters: {
-        timeSpan: [0, config.tEnd],
-        timeStep: config.dt,
-        integrationMethod: config.method,
+        timeSpan: [0, get(config).tEnd],
+        timeStep: get(config).dt,
+        integrationMethod: get(config).method,
         disturbance: {
           type: 'load-jump',
           time: 1.0,
-          magnitude: 0.2
+          magnitude: get(params).loadJump
         }
       },
-      progress: 0,
       createdAt: new Date(),
-      startedAt: new Date()
+      progress: 0
     };
     
-    tasks.unshift(task);
-    await addSimulationTask(task);
+    tasks.update(list => [...list, task]);
+    addSimulationTask(task);
     
-    const availableWorker = workers.find(w => !w.busy);
+    const workerList = get(workers);
+    const availableWorker = workerList.find(w => !w.busy);
+    
     if (availableWorker) {
-      availableWorker.busy = true;
-      task.status = 'running';
-      await updateSimulationTask(task);
+      workers.update(list => 
+        list.map(w => w.worker === availableWorker.worker ? { ...w, busy: true } : w)
+      );
+      tasks.update(list => 
+        list.map(t => t.id === taskId ? { ...t, status: 'running' } : t)
+      );
       
       availableWorker.worker.postMessage({
-        type: 'start-simulation',
-        params,
-        config,
+        type: 'simulate',
+        params: get(params),
+        config: get(config),
         taskId
       });
     }
@@ -108,27 +128,34 @@ export function createSimulationStore() {
   }
 
   function updateParams(newParams: Partial<SwingEquationParams>) {
-    Object.assign(params, newParams);
+    params.update(p => ({ ...p, ...newParams }));
   }
 
   function updateConfig(newConfig: Partial<SolverConfig>) {
-    Object.assign(config, newConfig);
+    config.update(c => ({ ...c, ...newConfig }));
   }
 
   function selectResult(taskId: string) {
-    currentResult = results.get(taskId) || null;
+    const resultMap = get(results);
+    currentResult.set(resultMap.get(taskId) || null);
   }
 
   function terminateAll() {
-    workers.forEach(pool => {
+    get(workers).forEach(pool => {
       pool.worker.terminate();
     });
-    workers.length = 0;
+    workers.set([]);
   }
 
-  const runningTasks = $derived(tasks.filter(t => t.status === 'running'));
-  const completedTasks = $derived(tasks.filter(t => t.status === 'completed'));
-  const hasAvailableWorker = $derived(workers.some(w => !w.busy));
+  const runningTasks = derived(tasks, $tasks => 
+    $tasks.filter(t => t.status === 'running')
+  );
+  const completedTasks = derived(tasks, $tasks => 
+    $tasks.filter(t => t.status === 'completed')
+  );
+  const hasAvailableWorker = derived(workers, $workers => 
+    $workers.some(w => !w.busy)
+  );
 
   initWorkers();
 

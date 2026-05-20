@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { $state } from 'svelte';
 
   let settings = $state({
     frequencyThresholdHigh: 50.2,
