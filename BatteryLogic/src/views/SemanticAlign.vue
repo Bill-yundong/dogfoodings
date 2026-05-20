@@ -68,7 +68,19 @@ function toggleRule(rule: MappingRule) {
 }
 
 function testRules() {
-  batteryStore.runThermalPrediction()
+  const testSignals = batteryStore.mappingRules
+    .filter(r => r.enabled)
+    .map((rule, index) => ({
+      id: `test_${Date.now()}_${index}`,
+      target: rule.target,
+      action: 'TEST_TRIGGER',
+      value: Math.random() > 0.5 ? 1 : 0,
+      level: ['info', 'warning', 'critical'][index % 3] as 'info' | 'warning' | 'critical',
+      timestamp: Date.now(),
+      sourceCellId: 'test'
+    }))
+  
+  batteryStore.fireSignals = [...testSignals, ...batteryStore.fireSignals].slice(0, 50)
 }
 
 const activeRulesCount = computed(() => 
@@ -77,7 +89,7 @@ const activeRulesCount = computed(() =>
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-4">
+  <div class="h-full flex flex-col gap-4 overflow-hidden">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <button
@@ -100,7 +112,7 @@ const activeRulesCount = computed(() =>
       </div>
     </div>
 
-    <div class="flex-1 grid grid-cols-3 gap-4 min-h-0">
+    <div class="flex-1 grid grid-cols-3 gap-4 min-h-0 overflow-hidden">
       <div class="glass-card p-4 flex flex-col">
         <h3 class="text-white font-semibold mb-3">BMS 数据点</h3>
         <div class="space-y-2 flex-1 overflow-y-auto">
@@ -218,9 +230,9 @@ const activeRulesCount = computed(() =>
       </div>
     </div>
 
-    <div class="glass-card p-4">
+    <div class="glass-card p-4 flex-shrink-0">
       <h3 class="text-white font-semibold mb-3">联动信号日志</h3>
-      <div class="max-h-48 overflow-y-auto">
+      <div class="h-48 overflow-y-auto">
         <table class="w-full text-sm">
           <thead class="text-dark-400 text-xs uppercase">
             <tr>

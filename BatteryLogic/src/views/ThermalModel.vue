@@ -154,7 +154,12 @@ function toggleCellSelection(cellId: string) {
  }
 }
 function clearSelection() {
- selectedCellIds.value = [];
+  selectedCellIds.value = [];
+}
+
+function clearResults() {
+  batteryStore.predictions = [];
+  batteryStore.propagationMap = new Map();
 }
 watch(chartData, () => {
  updateChart();
@@ -181,7 +186,7 @@ onMounted(() => {
           {{ batteryStore.isCalculating ? '计算中...' : '运行热失控预测' }}
         </button>
         <button
-          @click="batteryStore.predictions = []"
+          @click="clearResults"
           class="btn-ghost flex items-center gap-2"
         >
           <RotateCcw class="w-4 h-4" />
