@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onCleanup } from 'solid-js'
+import { createSignal, createEffect, onCleanup, createMemo } from 'solid-js'
 import type {
   Satellite,
   GroundStation,
@@ -25,27 +25,41 @@ export function createSimulationStore() {
   let worker: Worker | null = null
   let simulationInterval: number | null = null
 
+  const selectedSatellite = createMemo<Satellite | undefined>(() => {
+    const id = selectedSatelliteId()
+    if (!id) return undefined
+    return satellites().find(s => s.id === id)
+  })
+
+  const selectedStation = createMemo<GroundStation | undefined>(() => {
+    const id = selectedStationId()
+    if (!id) return undefined
+    return stations().find(s => s.id === id)
+  })
+
+  const satelliteColorsMap = createMemo<Map<string, string>>(() => {
+    const map = new Map<string, string>()
+    for (const sat of satellites()) {
+      map.set(sat.id, sat.color)
+    }
+    return map
+  })
+
   const getSatelliteColor = (satelliteId: string): string => {
     const sat = satellites().find(s => s.id === satelliteId)
     return sat?.color || '#3b82f6'
   }
 
   const getSatelliteColorsMap = (): Map<string, string> => {
-    const map = new Map<string, string>()
-    for (const sat of satellites()) {
-      map.set(sat.id, sat.color)
-    }
-    return map
+    return satelliteColorsMap()
   }
 
   const getSelectedSatellite = (): Satellite | undefined => {
-    const id = selectedSatelliteId()
-    return satellites().find(s => s.id === id)
+    return selectedSatellite()
   }
 
   const getSelectedStation = (): GroundStation | undefined => {
-    const id = selectedStationId()
-    return stations().find(s => s.id === id)
+    return selectedStation()
   }
 
   const toggleSatellite = (satelliteId: string): void => {
@@ -185,6 +199,9 @@ export function createSimulationStore() {
     setSelectedSatelliteId,
     selectedStationId,
     setSelectedStationId,
+    selectedSatellite,
+    selectedStation,
+    satelliteColorsMap,
     config,
     setConfig,
     isSimulating,

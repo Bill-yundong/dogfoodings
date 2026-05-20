@@ -1,5 +1,5 @@
 import type { Component } from 'solid-js'
-import { onMount, createMemo } from 'solid-js'
+import { onMount, createMemo, createEffect } from 'solid-js'
 import { createSimulationStore } from './store/simulationStore'
 import { initDatabase, saveVisibilitySnapshot, createVisibilitySnapshot } from './core/database'
 import { GlobeCanvas } from './components/GlobeCanvas'
@@ -28,9 +28,17 @@ const App: Component = () => {
   }
 
   const selectedSatellitePosition = createMemo(() => {
-    const id = store.selectedSatelliteId()
-    if (!id) return undefined
-    return store.positions().find(p => p.satelliteId === id)
+    const sat = store.selectedSatellite()
+    if (!sat) return undefined
+    return store.positions().find(p => p.satelliteId === sat.id)
+  })
+
+  createEffect(() => {
+    const satId = store.selectedSatelliteId()
+    const sat = store.selectedSatellite()
+    console.log('[App] 响应式更新 - selectedSatelliteId:', satId)
+    console.log('[App] 响应式更新 - selectedSatellite:', sat?.name)
+    console.log('[App] 响应式更新 - selectedSatellitePosition:', selectedSatellitePosition()?.state.altitude)
   })
 
   const handleSaveSnapshot = async () => {
@@ -96,7 +104,7 @@ const App: Component = () => {
           <div class="sidebar-section">
             <h2>卫星详情</h2>
             <SatelliteInfo
-              satellite={store.getSelectedSatellite()}
+              satellite={store.selectedSatellite()}
               position={selectedSatellitePosition()}
             />
           </div>
@@ -136,7 +144,7 @@ const App: Component = () => {
           <GlobeCanvas
             positions={store.positions()}
             stations={store.stations()}
-            satelliteColors={store.getSatelliteColorsMap()}
+            satelliteColors={store.satelliteColorsMap()}
             selectedStationId={store.selectedStationId()}
             isSimulating={store.isSimulating()}
           />

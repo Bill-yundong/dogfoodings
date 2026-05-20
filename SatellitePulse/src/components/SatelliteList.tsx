@@ -17,9 +17,12 @@ export const SatelliteList: Component<SatelliteListProps> = (props) => {
   }
 
   const handleClick = (satId: string) => {
+    console.log('[SatelliteList] 点击卫星:', satId, '当前选中:', props.selectedId)
     if (satId === props.selectedId) {
+      console.log('[SatelliteList] 取消选择卫星')
       props.onSelect(null)
     } else {
+      console.log('[SatelliteList] 选择卫星:', satId)
       props.onSelect(satId)
     }
   }
