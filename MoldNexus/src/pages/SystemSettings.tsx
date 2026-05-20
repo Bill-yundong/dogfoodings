@@ -1,12 +1,76 @@
-import { Component, createSignal } from 'solid-js';
+import { Component, createSignal, onMount } from 'solid-js';
 import { User, Bell, Database, Palette, Save, RotateCcw, Trash2 } from 'lucide-solid';
 import { clearAllData } from '@/db';
 
 const themes = [
-  { name: '深蓝（默认）', color: '#1e40af', cssVar: '#3b82f6' },
-  { name: '青绿', color: '#0891b2', cssVar: '#06b6d4' },
-  { name: '紫色', color: '#7c3aed', cssVar: '#8b5cf6' },
-  { name: '橙色', color: '#ea580c', cssVar: '#f97316' },
+  {
+    name: '深蓝（默认）',
+    color: '#1e40af',
+    colors: {
+      50: '#eff6ff',
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#93c5fd',
+      400: '#60a5fa',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      800: '#1e40af',
+      900: '#1e3a8a',
+      950: '#0F172A',
+    }
+  },
+  {
+    name: '青绿',
+    color: '#0891b2',
+    colors: {
+      50: '#ecfeff',
+      100: '#cffafe',
+      200: '#a5f3fc',
+      300: '#67e8f9',
+      400: '#22d3ee',
+      500: '#06b6d4',
+      600: '#0891b2',
+      700: '#0e7490',
+      800: '#155e75',
+      900: '#164e63',
+      950: '#083344',
+    }
+  },
+  {
+    name: '紫色',
+    color: '#7c3aed',
+    colors: {
+      50: '#faf5ff',
+      100: '#f3e8ff',
+      200: '#e9d5ff',
+      300: '#d8b4fe',
+      400: '#c084fc',
+      500: '#a855f7',
+      600: '#9333ea',
+      700: '#7e22ce',
+      800: '#6b21a8',
+      900: '#581c87',
+      950: '#3b0764',
+    }
+  },
+  {
+    name: '橙色',
+    color: '#ea580c',
+    colors: {
+      50: '#fff7ed',
+      100: '#ffedd5',
+      200: '#fed7aa',
+      300: '#fdba74',
+      400: '#fb923c',
+      500: '#f97316',
+      600: '#ea580c',
+      700: '#c2410c',
+      800: '#9a3412',
+      900: '#7c2d12',
+      950: '#431407',
+    }
+  },
 ];
 
 const SystemSettings: Component = () => {
@@ -18,6 +82,21 @@ const SystemSettings: Component = () => {
   const [showGrid, setShowGrid] = createSignal(true);
   const [animationQuality, setAnimationQuality] = createSignal<'low' | 'medium' | 'high'>('high');
   const [activeTheme, setActiveTheme] = createSignal(0);
+
+  onMount(() => {
+    const savedTheme = localStorage.getItem('moldnexus-theme');
+    if (savedTheme) {
+      const themeIndex = parseInt(savedTheme, 10);
+      if (themeIndex >= 0 && themeIndex < themes.length) {
+        setActiveTheme(themeIndex);
+        const theme = themes[themeIndex];
+        const root = document.documentElement;
+        Object.entries(theme.colors).forEach(([shade, color]) => {
+          root.style.setProperty(`--color-primary-${shade}`, color);
+        });
+      }
+    }
+  });
 
   const tabs = [
     { id: 'profile' as const, label: '个人设置', icon: User },
@@ -296,7 +375,11 @@ const SystemSettings: Component = () => {
                       <button 
                         onClick={() => {
                           setActiveTheme(index);
-                          document.documentElement.style.setProperty('--color-primary', theme.cssVar);
+                          const root = document.documentElement;
+                          Object.entries(theme.colors).forEach(([shade, color]) => {
+                            root.style.setProperty(`--color-primary-${shade}`, color);
+                          });
+                          localStorage.setItem('moldnexus-theme', index.toString());
                           alert(`已切换到"${theme.name}"主题`);
                         }}
                         class="flex flex-col items-center gap-1.5 group"

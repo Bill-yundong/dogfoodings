@@ -165,7 +165,11 @@ export async function closeDatabase(): Promise<void> {
 }
 
 export async function clearAllData(): Promise<void> {
+  if (!db) {
+    await initDatabase();
+  }
   if (!db) return;
+  
   const stores = [
     'users',
     'molds',
@@ -177,9 +181,15 @@ export async function clearAllData(): Promise<void> {
     'tasks',
     'comments',
   ] as const;
+  
+  console.log('[MoldNexus] Clearing all data from stores:', stores);
+  
   for (const store of stores) {
     if (db.objectStoreNames.contains(store)) {
       await db.clear(store);
+      console.log(`[MoldNexus] Cleared store: ${store}`);
     }
   }
+  
+  console.log('[MoldNexus] All data cleared successfully');
 }
