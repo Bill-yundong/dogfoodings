@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Play, Square, Send, Clock, ChevronRight, Plus, X, Navigation, Gauge } from 'lucide-react';
+import { Play, Square, Send, Clock, Plus, X, Navigation, Gauge, AlertCircle } from 'lucide-react';
 import type { DispatchCommand, EquipmentType } from '@/types';
 import { useControlTowerStore } from '@/store/controlTower';
 
-const PRIORITY_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string }> = {
-  emergency: { label: '紧急', color: 'text-[#FF5252]', bgColor: 'bg-[#FF5252]/10', borderColor: 'border-[#FF5252]/50' },
-  high: { label: '高', color: 'text-[#FF6B35]', bgColor: 'bg-[#FF6B35]/10', borderColor: 'border-[#FF6B35]/50' },
-  normal: { label: '普通', color: 'text-[#00D4FF]', bgColor: 'bg-[#00D4FF]/10', borderColor: 'border-[#00D4FF]/50' },
-  low: { label: '低', color: 'text-[#9FB8D1]', bgColor: 'bg-[#5A7A9A]/10', borderColor: 'border-[#5A7A9A]/50' },
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; barColor: string }> = {
+  emergency: { label: '紧急', color: 'text-[#FF5252]', bgColor: 'bg-[#FF5252]/15', borderColor: 'border-[#FF5252]/50', barColor: '#FF5252' },
+  high: { label: '高', color: 'text-[#FF6B35]', bgColor: 'bg-[#FF6B35]/15', borderColor: 'border-[#FF6B35]/50', barColor: '#FF6B35' },
+  normal: { label: '普通', color: 'text-[#00D4FF]', bgColor: 'bg-[#00D4FF]/15', borderColor: 'border-[#00D4FF]/50', barColor: '#00D4FF' },
+  low: { label: '低', color: 'text-[#9FB8D1]', bgColor: 'bg-[#5A7A9A]/15', borderColor: 'border-[#5A7A9A]/50', barColor: '#9FB8D1' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; iconColor: string; dotColor: string }> = {
@@ -49,78 +49,81 @@ const CommandItem: React.FC<CommandItemProps> = ({ command, isSelected, onClick 
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all group ${
+      className={`flex items-center gap-2 p-1.5 rounded cursor-pointer transition-all group ${
         isSelected
           ? 'bg-[#1A3152] border border-[#00D4FF]'
           : 'bg-[#0A1628] border border-transparent hover:border-[#2A4A6F] hover:bg-[#0F2137]'
       }`}
     >
-      <div className={`w-1.5 h-8 rounded-full ${status.dotColor} ${command.status === 'executing' ? 'animate-pulse' : ''}`} />
+      <div className={`w-1 h-6 rounded-full ${status.dotColor} flex-shrink-0 ${command.status === 'executing' ? 'animate-pulse' : ''}`} />
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${priority.bgColor} ${priority.color}`}>
+        <div className="flex items-center gap-1.5">
+          <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${priority.bgColor} ${priority.color} flex-shrink-0`}>
             {priority.label}
           </span>
-          <span className="text-xs font-mono text-[#E8F4FF] truncate">{command.equipmentId}</span>
-          <span className={`text-[10px] ${status.color} flex items-center gap-1`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor}`} />
+          <span className="text-[11px] font-mono text-[#E8F4FF] truncate">{command.equipmentId}</span>
+          <span className={`text-[9px] ${status.color} flex items-center gap-0.5 flex-shrink-0`}>
+            <span className={`w-1 h-1 rounded-full ${status.dotColor}`} />
             {status.label}
           </span>
+          <span className="text-[9px] text-[#5A7A9A] ml-auto flex-shrink-0">
+            {formatTime(command.createdAt)}
+          </span>
         </div>
         
-        <div className="flex items-center gap-2 text-[10px] text-[#5A7A9A]">
-          <Navigation className="w-2.5 h-2.5" />
-          <span>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <Navigation className="w-2 h-2 text-[#5A7A9A] flex-shrink-0" />
+          <span className="text-[9px] text-[#5A7A9A] font-mono">
             ({command.targetPosition.x.toFixed(0)}, {command.targetPosition.y.toFixed(0)})
           </span>
-          <span>·</span>
-          <Clock className="w-2.5 h-2.5" />
-          <span>{formatTime(command.createdAt)}</span>
+          
+          {command.status === 'executing' && (
+            <div className="flex-1 flex items-center gap-1.5 ml-1">
+              <div className="flex-1 h-1 bg-[#152A47] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${command.progress}%`,
+                    background: `linear-gradient(90deg, ${priority.barColor}80, ${priority.barColor})`,
+                    boxShadow: `0 0 6px ${priority.barColor}50`
+                  }}
+                />
+              </div>
+              <span className="text-[9px] text-[#5A7A9A] font-mono flex-shrink-0">{command.progress.toFixed(0)}%</span>
+            </div>
+          )}
         </div>
-        
-        {command.status === 'executing' && (
-          <div className="mt-1">
-            <div className="flex justify-between text-[9px] text-[#5A7A9A] mb-0.5">
-              <span>进度</span>
-              <span className="font-mono">{command.progress.toFixed(0)}%</span>
-            </div>
-            <div className="h-1 bg-[#152A47] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#00D4FF] to-[#00E676] rounded-full transition-all duration-300"
-                style={{ width: `${command.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
       </div>
       
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         {command.status === 'pending' && (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); handleExecute(); }}
-              className="p-1 hover:bg-[#00E676]/20 rounded text-[#00E676]"
+              className="p-0.5 hover:bg-[#00E676]/20 rounded text-[#00E676]"
+              title="执行"
             >
-              <Play className="w-3 h-3" />
+              <Play className="w-2.5 h-2.5" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-              className="p-1 hover:bg-[#FF5252]/20 rounded text-[#FF5252]"
+              className="p-0.5 hover:bg-[#FF5252]/20 rounded text-[#FF5252]"
+              title="取消"
             >
-              <Square className="w-3 h-3" />
+              <Square className="w-2.5 h-2.5" />
             </button>
           </>
         )}
         {command.status === 'executing' && (
           <button
             onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-            className="p-1 hover:bg-[#FF5252]/20 rounded text-[#FF5252]"
+            className="p-0.5 hover:bg-[#FF5252]/20 rounded text-[#FF5252]"
+            title="停止"
           >
-            <Square className="w-3 h-3" />
+            <Square className="w-2.5 h-2.5" />
           </button>
         )}
-        <ChevronRight className="w-3 h-3 text-[#5A7A9A]" />
       </div>
     </div>
   );
@@ -197,11 +200,11 @@ export const CommandConsole: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2A4A6F]">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs font-bold text-[#E8F4FF] font-mono flex items-center gap-1.5">
-            <Gauge className="w-3.5 h-3.5 text-[#00D4FF]" />
+    <div className="h-full w-full flex flex-col min-h-0">
+      <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#2A4A6F] flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[11px] font-bold text-[#E8F4FF] font-mono flex items-center gap-1">
+            <Gauge className="w-3 h-3 text-[#00D4FF]" />
             指令控制台
           </h3>
           
@@ -210,14 +213,14 @@ export const CommandConsole: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
+                className={`px-1.5 py-0.5 text-[9px] rounded transition-colors ${
                   activeTab === tab
                     ? 'bg-[#00D4FF]/20 text-[#00D4FF]'
                     : 'text-[#5A7A9A] hover:text-[#9FB8D1]'
                 }`}
               >
                 {tab === 'active' ? '活跃' : tab === 'all' ? '全部' : '历史'}
-                <span className="ml-1 opacity-70">({counts[tab]})</span>
+                <span className="ml-0.5 opacity-70">({counts[tab]})</span>
               </button>
             ))}
           </div>
@@ -231,53 +234,53 @@ export const CommandConsole: React.FC = () => {
               : 'bg-[#00D4FF] text-[#0A1628] hover:bg-[#00B8E0]'
           }`}
         >
-          {showCreateForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-          {showCreateForm ? '取消' : '下发指令'}
+          {showCreateForm ? <X className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5" />}
+          {showCreateForm ? '取消' : '下发'}
         </button>
       </div>
       
       {showCreateForm && (
-        <div className="px-3 py-2 border-b border-[#2A4A6F] bg-[#0A1628]">
-          <div className="grid grid-cols-5 gap-2">
+        <div className="px-2 py-1.5 border-b border-[#2A4A6F] bg-[#0A1628] flex-shrink-0">
+          <div className="grid grid-cols-5 gap-1.5">
             <div>
-              <label className="block text-[9px] text-[#5A7A9A] mb-1">选择设备</label>
+              <label className="block text-[8px] text-[#5A7A9A] mb-0.5">设备</label>
               <select
                 value={newCommand.equipmentId}
                 onChange={(e) => setNewCommand({ ...newCommand, equipmentId: e.target.value })}
-                className="w-full px-2 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
               >
-                <option value="">空闲设备</option>
+                <option value="">选择</option>
                 {availableEquipment.map((e) => (
                   <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-[9px] text-[#5A7A9A] mb-1">目标X</label>
+              <label className="block text-[8px] text-[#5A7A9A] mb-0.5">X坐标</label>
               <input
                 type="number"
                 value={newCommand.targetX}
                 onChange={(e) => setNewCommand({ ...newCommand, targetX: e.target.value })}
                 placeholder="0-300"
-                className="w-full px-2 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
               />
             </div>
             <div>
-              <label className="block text-[9px] text-[#5A7A9A] mb-1">目标Y</label>
+              <label className="block text-[8px] text-[#5A7A9A] mb-0.5">Y坐标</label>
               <input
                 type="number"
                 value={newCommand.targetY}
                 onChange={(e) => setNewCommand({ ...newCommand, targetY: e.target.value })}
                 placeholder="0-350"
-                className="w-full px-2 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
               />
             </div>
             <div>
-              <label className="block text-[9px] text-[#5A7A9A] mb-1">优先级</label>
+              <label className="block text-[8px] text-[#5A7A9A] mb-0.5">优先级</label>
               <select
                 value={newCommand.priority}
                 onChange={(e) => setNewCommand({ ...newCommand, priority: e.target.value as DispatchCommand['priority'] })}
-                className="w-full px-2 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
               >
                 <option value="emergency">紧急</option>
                 <option value="high">高</option>
@@ -285,12 +288,12 @@ export const CommandConsole: React.FC = () => {
                 <option value="low">低</option>
               </select>
             </div>
-            <div className="flex items-end gap-1">
+            <div className="flex items-end">
               <button
                 onClick={handleCreateCommand}
-                className="flex-1 px-2 py-1 bg-[#00E676] text-[#0A1628] text-[10px] font-medium rounded hover:bg-[#00C853] transition-colors flex items-center justify-center gap-1"
+                className="w-full px-2 py-1 bg-[#00E676] text-[#0A1628] text-[10px] font-medium rounded hover:bg-[#00C853] transition-colors flex items-center justify-center gap-0.5"
               >
-                <Send className="w-3 h-3" />
+                <Send className="w-2.5 h-2.5" />
                 创建
               </button>
             </div>
@@ -298,7 +301,7 @@ export const CommandConsole: React.FC = () => {
         </div>
       )}
       
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-1.5 min-h-0">
         <div className="space-y-1">
           {filteredCommands.map((command) => (
             <CommandItem
@@ -310,9 +313,9 @@ export const CommandConsole: React.FC = () => {
           ))}
           
           {filteredCommands.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-[#5A7A9A] py-6">
-              <Send className="w-6 h-6 mb-1.5 opacity-50" />
-              <p className="text-[11px]">暂无{activeTab === 'active' ? '活跃' : activeTab === 'completed' ? '历史' : ''}指令</p>
+            <div className="h-full flex flex-col items-center justify-center text-[#5A7A9A] py-4">
+              <AlertCircle className="w-5 h-5 mb-1 opacity-40" />
+              <p className="text-[10px]">暂无{activeTab === 'active' ? '活跃' : activeTab === 'completed' ? '历史' : ''}指令</p>
             </div>
           )}
         </div>

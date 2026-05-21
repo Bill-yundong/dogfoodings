@@ -18,7 +18,8 @@ const ControlTowerPage: React.FC = () => {
   const frameCountRef = useRef(0);
   const lastFpsUpdateRef = useRef(performance.now());
   const animationFrameRef = useRef<number>();
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
   
   const {
     equipmentStates,
@@ -50,8 +51,8 @@ const ControlTowerPage: React.FC = () => {
       if (canvasContainerRef.current) {
         const rect = canvasContainerRef.current.getBoundingClientRect();
         setCanvasSize({
-          width: rect.width,
-          height: rect.height,
+          width: Math.max(rect.width, 400),
+          height: Math.max(rect.height, 300),
         });
       }
     };
@@ -60,7 +61,7 @@ const ControlTowerPage: React.FC = () => {
     window.addEventListener('resize', updateSize);
     
     return () => window.removeEventListener('resize', updateSize);
-  }, []);
+  }, [showLeftPanel, showRightPanel]);
 
   useEffect(() => {
     if (!isSimulationRunning) return;
@@ -164,45 +165,76 @@ const ControlTowerPage: React.FC = () => {
     charging: equipmentList.filter((e) => e.status === 'charging').length,
   };
 
+  const LEFT_PANEL_WIDTH = 256;
+  const RIGHT_PANEL_WIDTH = 288;
+  const TOGGLE_WIDTH = 20;
+
   return (
-    <div className="h-screen flex flex-col bg-[#0A1628] overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#0A1628] overflow-hidden">
       <HeaderBar />
       
       <div className="flex-1 flex overflow-hidden">
-        <div className={`flex flex-col bg-[#0F2137] border-r border-[#2A4A6F] transition-all duration-300 ${showSidebar ? 'w-72' : 'w-0 overflow-hidden'}`}>
-          <EquipmentPanel />
-        </div>
+        {showLeftPanel && (
+          <div 
+            className="flex-shrink-0 bg-[#0F2137] border-r border-[#2A4A6F] flex flex-col overflow-hidden"
+            style={{ width: LEFT_PANEL_WIDTH }}
+          >
+            <EquipmentPanel />
+          </div>
+        )}
         
         <button
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="w-6 bg-[#152A47] hover:bg-[#1A3152] border-r border-[#2A4A6F] flex items-center justify-center text-[#5A7A9A] hover:text-[#00D4FF] transition-colors z-10"
+          onClick={() => setShowLeftPanel(!showLeftPanel)}
+          className="flex-shrink-0 bg-[#152A47] hover:bg-[#1A3152] border-r border-[#2A4A6F] flex items-center justify-center text-[#5A7A9A] hover:text-[#00D4FF] transition-colors group"
+          style={{ width: TOGGLE_WIDTH }}
+          title={showLeftPanel ? '收起设备面板' : '展开设备面板'}
         >
-          {showSidebar ? '‹' : '›'}
+          <span className="text-lg font-bold transition-transform group-hover:scale-125">
+            {showLeftPanel ? '‹' : '›'}
+          </span>
         </button>
         
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <KPIPanel stats={stats} />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <div className="flex-shrink-0 bg-[#0F2137] border-b border-[#2A4A6F]" style={{ height: 56 }}>
+            <KPIPanel stats={stats} />
+          </div>
           
           <div
             ref={canvasContainerRef}
-            className="flex-1 relative grid-bg"
+            className="flex-1 relative grid-bg overflow-hidden"
           >
             <ApronCanvas width={canvasSize.width} height={canvasSize.height} />
           </div>
           
-          <div className="h-48 bg-[#0F2137] border-t border-[#2A4A6F]">
+          <div className="flex-shrink-0 bg-[#0F2137] border-t border-[#2A4A6F] overflow-hidden" style={{ height: 160 }}>
             <CommandConsole />
           </div>
         </div>
         
-        <div className="w-80 bg-[#0F2137] border-l border-[#2A4A6F] flex flex-col">
-          <div className="h-1/2 border-b border-[#2A4A6F] overflow-hidden">
-            <AlertBar />
+        <button
+          onClick={() => setShowRightPanel(!showRightPanel)}
+          className="flex-shrink-0 bg-[#152A47] hover:bg-[#1A3152] border-l border-[#2A4A6F] flex items-center justify-center text-[#5A7A9A] hover:text-[#00D4FF] transition-colors group"
+          style={{ width: TOGGLE_WIDTH }}
+          title={showRightPanel ? '收起状态面板' : '展开状态面板'}
+        >
+          <span className="text-lg font-bold transition-transform group-hover:scale-125">
+            {showRightPanel ? '›' : '‹'}
+          </span>
+        </button>
+        
+        {showRightPanel && (
+          <div 
+            className="flex-shrink-0 bg-[#0F2137] border-l border-[#2A4A6F] flex flex-col overflow-hidden"
+            style={{ width: RIGHT_PANEL_WIDTH }}
+          >
+            <div className="flex-1 border-b border-[#2A4A6F] overflow-hidden" style={{ minHeight: 0 }}>
+              <AlertBar />
+            </div>
+            <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+              <SystemStatus />
+            </div>
           </div>
-          <div className="h-1/2 overflow-hidden">
-            <SystemStatus />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
