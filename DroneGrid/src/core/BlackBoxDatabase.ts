@@ -164,12 +164,13 @@ export class BlackBoxDatabase {
     
     const tx = this.db.transaction(STORE_LOGS, 'readonly')
     const store = tx.store
-    const syncedIndex = store.index('synced')
     
     const results: BlackBoxLog[] = []
-    for await (const cursor of syncedIndex.iterate(IDBKeyRange.only(false))) {
-      if (results.length >= limit) break
-      results.push(cursor.value)
+    for await (const cursor of store.iterate()) {
+      if (!cursor.value.synced) {
+        if (results.length >= limit) break
+        results.push(cursor.value)
+      }
     }
     
     return results
@@ -246,12 +247,14 @@ export class BlackBoxDatabase {
     
     const tx = this.db.transaction(STORE_LOGS, 'readonly')
     const store = tx.store
-    const syncedIndex = store.index('synced')
+    const timeIndex = store.index('timestamp')
     
     let lastId: string | null = null
-    for await (const cursor of syncedIndex.iterate(IDBKeyRange.only(true), 'prev')) {
-      lastId = cursor.value.id
-      break
+    for await (const cursor of timeIndex.iterate(undefined, 'prev')) {
+      if (cursor.value.synced) {
+        lastId = cursor.value.id
+        break
+      }
     }
     
     return lastId
@@ -303,8 +306,10 @@ export class BlackBoxDatabase {
     const store = tx.store
     
     const totalLogs = await store.count()
-    const syncedIndex = store.index('synced')
-    const syncedLogs = await syncedIndex.count(IDBKeyRange.only(true))
+    let syncedLogs = 0
+    for await (const cursor of store.iterate()) {
+      if (cursor.value.synced) syncedLogs++
+    }
     
     const timeIndex = store.index('timestamp')
     let oldestLogTime = 0

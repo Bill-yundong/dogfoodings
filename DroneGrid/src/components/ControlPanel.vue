@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useDroneStore } from '@/stores/droneStore'
 import { storeToRefs } from 'pinia'
 import type { Waypoint } from '@/types'
@@ -236,7 +236,9 @@ function formatDate(timestamp: number): string {
 
 onMounted(async () => {
   try {
-    await droneStore.init()
+    if (!droneStore.isInitialized) {
+      await droneStore.init()
+    }
     currentWindData.value = droneStore.weatherDynamics.getWindAt({ x: 0, y: 50, z: 0 })
   } catch (e) {
     console.error('Failed to init store:', e)

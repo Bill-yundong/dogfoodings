@@ -3,11 +3,15 @@ import { onMounted } from 'vue'
 import Scene3D from './components/Scene3D.vue'
 import ControlPanel from './components/ControlPanel.vue'
 import { useDroneStore } from '@/stores/droneStore'
+import { storeToRefs } from 'pinia'
 
 const droneStore = useDroneStore()
+const { activeDrones, droneList, missionList } = storeToRefs(droneStore)
 
 onMounted(async () => {
-  await droneStore.init()
+  if (!droneStore.isInitialized) {
+    await droneStore.init()
+  }
 })
 </script>
 
@@ -23,15 +27,15 @@ onMounted(async () => {
         <div class="hud-stats">
           <div class="stat">
             <span class="label">活跃无人机</span>
-            <span class="value">{{ droneStore.activeDrones.length }}</span>
+            <span class="value">{{ activeDrones.length }}</span>
           </div>
           <div class="stat">
             <span class="label">总无人机</span>
-            <span class="value">{{ droneStore.droneList.length }}</span>
+            <span class="value">{{ droneList.length }}</span>
           </div>
           <div class="stat">
             <span class="label">任务数</span>
-            <span class="value">{{ droneStore.missionList.length }}</span>
+            <span class="value">{{ missionList.length }}</span>
           </div>
         </div>
       </div>

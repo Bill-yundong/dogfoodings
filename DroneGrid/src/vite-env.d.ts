@@ -6,9 +6,10 @@ declare module '*.vue' {
   export default component
 }
 
-declare module 'three/examples/jsm/controls/OrbitControls.js' {
+declare module 'three/examples/jsm/controls/OrbitControls' {
+  import { Camera } from 'three'
   export class OrbitControls {
-    constructor(camera: any, domElement: HTMLElement)
+    constructor(camera: Camera, domElement: HTMLElement)
     enableDamping: boolean
     dampingFactor: number
     maxPolarAngle: number
