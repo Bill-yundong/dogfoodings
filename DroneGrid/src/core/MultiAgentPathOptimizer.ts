@@ -1,5 +1,5 @@
 import type { Vector3D, Mission, PathOptimizationResult, DroneState, AirspaceZone, CollisionDetectionResult } from '@/types'
-import { vectorDistance, vectorNormalize, vectorAdd, vectorScale, vectorSub } from '@/utils/math'
+import { vectorDistance, vectorNormalize, vectorAdd, vectorScale, vectorSub, vectorDot } from '@/utils/math'
 import { WeatherDynamics } from './WeatherDynamics'
 
 interface PathNode {

@@ -8,7 +8,7 @@ import { generateId } from '@/utils/math'
 const droneStore = useDroneStore()
 const { droneList, missionList, isSimulating, simulationSpeed, activeDrones } = storeToRefs(droneStore)
 
-const localSpeed = ref(1)
+const localSpeed = ref(simulationSpeed.value || 1)
 const selectedDroneId = ref<string>('')
 const newDroneId = ref('')
 const missionName = ref('')
@@ -265,6 +265,7 @@ onMounted(async () => {
           <button 
             v-for="speed in [0.5, 1, 2, 5]" 
             :key="speed"
+            class="btn"
             :class="{ active: localSpeed === speed }"
             @click="setSpeed(speed)"
           >
@@ -660,6 +661,12 @@ onMounted(async () => {
 .speed-controls span {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.speed-controls .btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  min-width: auto;
 }
 
 .tabs {
