@@ -278,7 +278,42 @@ export class SimulationDataGenerator {
 
   simulateStep(dt: number = 0.033): void {
     for (const equipment of this.equipment) {
-      if (equipment.status === 'moving') {
+      const activeCommand = this.commands.find(
+        (c) => c.equipmentId === equipment.id && c.status === 'executing'
+      );
+      
+      if (activeCommand) {
+        const targetX = activeCommand.targetPosition.x;
+        const targetY = activeCommand.targetPosition.y;
+        const dx = targetX - equipment.position.x;
+        const dy = targetY - equipment.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 2) {
+          const targetHeading = Math.atan2(dy, dx);
+          let headingDiff = targetHeading - equipment.position.heading;
+          
+          while (headingDiff > Math.PI) headingDiff -= 2 * Math.PI;
+          while (headingDiff < -Math.PI) headingDiff += 2 * Math.PI;
+          
+          const maxTurnRate = Math.PI / 3;
+          equipment.position.heading += Math.sign(headingDiff) * Math.min(Math.abs(headingDiff), maxTurnRate * dt);
+          
+          const speed = Math.min(equipment.maxSpeed, distance / 2);
+          equipment.velocity.linear = speed;
+          
+          equipment.position.x += Math.cos(equipment.position.heading) * speed * dt;
+          equipment.position.y += Math.sin(equipment.position.heading) * speed * dt;
+          
+          equipment.position.x = Math.max(5, Math.min(295, equipment.position.x));
+          equipment.position.y = Math.max(5, Math.min(345, equipment.position.y));
+        } else {
+          equipment.velocity.linear = 0;
+          equipment.velocity.angular = 0;
+        }
+        
+        equipment.timestamp = Date.now();
+      } else if (equipment.status === 'moving') {
         const newX = equipment.position.x + equipment.velocity.linear * Math.cos(equipment.position.heading) * dt;
         const newY = equipment.position.y + equipment.velocity.linear * Math.sin(equipment.position.heading) * dt;
         const newHeading = equipment.position.heading + equipment.velocity.angular * dt;
@@ -313,15 +348,50 @@ export class SimulationDataGenerator {
     
     for (const command of this.commands) {
       if (command.status === 'executing') {
-        command.progress = Math.min(100, command.progress + dt * 5);
-        if (command.progress >= 100) {
-          command.status = 'completed';
-          command.completedAt = Date.now();
+        const equipment = this.equipment.find((e) => e.id === command.equipmentId);
+        if (equipment && command.path && command.path.length >= 2) {
+          const startPoint = command.path[0];
+          const endPoint = command.path[command.path.length - 1];
           
-          const equipment = this.equipment.find((e) => e.id === command.equipmentId);
-          if (equipment) {
+          const totalDistance = Math.sqrt(
+            Math.pow(endPoint.x - startPoint.x, 2) + 
+            Math.pow(endPoint.y - startPoint.y, 2)
+          );
+          
+          const currentDistance = Math.sqrt(
+            Math.pow(equipment.position.x - startPoint.x, 2) + 
+            Math.pow(equipment.position.y - startPoint.y, 2)
+          );
+          
+          if (totalDistance > 0) {
+            command.progress = Math.min(100, (currentDistance / totalDistance) * 100);
+          }
+          
+          const distanceToTarget = Math.sqrt(
+            Math.pow(endPoint.x - equipment.position.x, 2) + 
+            Math.pow(endPoint.y - equipment.position.y, 2)
+          );
+          
+          if (distanceToTarget < 2 || command.progress >= 100) {
+            command.progress = 100;
+            command.status = 'completed';
+            command.completedAt = Date.now();
+            
             equipment.status = 'idle';
             equipment.currentTask = null;
+            equipment.velocity.linear = 0;
+            equipment.velocity.angular = 0;
+          }
+        } else {
+          command.progress = Math.min(100, command.progress + dt * 5);
+          if (command.progress >= 100) {
+            command.status = 'completed';
+            command.completedAt = Date.now();
+            
+            if (equipment) {
+              equipment.status = 'idle';
+              equipment.currentTask = null;
+            }
           }
         }
       }

@@ -27,6 +27,7 @@ const ControlTowerPage: React.FC = () => {
     alerts,
     setEquipmentStates,
     updateEquipmentState,
+    updateCommand,
     addAlert,
     updatePerformance,
     isSimulationRunning,
@@ -34,6 +35,24 @@ const ControlTowerPage: React.FC = () => {
     setNetworkStatus,
     updateSyncStatus,
   } = useControlTowerStore();
+
+  useEffect(() => {
+    const storeCommands = Array.from(commands.values());
+    const generatorCommands = simulationDataGenerator.getCommands();
+    
+    storeCommands.forEach((cmd) => {
+      const existing = generatorCommands.find((c) => c.id === cmd.id);
+      if (!existing) {
+        simulationDataGenerator.addCommand(cmd);
+      } else if (existing.status !== cmd.status || existing.progress !== cmd.progress) {
+        simulationDataGenerator.updateCommand(cmd.id, {
+          status: cmd.status,
+          progress: cmd.progress,
+          executedAt: cmd.executedAt,
+        });
+      }
+    });
+  }, [commands]);
 
   useEffect(() => {
     const initialEquipment = simulationDataGenerator.getEquipment();
@@ -86,6 +105,14 @@ const ControlTowerPage: React.FC = () => {
       simulationDataGenerator.simulateStep(deltaTime * simulationSpeed);
       const updatedEquipment = simulationDataGenerator.getEquipment();
       updatedEquipment.forEach((eq) => updateEquipmentState(eq));
+      
+      const updatedCommands = simulationDataGenerator.getCommands();
+      updatedCommands.forEach((cmd) => {
+        const existing = commands.get(cmd.id);
+        if (existing && (existing.progress !== cmd.progress || existing.status !== cmd.status)) {
+          updateCommand(cmd);
+        }
+      });
       
       conflictCheckTimer += deltaTime * 1000;
       if (conflictCheckTimer >= 500) {
@@ -153,7 +180,7 @@ const ControlTowerPage: React.FC = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isSimulationRunning, simulationSpeed, equipmentStates, commands, alerts, updateEquipmentState, addAlert, updatePerformance, setNetworkStatus, updateSyncStatus]);
+  }, [isSimulationRunning, simulationSpeed, equipmentStates, commands, alerts, updateEquipmentState, updateCommand, addAlert, updatePerformance, setNetworkStatus, updateSyncStatus]);
 
   const equipmentList = Array.from(equipmentStates.values());
   const stats = {

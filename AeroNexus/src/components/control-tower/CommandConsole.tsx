@@ -37,7 +37,7 @@ interface CommandItemProps {
 const CommandItem: React.FC<CommandItemProps> = ({ command, isSelected, onClick }) => {
   const priority = PRIORITY_CONFIG[command.priority];
   const status = STATUS_CONFIG[command.status];
-  const { updateCommand } = useControlTowerStore();
+  const { updateCommand, updateEquipmentState, equipmentStates } = useControlTowerStore();
   
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString('zh-CN', {
@@ -49,10 +49,27 @@ const CommandItem: React.FC<CommandItemProps> = ({ command, isSelected, onClick 
 
   const handleExecute = () => {
     updateCommand({ ...command, status: 'executing', executedAt: Date.now() });
+    const equipment = equipmentStates.get(command.equipmentId);
+    if (equipment) {
+      updateEquipmentState({
+        ...equipment,
+        status: 'moving',
+        currentTask: command.type,
+      });
+    }
   };
 
   const handleCancel = () => {
     updateCommand({ ...command, status: 'cancelled' });
+    const equipment = equipmentStates.get(command.equipmentId);
+    if (equipment) {
+      updateEquipmentState({
+        ...equipment,
+        status: 'idle',
+        currentTask: null,
+        velocity: { linear: 0, angular: 0 },
+      });
+    }
   };
 
   return (
