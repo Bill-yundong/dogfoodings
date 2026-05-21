@@ -22,9 +22,22 @@ const weatherStats = ref<any>(null)
 const syncStatus = ref<any>(null)
 const isSyncing = ref(false)
 const syncResult = ref<any>(null)
-const currentWindData = ref<any>(null)
+const currentWindData = ref<any>({
+  speed: 0,
+  direction: 0,
+  turbulence: 0,
+  temperature: 0,
+  pressure: 0,
+  humidity: 0
+})
 
 const selectedDrone = computed(() => droneList.value.find(d => d.id === selectedDroneId.value))
+
+watch(activeTab, () => {
+  if (activeTab.value === 'weather') {
+    refreshStats()
+  }
+})
 
 function addNewDrone() {
   if (newDroneId.value.trim()) {
@@ -63,8 +76,22 @@ function removeWaypoint(index: number) {
   waypoints.value.splice(index, 1)
 }
 
+const startMissionError = ref<string | null>(null)
+const optimizeError = ref<string | null>(null)
+const simulationHint = ref<string | null>(null)
+
 async function createAndOptimizeMission() {
-  if (!selectedDroneId.value || waypoints.value.length === 0) return
+  optimizeError.value = null
+  
+  if (!selectedDroneId.value) {
+    optimizeError.value = '请先选择一个无人机'
+    return
+  }
+  
+  if (waypoints.value.length === 0) {
+    optimizeError.value = '请至少添加一个航点'
+    return
+  }
 
   const mission = droneStore.addMission({
     name: missionName.value || `任务 ${Date.now()}`,
@@ -77,16 +104,25 @@ async function createAndOptimizeMission() {
   isOptimizing.value = true
   optimizationProgress.value = 0
 
-  await droneStore.optimizeMissionPath(mission.id, (progress) => {
-    optimizationProgress.value = progress
-  })
-
-  isOptimizing.value = false
-  missionName.value = ''
-  waypoints.value = []
+  try {
+    await droneStore.optimizeMissionPath(mission.id, (progress) => {
+      optimizationProgress.value = progress
+    })
+    isOptimizing.value = false
+    missionName.value = ''
+    waypoints.value = []
+    
+    if (!isSimulating.value) {
+      simulationHint.value = '💡 路径优化完成！点击右上角"开始"按钮启动模拟，然后开始任务'
+      setTimeout(() => {
+        simulationHint.value = null
+      }, 8000)
+    }
+  } catch (error) {
+    isOptimizing.value = false
+    optimizeError.value = `优化失败: ${error}`
+  }
 }
-
-const startMissionError = ref<string | null>(null)
 
 async function startMission(missionId: string) {
   startMissionError.value = null
@@ -198,7 +234,13 @@ function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString()
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    await droneStore.init()
+    currentWindData.value = droneStore.weatherDynamics.getWindAt({ x: 0, y: 50, z: 0 })
+  } catch (e) {
+    console.error('Failed to init store:', e)
+  }
   refreshStats()
   setInterval(refreshStats, 5000)
 })
@@ -310,6 +352,12 @@ onMounted(() => {
       <div v-if="activeTab === 'missions'" class="tab-pane">
         <div class="section">
           <h3>创建任务</h3>
+          <div v-if="simulationHint" class="sync-result success">
+            {{ simulationHint }}
+          </div>
+          <div v-if="optimizeError" class="sync-result error">
+            ✗ {{ optimizeError }}
+          </div>
           <div class="input-group">
             <input v-model="missionName" placeholder="任务名称" />
           </div>
