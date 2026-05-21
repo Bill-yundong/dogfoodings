@@ -19,6 +19,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; iconColor: s
   cancelled: { label: '已取消', color: 'text-[#5A7A9A]', iconColor: '#5A7A9A', dotColor: 'bg-[#5A7A9A]' },
 };
 
+const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  tug: { label: '牵引车', color: '#00D4FF' },
+  baggage: { label: '行李车', color: '#00E676' },
+  fuel: { label: '加油车', color: '#FFD600' },
+  catering: { label: '餐车', color: '#FF6B35' },
+  bus: { label: '摆渡车', color: '#A855F7' },
+  bridge: { label: '廊桥', color: '#F472B6' },
+};
+
 interface CommandItemProps {
   command: DispatchCommand;
   isSelected: boolean;
@@ -139,6 +148,7 @@ export const CommandConsole: React.FC = () => {
     targetY: '',
     priority: 'normal' as DispatchCommand['priority'],
   });
+  const [createError, setCreateError] = useState<string | null>(null);
   
   const commandList = Array.from(commands.values()).sort((a, b) => {
     const priorityOrder = ['emergency', 'high', 'normal', 'low'];
@@ -161,14 +171,39 @@ export const CommandConsole: React.FC = () => {
   };
   
   const availableEquipment = Array.from(equipmentStates.values()).filter(
-    (e) => e.status === 'idle' && !e.currentTask
+    (e) => e.status !== 'error' && e.status !== 'offline'
   );
 
   const handleCreateCommand = () => {
-    if (!newCommand.equipmentId || !newCommand.targetX || !newCommand.targetY) return;
+    setCreateError(null);
+    
+    if (!newCommand.equipmentId) {
+      setCreateError('请选择设备');
+      return;
+    }
+    if (!newCommand.targetX || !newCommand.targetY) {
+      setCreateError('请输入目标坐标');
+      return;
+    }
+    
+    const targetX = parseFloat(newCommand.targetX);
+    const targetY = parseFloat(newCommand.targetY);
+    
+    if (isNaN(targetX) || isNaN(targetY)) {
+      setCreateError('坐标格式不正确');
+      return;
+    }
+    
+    if (targetX < 0 || targetX > 400 || targetY < 0 || targetY > 400) {
+      setCreateError('坐标范围应在 0-400 之间');
+      return;
+    }
     
     const equipment = equipmentStates.get(newCommand.equipmentId);
-    if (!equipment) return;
+    if (!equipment) {
+      setCreateError('设备不存在');
+      return;
+    }
     
     const command: DispatchCommand = {
       id: `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -176,13 +211,13 @@ export const CommandConsole: React.FC = () => {
       type: 'move',
       equipmentId: newCommand.equipmentId,
       targetPosition: {
-        x: parseFloat(newCommand.targetX),
-        y: parseFloat(newCommand.targetY),
+        x: targetX,
+        y: targetY,
         heading: 0,
       },
       path: [
         { x: equipment.position.x, y: equipment.position.y, t: 0 },
-        { x: parseFloat(newCommand.targetX), y: parseFloat(newCommand.targetY), t: 30 },
+        { x: targetX, y: targetY, t: 30 },
       ],
       expectedDuration: 30000,
       scheduledTime: Date.now(),
@@ -246,13 +281,19 @@ export const CommandConsole: React.FC = () => {
               <label className="block text-[8px] text-[#5A7A9A] mb-0.5">设备</label>
               <select
                 value={newCommand.equipmentId}
-                onChange={(e) => setNewCommand({ ...newCommand, equipmentId: e.target.value })}
-                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                onChange={(e) => { setNewCommand({ ...newCommand, equipmentId: e.target.value }); setCreateError(null); }}
+                className={`w-full px-1.5 py-1 bg-[#0F2137] border rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none transition-colors ${
+                  createError && !newCommand.equipmentId ? 'border-[#FF5252]' : 'border-[#2A4A6F]'
+                }`}
               >
                 <option value="">选择</option>
-                {availableEquipment.map((e) => (
-                  <option key={e.id} value={e.id}>{e.name}</option>
-                ))}
+                {availableEquipment.length === 0 ? (
+                  <option value="" disabled>无可用设备</option>
+                ) : (
+                  availableEquipment.map((e) => (
+                    <option key={e.id} value={e.id}>{e.name} ({TYPE_CONFIG[e.type as EquipmentType]?.label || e.type})</option>
+                  ))
+                )}
               </select>
             </div>
             <div>
@@ -260,9 +301,11 @@ export const CommandConsole: React.FC = () => {
               <input
                 type="number"
                 value={newCommand.targetX}
-                onChange={(e) => setNewCommand({ ...newCommand, targetX: e.target.value })}
-                placeholder="0-300"
-                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                onChange={(e) => { setNewCommand({ ...newCommand, targetX: e.target.value }); setCreateError(null); }}
+                placeholder="0-400"
+                className={`w-full px-1.5 py-1 bg-[#0F2137] border rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none transition-colors ${
+                  createError && !newCommand.targetX ? 'border-[#FF5252]' : 'border-[#2A4A6F]'
+                }`}
               />
             </div>
             <div>
@@ -270,9 +313,11 @@ export const CommandConsole: React.FC = () => {
               <input
                 type="number"
                 value={newCommand.targetY}
-                onChange={(e) => setNewCommand({ ...newCommand, targetY: e.target.value })}
-                placeholder="0-350"
-                className="w-full px-1.5 py-1 bg-[#0F2137] border border-[#2A4A6F] rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none"
+                onChange={(e) => { setNewCommand({ ...newCommand, targetY: e.target.value }); setCreateError(null); }}
+                placeholder="0-400"
+                className={`w-full px-1.5 py-1 bg-[#0F2137] border rounded text-[10px] text-[#E8F4FF] focus:border-[#00D4FF] outline-none transition-colors ${
+                  createError && !newCommand.targetY ? 'border-[#FF5252]' : 'border-[#2A4A6F]'
+                }`}
               />
             </div>
             <div>
@@ -288,7 +333,7 @@ export const CommandConsole: React.FC = () => {
                 <option value="low">低</option>
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="flex flex-col gap-0.5">
               <button
                 onClick={handleCreateCommand}
                 className="w-full px-2 py-1 bg-[#00E676] text-[#0A1628] text-[10px] font-medium rounded hover:bg-[#00C853] transition-colors flex items-center justify-center gap-0.5"
@@ -298,6 +343,13 @@ export const CommandConsole: React.FC = () => {
               </button>
             </div>
           </div>
+          
+          {createError && (
+            <div className="mt-1 px-1.5 py-1 bg-[#FF5252]/15 border border-[#FF5252]/30 rounded flex items-center gap-1 animate-slide-in">
+              <AlertCircle className="w-3 h-3 text-[#FF5252] flex-shrink-0" />
+              <span className="text-[9px] text-[#FF5252]">{createError}</span>
+            </div>
+          )}
         </div>
       )}
       
