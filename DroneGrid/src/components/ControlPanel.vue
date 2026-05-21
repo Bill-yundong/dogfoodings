@@ -8,6 +8,7 @@ import { generateId } from '@/utils/math'
 const droneStore = useDroneStore()
 const { droneList, missionList, isSimulating, simulationSpeed, activeDrones } = storeToRefs(droneStore)
 
+const localSpeed = ref(1)
 const selectedDroneId = ref<string>('')
 const newDroneId = ref('')
 const missionName = ref('')
@@ -19,6 +20,9 @@ const dbStats = ref<any>(null)
 const syncStats = ref<any>(null)
 const weatherStats = ref<any>(null)
 const syncStatus = ref<any>(null)
+const isSyncing = ref(false)
+const syncResult = ref<any>(null)
+const currentWindData = ref<any>(null)
 
 const selectedDrone = computed(() => droneList.value.find(d => d.id === selectedDroneId.value))
 
@@ -82,8 +86,30 @@ async function createAndOptimizeMission() {
   waypoints.value = []
 }
 
+const startMissionError = ref<string | null>(null)
+
 async function startMission(missionId: string) {
-  await droneStore.startMission(missionId)
+  startMissionError.value = null
+  const success = await droneStore.startMission(missionId)
+  
+  if (!success) {
+    const mission = droneStore.missions.get(missionId)
+    const drone = mission ? droneStore.drones.get(mission.droneId) : null
+    
+    if (!mission) {
+      startMissionError.value = '任务不存在'
+    } else if (!drone) {
+      startMissionError.value = '无人机不存在'
+    } else if (drone.status !== 'idle') {
+      startMissionError.value = `无人机状态为 ${drone.status}，需要 idle 状态才能开始`
+    } else {
+      startMissionError.value = '无法开始任务，请检查无人机和路径优化状态'
+    }
+    
+    setTimeout(() => {
+      startMissionError.value = null
+    }, 5000)
+  }
 }
 
 function toggleSimulation() {
@@ -95,6 +121,7 @@ function toggleSimulation() {
 }
 
 function setSpeed(speed: number) {
+  localSpeed.value = speed
   droneStore.setSimulationSpeed(speed)
 }
 
@@ -104,19 +131,39 @@ async function refreshStats() {
     syncStats.value = await droneStore.blackBoxDB.getSyncState()
     syncStatus.value = droneStore.semanticSync.getSyncStatus()
     weatherStats.value = droneStore.weatherDynamics.getGridStats()
+    
+    const samplePosition = selectedDrone.value?.position || { x: 0, y: 50, z: 0 }
+    currentWindData.value = droneStore.weatherDynamics.getWindAt(samplePosition)
   } catch (e) {
     console.error('Failed to refresh stats:', e)
   }
 }
 
 async function syncWithBackend() {
-  const result = await droneStore.blackBoxDB.syncWithBackend(async (logs) => {
-    console.log(`Syncing ${logs.length} logs...`)
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return true
-  })
-  console.log('Sync result:', result)
-  refreshStats()
+  if (isSyncing.value) return
+  
+  isSyncing.value = true
+  syncResult.value = null
+  
+  try {
+    const result = await droneStore.blackBoxDB.syncWithBackend(async (logs) => {
+      console.log(`Syncing ${logs.length} logs...`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return true
+    })
+    syncResult.value = result
+    console.log('Sync result:', result)
+  } catch (error) {
+    console.error('Sync error:', error)
+    syncResult.value = { success: false, error: String(error) }
+  } finally {
+    isSyncing.value = false
+    refreshStats()
+    
+    setTimeout(() => {
+      syncResult.value = null
+    }, 5000)
+  }
 }
 
 function generateDemoData() {
@@ -174,7 +221,7 @@ onMounted(() => {
           <button 
             v-for="speed in [0.5, 1, 2, 5]" 
             :key="speed"
-            :class="{ active: simulationSpeed === speed }"
+            :class="{ active: localSpeed === speed }"
             @click="setSpeed(speed)"
           >
             {{ speed }}x
@@ -293,6 +340,9 @@ onMounted(() => {
 
         <div class="section">
           <h3>任务列表</h3>
+          <div v-if="startMissionError" class="sync-result error">
+            ✗ {{ startMissionError }}
+          </div>
           <div class="mission-list">
             <div 
               v-for="mission in missionList" 
@@ -340,6 +390,89 @@ onMounted(() => {
           </div>
           <div class="info-box">
             <p>💡 三维气象网格实时模拟风场、温度、气压和湍流</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>实时气象数据 {{ selectedDrone ? `(${selectedDrone.id})` : '(原点)' }}</h3>
+          <div v-if="currentWindData" class="weather-details">
+            <div class="weather-item">
+              <div class="weather-icon">🌬️</div>
+              <div class="weather-info">
+                <span class="label">风速</span>
+                <span class="value highlight">{{ currentWindData.speed.toFixed(1) }} m/s</span>
+              </div>
+              <div class="wind-direction">
+                <div class="compass" :style="{ transform: `rotate(${currentWindData.direction}deg)` }">
+                  <span>↑</span>
+                </div>
+                <span class="direction-text">{{ currentWindData.direction.toFixed(0) }}°</span>
+              </div>
+            </div>
+            <div class="weather-item">
+              <div class="weather-icon">🌀</div>
+              <div class="weather-info">
+                <span class="label">湍流强度</span>
+                <span class="value" :class="{
+                  'success': currentWindData.turbulence < 0.3,
+                  'warning': currentWindData.turbulence >= 0.3 && currentWindData.turbulence < 0.5,
+                  'danger': currentWindData.turbulence >= 0.5
+                }">{{ (currentWindData.turbulence * 100).toFixed(0) }}%</span>
+              </div>
+            </div>
+            <div class="weather-item">
+              <div class="weather-icon">🌡️</div>
+              <div class="weather-info">
+                <span class="label">温度</span>
+                <span class="value">{{ currentWindData.temperature.toFixed(1) }} °C</span>
+              </div>
+            </div>
+            <div class="weather-item">
+              <div class="weather-icon">📊</div>
+              <div class="weather-info">
+                <span class="label">气压</span>
+                <span class="value">{{ currentWindData.pressure.toFixed(0) }} Pa</span>
+              </div>
+            </div>
+            <div class="weather-item">
+              <div class="weather-icon">💧</div>
+              <div class="weather-info">
+                <span class="label">湿度</span>
+                <span class="value">{{ currentWindData.humidity.toFixed(0) }} %</span>
+              </div>
+            </div>
+          </div>
+          <div class="wind-visualization">
+            <div class="wind-bar">
+              <div class="wind-bar-fill" :style="{ width: `${Math.min(100, currentWindData?.speed * 5)}%` }"></div>
+            </div>
+            <div class="wind-labels">
+              <span>0</span>
+              <span>10</span>
+              <span>20 m/s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>风阻动能损耗估算</h3>
+          <div v-if="currentWindData" class="energy-loss">
+            <div class="detail-item">
+              <span class="label">基础功耗</span>
+              <span class="value">150 W</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">风阻功耗</span>
+              <span class="value warning">{{ (currentWindData.speed * 15).toFixed(0) }} W</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">湍流惩罚</span>
+              <span class="value danger">{{ (currentWindData.turbulence * 50).toFixed(0) }} W</span>
+            </div>
+            <div class="detail-item total">
+              <span class="label">总估算功耗</span>
+              <span class="value highlight">{{ (150 + currentWindData.speed * 15 + currentWindData.turbulence * 50).toFixed(0) }} W</span>
+            </div>
           </div>
         </div>
       </div>
@@ -395,7 +528,26 @@ onMounted(() => {
             <span class="label">最后同步</span>
             <span class="value">{{ formatDate(syncStatus?.lastSyncTime) }}</span>
           </div>
-          <button class="btn primary" @click="syncWithBackend">立即同步</button>
+          
+          <div v-if="syncResult" class="sync-result" :class="{ success: syncResult.success, error: !syncResult.success }">
+            <template v-if="syncResult.success">
+              ✓ 同步成功：已同步 {{ syncResult.synced }} / {{ syncResult.total }} 条日志
+            </template>
+            <template v-else-if="syncResult.error">
+              ✗ 同步失败：{{ syncResult.error }}
+            </template>
+            <template v-else>
+              ⚠ 同步完成：0 条待同步日志
+            </template>
+          </div>
+          
+          <button 
+            class="btn primary" 
+            :disabled="isSyncing"
+            @click="syncWithBackend"
+          >
+            {{ isSyncing ? '同步中...' : '立即同步' }}
+          </button>
         </div>
 
         <div class="section">
@@ -781,5 +933,145 @@ input:focus {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
+}
+
+.sync-result {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+
+.sync-result.success {
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  color: #4caf50;
+}
+
+.sync-result.error {
+  background: rgba(244, 67, 54, 0.2);
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  color: #f44336;
+}
+
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.weather-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.weather-icon {
+  font-size: 24px;
+}
+
+.weather-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.weather-info .label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.weather-info .value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.weather-info .value.highlight {
+  color: #00d4ff;
+}
+
+.weather-info .value.success {
+  color: #4caf50;
+}
+
+.weather-info .value.warning {
+  color: #ff9800;
+}
+
+.weather-info .value.danger {
+  color: #f44336;
+}
+
+.wind-direction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.compass {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 212, 255, 0.2);
+  border: 2px solid #00d4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.compass span {
+  font-size: 12px;
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+.direction-text {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.wind-visualization {
+  margin-top: 10px;
+}
+
+.wind-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.wind-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #ff9800, #f44336);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.wind-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.energy-loss .detail-item.total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.energy-loss .detail-item.total .label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 </style>

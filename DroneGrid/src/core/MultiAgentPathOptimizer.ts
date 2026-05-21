@@ -42,16 +42,49 @@ export class MultiAgentPathOptimizer {
     startPosition: Vector3D,
     onProgress?: (progress: number) => void
   ): Promise<PathOptimizationResult> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        try {
-          const result = this.optimizePath(mission, startPosition, onProgress)
-          resolve(result)
-        } catch (error) {
-          reject(error)
-        }
-      }, 0)
-    })
+    const waypoints = mission.waypoints.map(wp => wp.position)
+    const fullPath: Vector3D[] = [startPosition]
+    let totalDistance = 0
+    let totalEnergy = 0
+    let totalDuration = 0
+    let maxWindPenalty = 0
+    let maxCollisionRisk = 0
+
+    const orderedWaypoints = this.optimizeWaypointOrder(startPosition, waypoints)
+
+    for (let i = 0; i < orderedWaypoints.length; i++) {
+      const start = i === 0 ? startPosition : orderedWaypoints[i - 1]
+      const end = orderedWaypoints[i]
+      
+      const segmentPath = this.aStarPathfinding(start, end, mission.droneId)
+      
+      if (i > 0) segmentPath.shift()
+      
+      fullPath.push(...segmentPath)
+
+      const segmentResult = this.calculateSegmentMetrics(segmentPath, mission.droneId)
+      totalDistance += segmentResult.distance
+      totalEnergy += segmentResult.energy
+      totalDuration += segmentResult.duration
+      maxWindPenalty = Math.max(maxWindPenalty, segmentResult.windPenalty)
+      maxCollisionRisk = Math.max(maxCollisionRisk, segmentResult.collisionRisk)
+
+      if (onProgress) {
+        onProgress(((i + 1) / orderedWaypoints.length) * 100)
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+
+    return {
+      missionId: mission.id,
+      optimizedPath: fullPath,
+      totalDistance,
+      estimatedEnergy: totalEnergy,
+      estimatedDuration: totalDuration,
+      windPenalty: maxWindPenalty,
+      collisionRisk: maxCollisionRisk
+    }
   }
 
   public optimizePath(
