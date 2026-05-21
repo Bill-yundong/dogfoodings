@@ -4,6 +4,8 @@ import { ApronCanvas } from '@/components/control-tower/ApronCanvas';
 import { EquipmentPanel } from '@/components/control-tower/EquipmentPanel';
 import { AlertBar } from '@/components/control-tower/AlertBar';
 import { CommandConsole } from '@/components/control-tower/CommandConsole';
+import { KPIPanel } from '@/components/control-tower/KPIPanel';
+import { SystemStatus } from '@/components/control-tower/SystemStatus';
 import { useControlTowerStore } from '@/store/controlTower';
 import { simulationDataGenerator } from '@/utils/simulation/dataGenerator';
 import { conflictDetectionWorker } from '@/workers/conflictDetectionWorker';
@@ -16,6 +18,7 @@ const ControlTowerPage: React.FC = () => {
   const frameCountRef = useRef(0);
   const lastFpsUpdateRef = useRef(performance.now());
   const animationFrameRef = useRef<number>();
+  const [showSidebar, setShowSidebar] = useState(true);
   
   const {
     equipmentStates,
@@ -151,30 +154,53 @@ const ControlTowerPage: React.FC = () => {
     };
   }, [isSimulationRunning, simulationSpeed, equipmentStates, commands, alerts, updateEquipmentState, addAlert, updatePerformance, setNetworkStatus, updateSyncStatus]);
 
+  const equipmentList = Array.from(equipmentStates.values());
+  const stats = {
+    total: equipmentList.length,
+    moving: equipmentList.filter((e) => e.status === 'moving').length,
+    working: equipmentList.filter((e) => e.status === 'working').length,
+    idle: equipmentList.filter((e) => e.status === 'idle').length,
+    error: equipmentList.filter((e) => e.status === 'error').length,
+    charging: equipmentList.filter((e) => e.status === 'charging').length,
+  };
+
   return (
     <div className="h-screen flex flex-col bg-[#0A1628] overflow-hidden">
       <HeaderBar />
       
       <div className="flex-1 flex overflow-hidden">
-        <div
-          ref={canvasContainerRef}
-          className="flex-1 relative grid-bg"
-        >
-          <ApronCanvas width={canvasSize.width} height={canvasSize.height} />
-        </div>
-        
-        <div className="w-80 flex-shrink-0">
+        <div className={`flex flex-col bg-[#0F2137] border-r border-[#2A4A6F] transition-all duration-300 ${showSidebar ? 'w-72' : 'w-0 overflow-hidden'}`}>
           <EquipmentPanel />
         </div>
-      </div>
-      
-      <div className="h-64 flex-shrink-0">
-        <div className="h-full flex">
-          <div className="w-2/3">
+        
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="w-6 bg-[#152A47] hover:bg-[#1A3152] border-r border-[#2A4A6F] flex items-center justify-center text-[#5A7A9A] hover:text-[#00D4FF] transition-colors z-10"
+        >
+          {showSidebar ? '‹' : '›'}
+        </button>
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <KPIPanel stats={stats} />
+          
+          <div
+            ref={canvasContainerRef}
+            className="flex-1 relative grid-bg"
+          >
+            <ApronCanvas width={canvasSize.width} height={canvasSize.height} />
+          </div>
+          
+          <div className="h-48 bg-[#0F2137] border-t border-[#2A4A6F]">
             <CommandConsole />
           </div>
-          <div className="w-1/3 border-l border-[#2A4A6F]">
+        </div>
+        
+        <div className="w-80 bg-[#0F2137] border-l border-[#2A4A6F] flex flex-col">
+          <div className="h-1/2 border-b border-[#2A4A6F] overflow-hidden">
             <AlertBar />
+          </div>
+          <div className="h-1/2 overflow-hidden">
+            <SystemStatus />
           </div>
         </div>
       </div>
