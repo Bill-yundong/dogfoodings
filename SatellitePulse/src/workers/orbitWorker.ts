@@ -32,7 +32,10 @@ const state: WorkerState = {
 }
 
 let animationFrameId: number | null = null
+let idleIntervalId: number | null = null
 let lastUpdateTime = 0
+let simulationStartTime: number | null = null
+let baseTime: number = Date.now()
 
 function initialize(payload: {
   satellites: Satellite[]
@@ -52,6 +55,7 @@ function initialize(payload: {
   
   state.stations = payload.stations
   state.config = { ...state.config, ...payload.config }
+  baseTime = Date.now()
   
   self.postMessage({
     type: 'initialized',
@@ -60,6 +64,28 @@ function initialize(payload: {
       stationCount: state.stations.length
     }
   })
+  
+  updateSimulation(baseTime)
+  startIdleUpdates()
+}
+
+function startIdleUpdates(): void {
+  if (idleIntervalId !== null) return
+  
+  idleIntervalId = (self as unknown as Window).setInterval(() => {
+    if (!state.isRunning) {
+      const now = Date.now()
+      updateSimulation(now)
+      baseTime = now
+    }
+  }, 1000)
+}
+
+function stopIdleUpdates(): void {
+  if (idleIntervalId !== null) {
+    (self as unknown as Window).clearInterval(idleIntervalId)
+    idleIntervalId = null
+  }
 }
 
 function calculatePositions(currentTime: number): SatellitePosition[] {
@@ -135,8 +161,6 @@ function predictVisibility(payload: {
 }
 
 function updateSimulation(currentTime: number): void {
-  if (!state.isRunning) return
-  
   const positions = calculatePositions(currentTime)
   
   const result: OrbitCalculationResult = {
@@ -153,13 +177,19 @@ function updateSimulation(currentTime: number): void {
 function startSimulation(): void {
   if (state.isRunning) return
   state.isRunning = true
+  const simStart = Date.now()
+  simulationStartTime = simStart
+  baseTime = simStart
   
-  const loop = (timestamp: number) => {
+  const loop = () => {
     if (!state.isRunning) return
     
-    if (timestamp - lastUpdateTime >= state.config.updateInterval) {
-      updateSimulation(timestamp)
-      lastUpdateTime = timestamp
+    const now = Date.now()
+    if (now - lastUpdateTime >= state.config.updateInterval) {
+      const elapsed = now - simStart
+      const simulatedTime = baseTime + elapsed * state.config.timeSpeed
+      updateSimulation(simulatedTime)
+      lastUpdateTime = now
     }
     
     animationFrameId = requestAnimationFrame(loop)
@@ -174,9 +204,24 @@ function stopSimulation(): void {
     cancelAnimationFrame(animationFrameId)
     animationFrameId = null
   }
+  if (simulationStartTime !== null) {
+    const now = Date.now()
+    const elapsed = now - simulationStartTime
+    baseTime = baseTime + elapsed * state.config.timeSpeed
+    simulationStartTime = null
+  }
 }
 
 function updateConfig(config: Partial<SimulationConfig>): void {
+  if (config.timeSpeed !== undefined && state.isRunning) {
+    const simStart = simulationStartTime
+    if (simStart !== null) {
+      const now = Date.now()
+      const elapsed = now - simStart
+      baseTime = baseTime + elapsed * state.config.timeSpeed
+      simulationStartTime = now
+    }
+  }
   state.config = { ...state.config, ...config }
 }
 
@@ -224,6 +269,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessage>) => {
         
       case 'dispose':
         stopSimulation()
+        stopIdleUpdates()
         state.satellites.clear()
         state.stations = []
         break

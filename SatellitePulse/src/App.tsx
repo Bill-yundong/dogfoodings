@@ -36,9 +36,16 @@ const App: Component = () => {
   createEffect(() => {
     const satId = store.selectedSatelliteId()
     const sat = store.selectedSatellite()
-    console.log('[App] 响应式更新 - selectedSatelliteId:', satId)
-    console.log('[App] 响应式更新 - selectedSatellite:', sat?.name)
-    console.log('[App] 响应式更新 - selectedSatellitePosition:', selectedSatellitePosition()?.state.altitude)
+    const allPositions = store.positions()
+    const pos = selectedSatellitePosition()
+    
+    console.log('[App] ========== 响应式更新 ==========')
+    console.log('[App] selectedSatelliteId:', satId)
+    console.log('[App] selectedSatellite:', sat?.name)
+    console.log('[App] 所有 positions 数量:', allPositions.length)
+    console.log('[App] 所有 positions:', allPositions.map(p => ({ id: p.satelliteId, alt: p.state.altitude })))
+    console.log('[App] selectedSatellitePosition:', pos ? { id: pos.satelliteId, alt: pos.state.altitude } : 'undefined')
+    console.log('[App] ================================')
   })
 
   const handleSaveSnapshot = async () => {

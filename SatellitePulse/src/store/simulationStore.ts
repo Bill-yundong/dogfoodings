@@ -83,17 +83,22 @@ export function createSimulationStore() {
 
         switch (type) {
           case 'initialized':
+            console.log('[Store] Worker initialized, payload:', payload)
             setWorkerReady(true)
             break
           case 'positions':
+            console.log('[Store] Received positions, count:', payload.positions.length)
+            console.log('[Store] First position:', payload.positions[0])
             setPositions(payload.positions)
+            setCurrentTime(payload.timestamp)
             break
           case 'visibility':
+            console.log('[Store] Received visibility windows:', payload.windows.length)
             setVisibilityWindows(payload.windows)
             setIsLoading(false)
             break
           case 'error':
-            console.error('Worker error:', payload)
+            console.error('[Store] Worker error:', payload)
             setIsLoading(false)
             break
         }
