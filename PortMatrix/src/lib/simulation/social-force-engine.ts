@@ -44,6 +44,14 @@ export class SocialForceEngine {
     }
   }
 
+  addAgent(agent: PassengerAgent): void {
+    this.agentMap.set(agent.id, agent);
+  }
+
+  removeAgent(agentId: string): void {
+    this.agentMap.delete(agentId);
+  }
+
   update(dt: number): void {
     this.buildSpatialGrid();
 

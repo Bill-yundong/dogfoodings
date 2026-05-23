@@ -150,6 +150,7 @@ class SimulationWorker {
 
       this.agents.set(agent.id, agent);
       this.agentIdToIndex.set(agent.id, this.agentIdToIndex.size);
+      this.socialForce.addAgent(agent);
 
       assignNextTarget(agent, this.layout, event.timestamp);
 
@@ -399,18 +400,23 @@ class SimulationWorker {
   reset(): void {
     this.agents.clear();
     this.agentIdToIndex.clear();
-    this.scheduler.reset();
-    this.queueManager.reset();
     this.socialForce.setAgents([]);
+    this.scheduler.clear();
+    this.queueManager.reset();
     this.simulationTime = 0;
     this.realTime = 0;
     this.accumulator = 0;
+    this.lastFrameTime = 0;
     this.pendingArrivals = [];
     this.lastSnapshotTime = 0;
     this.totalServed = 0;
     this.waitTimes = {};
     this.isRunning = false;
     this.isPaused = false;
+
+    for (const zone of this.layout.zones) {
+      zone.currentCount = 0;
+    }
   }
 
   setSpeed(speed: number): void {
@@ -517,6 +523,7 @@ class SimulationWorker {
       if (agent.status === 'exited' && this.simulationTime - agent.arrivalTime > 60) {
         this.agents.delete(id);
         this.agentIdToIndex.delete(id);
+        this.socialForce.removeAgent(id);
       }
     }
   }
