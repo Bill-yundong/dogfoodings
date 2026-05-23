@@ -8,23 +8,7 @@
         
         <main class="flex-1 overflow-hidden">
           <router-view v-slot="{ Component, route: routeInfo }">
-            <Suspense timeout="0">
-              <template #default>
-                <transition name="fade-fast">
-                  <keep-alive :include="cachedViews" :max="6">
-                    <component :is="Component" :key="routeInfo.name" />
-                  </keep-alive>
-                </transition>
-              </template>
-              <template #fallback>
-                <div class="h-full w-full flex items-center justify-center bg-cyber-bg">
-                  <div class="text-center">
-                    <div class="w-8 h-8 border-2 border-electric-blue/30 border-t-electric-blue rounded-full animate-spin mx-auto mb-2"></div>
-                    <p class="text-xs text-cyber-text-secondary">加载中...</p>
-                  </div>
-                </div>
-              </template>
-            </Suspense>
+            <component :is="Component" :key="routeInfo.fullPath" />
           </router-view>
         </main>
       </div>

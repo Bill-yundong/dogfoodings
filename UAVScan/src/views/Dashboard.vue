@@ -294,7 +294,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'Dashboard' })
-import { ref, computed, onMounted, onUnmounted, shallowRef, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, shallowRef, nextTick, type Component } from 'vue'
 import * as echarts from 'echarts'
 import {
   Database,
@@ -544,6 +544,29 @@ function handleViewTask(task: ProcessingTask) {
 }
 
 let metricsInterval: number | null = null
+let isInitialized = false
+
+function startMetricsTimer() {
+  if (metricsInterval === null) {
+    metricsInterval = window.setInterval(() => {
+      if (trendChart.value) {
+        trendChart.value.setOption({
+          series: [
+            { data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 20) + 15) },
+            { data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 100) + 80) }
+          ]
+        })
+      }
+    }, 5000)
+  }
+}
+
+function stopMetricsTimer() {
+  if (metricsInterval) {
+    clearInterval(metricsInterval)
+    metricsInterval = null
+  }
+}
 
 onMounted(() => {
   pointCloudStore.loadPointClouds()
@@ -553,26 +576,31 @@ onMounted(() => {
   
   setTimeout(() => {
     initChart()
+    isInitialized = true
   }, 100)
   
-  metricsInterval = window.setInterval(() => {
-    if (trendChart.value) {
-      trendChart.value.setOption({
-        series: [
-          { data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 20) + 15) },
-          { data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 100) + 80) }
-        ]
-      })
-    }
-  }, 5000)
+  startMetricsTimer()
+})
+
+onActivated(() => {
+  if (isInitialized && trendChart.value) {
+    nextTick(() => {
+      trendChart.value?.resize()
+    })
+  }
+  startMetricsTimer()
+})
+
+onDeactivated(() => {
+  stopMetricsTimer()
 })
 
 onUnmounted(() => {
+  stopMetricsTimer()
   if (trendChart.value) {
     trendChart.value.dispose()
+    trendChart.value = null
   }
-  if (metricsInterval) {
-    clearInterval(metricsInterval)
-  }
+  isInitialized = false
 })
 </script>

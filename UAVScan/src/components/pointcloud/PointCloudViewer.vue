@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated, shallowRef } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
@@ -129,7 +129,6 @@ import {
   Box
 } from 'lucide-vue-next'
 import type { PointCloudData } from '@/types'
-import { useWebGLRenderer } from '@/composables/useWebGLRenderer'
 
 const props = defineProps<{
   pointCloudData?: PointCloudData | null
@@ -164,8 +163,6 @@ const colorMode = ref<'height' | 'intensity' | 'original'>('height')
 const fps = ref(60)
 const cameraDistance = ref(100)
 
-const { createRenderer, render, updatePointSize, updateColorMode, dispose } = useWebGLRenderer()
-
 const scene = shallowRef<THREE.Scene | null>(null)
 const camera = shallowRef<THREE.PerspectiveCamera | null>(null)
 const renderer = shallowRef<THREE.WebGLRenderer | null>(null)
@@ -179,6 +176,7 @@ const mouse = shallowRef<THREE.Vector2 | null>(null)
 let animationFrameId: number | null = null
 let lastTime = performance.now()
 let frameCount = 0
+let isActive = false
 
 const hasData = computed(() => props.pointCloudData && props.pointCloudData.positions.length > 0)
 const currentPointCount = computed(() => {
@@ -188,14 +186,43 @@ const currentPointCount = computed(() => {
 function initScene() {
   if (!containerRef.value || !canvasRef.value) return
 
-  const result = createRenderer(canvasRef.value, containerRef.value.clientWidth, containerRef.value.clientHeight)
-  scene.value = result.scene
-  camera.value = result.camera
-  renderer.value = result.renderer
-  controls.value = result.controls
+  const width = containerRef.value.clientWidth
+  const height = containerRef.value.clientHeight
 
-  raycaster.value = new THREE.Raycaster()
-  mouse.value = new THREE.Vector2()
+  scene.value = new THREE.Scene()
+  scene.value.background = new THREE.Color(0x0a0e17)
+
+  camera.value = new THREE.PerspectiveCamera(60, width / height, 0.1, 10000)
+  camera.value.position.set(50, 50, 50)
+
+  renderer.value = new THREE.WebGLRenderer({
+    canvas: canvasRef.value,
+    antialias: true,
+    powerPreference: 'high-performance',
+    alpha: true
+  })
+  renderer.value.setSize(width, height)
+  renderer.value.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.value.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.value.toneMappingExposure = 1.0
+
+  controls.value = new OrbitControls(camera.value, renderer.value.domElement)
+  controls.value.enableDamping = true
+  controls.value.dampingFactor = 0.05
+  controls.value.screenSpacePanning = true
+  controls.value.minDistance = 1
+  controls.value.maxDistance = 1000
+  controls.value.autoRotate = autoRotate.value
+  controls.value.autoRotateSpeed = 0.5
+
+  controls.value.addEventListener('change', () => {
+    if (camera.value) {
+      const pos = camera.value.position
+      const target = controls.value!.target
+      cameraDistance.value = pos.distanceTo(target)
+      emit('cameraChange', { x: pos.x, y: pos.y, z: pos.z })
+    }
+  })
 
   gridHelper.value = new THREE.GridHelper(200, 50, 0x00d4ff, 0x2a3447)
   gridHelper.value.material.opacity = 0.3
@@ -205,21 +232,22 @@ function initScene() {
   axesHelper.value = new THREE.AxesHelper(50)
   scene.value.add(axesHelper.value)
 
-  controls.value!.autoRotate = autoRotate.value
-  controls.value!.autoRotateSpeed = 0.5
+  raycaster.value = new THREE.Raycaster()
+  mouse.value = new THREE.Vector2()
 
-  controls.value!.addEventListener('change', () => {
-    if (camera.value) {
-      const pos = camera.value.position
-      const target = controls.value!.target
-      cameraDistance.value = pos.distanceTo(target)
-      emit('cameraChange', { x: pos.x, y: pos.y, z: pos.z })
-    }
-  })
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.5)
+  scene.value.add(ambientLight)
 
-  canvasRef.value.addEventListener('click', onCanvasClick)
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  directionalLight.position.set(1, 1, 1)
+  scene.value.add(directionalLight)
+}
 
-  window.addEventListener('resize', onResize)
+function removeAllListeners() {
+  window.removeEventListener('resize', onResize)
+  if (canvasRef.value) {
+    canvasRef.value.removeEventListener('click', onCanvasClick)
+  }
 }
 
 function loadPointCloud(data: PointCloudData) {
@@ -369,6 +397,8 @@ function onResize() {
 }
 
 function animate() {
+  if (!isActive) return
+  
   animationFrameId = requestAnimationFrame(animate)
   
   const now = performance.now()
@@ -449,26 +479,75 @@ watch(() => props.pointCloudData, (newData) => {
   }
 }, { deep: true })
 
+function startAnimation() {
+  if (!isActive && animationFrameId === null) {
+    isActive = true
+    animate()
+  }
+}
+
+function stopAnimation() {
+  isActive = false
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+}
+
 onMounted(() => {
   initScene()
-  animate()
+  startAnimation()
+  window.addEventListener('resize', onResize)
+  if (canvasRef.value) {
+    canvasRef.value.addEventListener('click', onCanvasClick)
+  }
   if (props.pointCloudData) {
     loadPointCloud(props.pointCloudData)
   }
 })
 
-onUnmounted(() => {
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId)
+onActivated(() => {
+  startAnimation()
+  window.addEventListener('resize', onResize)
+  if (canvasRef.value) {
+    canvasRef.value.addEventListener('click', onCanvasClick)
   }
+  if (renderer.value && containerRef.value) {
+    onResize()
+  }
+})
+
+onDeactivated(() => {
+  stopAnimation()
   window.removeEventListener('resize', onResize)
   if (canvasRef.value) {
     canvasRef.value.removeEventListener('click', onCanvasClick)
   }
-  dispose()
+})
+
+onUnmounted(() => {
+  stopAnimation()
+  removeAllListeners()
   if (renderer.value) {
     renderer.value.dispose()
+    renderer.value = null
   }
+  if (pointCloud.value) {
+    pointCloud.value.geometry.dispose()
+    if (Array.isArray(pointCloud.value.material)) {
+      pointCloud.value.material.forEach(m => m.dispose())
+    } else {
+      pointCloud.value.material.dispose()
+    }
+  }
+  scene.value = null
+  camera.value = null
+  controls.value = null
+  pointCloud.value = null
+  gridHelper.value = null
+  axesHelper.value = null
+  raycaster.value = null
+  mouse.value = null
 })
 
 function formatNumber(num: number): string {
@@ -478,3 +557,9 @@ function formatNumber(num: number): string {
   return num.toString()
 }
 </script>
+
+<style scoped>
+canvas {
+  display: block;
+}
+</style>
