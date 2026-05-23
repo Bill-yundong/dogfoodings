@@ -25,6 +25,10 @@ export const useSnapshotStore = defineStore('snapshot', () => {
   })
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  const isLoaded = ref(false)
+  const lastLoadTime = ref(0)
+  const MIN_LOAD_INTERVAL = 5000
 
   const sortedSnapshots = computed(() => {
     return [...snapshots.value].sort((a, b) => b.createdAt - a.createdAt)
@@ -35,12 +39,22 @@ export const useSnapshotStore = defineStore('snapshot', () => {
     return (storageStats.value.usedSize / storageStats.value.totalSize) * 100
   })
 
-  async function loadSnapshots() {
+  async function loadSnapshots(force = false) {
+    const now = Date.now()
+    
+    if (!force && loading.value) return
+    
+    if (!force && isLoaded.value && now - lastLoadTime.value < MIN_LOAD_INTERVAL) {
+      return
+    }
+    
     loading.value = true
     error.value = null
     try {
       snapshots.value = await snapshotDB.getAll()
       await refreshStorageStats()
+      isLoaded.value = true
+      lastLoadTime.value = now
     } catch (e) {
       error.value = '加载快照列表失败'
       console.error(e)

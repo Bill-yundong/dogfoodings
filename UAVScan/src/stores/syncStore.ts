@@ -23,6 +23,10 @@ export const useSyncStore = defineStore('sync', () => {
   const error = ref<string | null>(null)
   const autoSync = ref(true)
   const syncInterval = ref(30000)
+  
+  const isLoaded = ref(false)
+  const lastLoadTime = ref(0)
+  const MIN_LOAD_INTERVAL = 5000
 
   const pendingSync = computed(() => syncTasks.value.filter(t => t.status === 'pending'))
   const syncingTasks = computed(() => syncTasks.value.filter(t => t.status === 'transferring' || t.status === 'syncing'))
@@ -37,11 +41,21 @@ export const useSyncStore = defineStore('sync', () => {
     return completedSync.value.reduce((sum, t) => sum + (t.bytesTransferred || 0), 0)
   })
 
-  async function loadSyncTasks() {
+  async function loadSyncTasks(force = false) {
+    const now = Date.now()
+    
+    if (!force && loading.value) return
+    
+    if (!force && isLoaded.value && now - lastLoadTime.value < MIN_LOAD_INTERVAL) {
+      return
+    }
+    
     loading.value = true
     error.value = null
     try {
       syncTasks.value = await syncDB.getAll()
+      isLoaded.value = true
+      lastLoadTime.value = now
     } catch (e) {
       error.value = '加载同步任务失败'
       console.error(e)

@@ -543,16 +543,24 @@ function handleViewTask(task: ProcessingTask) {
 }
 
 let metricsInterval: number | null = null
+let isInitialized = false
 
 onMounted(() => {
-  pointCloudStore.loadPointClouds()
-  taskStore.loadTasks()
-  syncStore.loadSyncTasks()
-  syncStore.refreshLinkStatus()
-  
-  setTimeout(() => {
-    initChart()
-  }, 100)
+  if (!isInitialized) {
+    isInitialized = true
+    pointCloudStore.loadPointClouds()
+    taskStore.loadTasks()
+    syncStore.loadSyncTasks()
+    syncStore.refreshLinkStatus()
+    
+    setTimeout(() => {
+      initChart()
+    }, 100)
+  } else if (!trendChart.value) {
+    setTimeout(() => {
+      initChart()
+    }, 50)
+  }
   
   metricsInterval = window.setInterval(() => {
     if (trendChart.value) {

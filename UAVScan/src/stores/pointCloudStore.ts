@@ -14,6 +14,10 @@ export const usePointCloudStore = defineStore('pointCloud', () => {
   const error = ref<string | null>(null)
   const downsamplingConfig = ref<DownsamplingConfig>(processor.getDefaultConfig())
   const viewMode = ref<'original' | 'downsampled'>('downsampled')
+  
+  const isLoaded = ref(false)
+  const lastLoadTime = ref(0)
+  const MIN_LOAD_INTERVAL = 5000
 
   const totalPoints = computed(() => {
     return pointClouds.value.reduce((sum, pc) => sum + pc.originalPoints, 0)
@@ -28,11 +32,21 @@ export const usePointCloudStore = defineStore('pointCloud', () => {
     return (1 - currentPointCloud.value.downsampledPoints / currentPointCloud.value.originalPoints) * 100
   })
 
-  async function loadPointClouds() {
+  async function loadPointClouds(force = false) {
+    const now = Date.now()
+    
+    if (!force && loading.value) return
+    
+    if (!force && isLoaded.value && now - lastLoadTime.value < MIN_LOAD_INTERVAL) {
+      return
+    }
+    
     loading.value = true
     error.value = null
     try {
       pointClouds.value = await pointCloudDB.getAll()
+      isLoaded.value = true
+      lastLoadTime.value = now
     } catch (e) {
       error.value = '加载点云列表失败'
       console.error(e)

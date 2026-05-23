@@ -65,8 +65,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, markRaw } from 'vue'
 import { useRoute } from 'vue-router'
+import type { Component } from 'vue'
 import {
   LayoutDashboard,
   Cpu,
@@ -92,19 +93,28 @@ const route = useRoute()
 const taskStore = useTaskStore()
 const syncStore = useSyncStore()
 
-const icons = {
-  LayoutDashboard,
-  Cpu,
-  Box,
-  RefreshCw,
-  Camera,
-  Settings,
-  ScanLine,
-  ChevronLeft,
-  ChevronRight
+type IconName = 'LayoutDashboard' | 'Cpu' | 'Box' | 'RefreshCw' | 'Camera' | 'Settings' | 'ScanLine' | 'ChevronLeft' | 'ChevronRight'
+
+interface MenuItem {
+  path: string
+  label: string
+  icon: IconName
+  badge?: number
 }
 
-const menuItems = computed(() => [
+const icons: Record<IconName, Component> = {
+  LayoutDashboard: markRaw(LayoutDashboard),
+  Cpu: markRaw(Cpu),
+  Box: markRaw(Box),
+  RefreshCw: markRaw(RefreshCw),
+  Camera: markRaw(Camera),
+  Settings: markRaw(Settings),
+  ScanLine: markRaw(ScanLine),
+  ChevronLeft: markRaw(ChevronLeft),
+  ChevronRight: markRaw(ChevronRight)
+}
+
+const baseMenuItems: MenuItem[] = [
   {
     path: '/dashboard',
     label: '数据仪表盘',
@@ -113,8 +123,7 @@ const menuItems = computed(() => [
   {
     path: '/processing',
     label: '处理中心',
-    icon: 'Cpu',
-    badge: taskStore.runningTasks.length > 0 ? taskStore.runningTasks.length : undefined
+    icon: 'Cpu'
   },
   {
     path: '/visualizer',
@@ -124,8 +133,7 @@ const menuItems = computed(() => [
   {
     path: '/sync',
     label: '数据同步',
-    icon: 'RefreshCw',
-    badge: syncStore.syncingTasks.length > 0 ? syncStore.syncingTasks.length : undefined
+    icon: 'RefreshCw'
   },
   {
     path: '/snapshots',
@@ -137,9 +145,27 @@ const menuItems = computed(() => [
     label: '系统设置',
     icon: 'Settings'
   }
-])
+]
+
+const runningTaskCount = computed(() => taskStore.runningTasks.length)
+const syncingTaskCount = computed(() => syncStore.syncingTasks.length)
+
+const menuItems = computed<MenuItem[]>(() => {
+  return baseMenuItems.map(item => {
+    if (item.path === '/processing' && runningTaskCount.value > 0) {
+      return { ...item, badge: runningTaskCount.value }
+    }
+    if (item.path === '/sync' && syncingTaskCount.value > 0) {
+      return { ...item, badge: syncingTaskCount.value }
+    }
+    return item
+  })
+})
+
+const activePath = computed(() => route.path)
 
 function isActive(path: string): boolean {
-  return route.path === path || route.path.startsWith(path + '/')
+  const currentPath = activePath.value
+  return currentPath === path || currentPath.startsWith(path + '/')
 }
 </script>

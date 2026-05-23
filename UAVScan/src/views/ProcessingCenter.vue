@@ -409,8 +409,13 @@ function handleViewTask(task: ProcessingTask) {
   }, 500)
 }
 
+let isInitialized = false
+
 onMounted(() => {
-  taskStore.loadTasks()
-  pointCloudStore.loadPointClouds()
+  if (!isInitialized) {
+    isInitialized = true
+    taskStore.loadTasks()
+    pointCloudStore.loadPointClouds()
+  }
 })
 </script>

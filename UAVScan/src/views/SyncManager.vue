@@ -654,20 +654,27 @@ function handleRetrySync(task: SyncTask) {
 }
 
 let linkMonitorInterval: number | null = null
+let isInitialized = false
 
 onMounted(() => {
-  syncStore.loadSyncTasks()
-  pointCloudStore.loadPointClouds()
-  syncStore.refreshLinkStatus()
-  
-  linkMonitorInterval = window.setInterval(() => {
+  if (!isInitialized) {
+    isInitialized = true
+    syncStore.loadSyncTasks()
+    pointCloudStore.loadPointClouds()
     syncStore.refreshLinkStatus()
-  }, 5000)
+  }
+  
+  if (!linkMonitorInterval) {
+    linkMonitorInterval = window.setInterval(() => {
+      syncStore.refreshLinkStatus()
+    }, 5000)
+  }
 })
 
 onUnmounted(() => {
   if (linkMonitorInterval) {
     clearInterval(linkMonitorInterval)
+    linkMonitorInterval = null
   }
 })
 </script>

@@ -667,9 +667,14 @@ function handleCleanExpired() {
   })
 }
 
+let isInitialized = false
+
 onMounted(() => {
-  snapshotStore.loadSnapshots()
-  pointCloudStore.loadPointClouds()
+  if (!isInitialized) {
+    isInitialized = true
+    snapshotStore.loadSnapshots()
+    pointCloudStore.loadPointClouds()
+  }
   
   storageStats.totalUsed = snapshotStore.totalSize
   storageStats.objectCount = snapshotStore.snapshots.length

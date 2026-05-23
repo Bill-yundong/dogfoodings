@@ -466,15 +466,20 @@ async function handleUpload() {
   }
 }
 
+let isInitialized = false
+
 onMounted(() => {
-  pointCloudStore.loadPointClouds()
-  
-  setTimeout(() => {
-    if (pointCloudStore.pointClouds.length > 0 && !pointCloudStore.currentPointCloud) {
-      selectedPointCloudId.value = pointCloudStore.pointClouds[0].id
-      handleSelectPointCloud()
-    }
-  }, 100)
+  if (!isInitialized) {
+    isInitialized = true
+    pointCloudStore.loadPointClouds()
+    
+    setTimeout(() => {
+      if (pointCloudStore.pointClouds.length > 0 && !pointCloudStore.currentPointCloud) {
+        selectedPointCloudId.value = pointCloudStore.pointClouds[0].id
+        handleSelectPointCloud()
+      }
+    }, 100)
+  }
 })
 
 watch(() => pointCloudStore.currentPointCloud, (pc) => {

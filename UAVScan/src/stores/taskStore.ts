@@ -12,6 +12,10 @@ export const useTaskStore = defineStore('task', () => {
   const workerStates = ref<Map<string, WorkerState>>(new Map())
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  const isLoaded = ref(false)
+  const lastLoadTime = ref(0)
+  const MIN_LOAD_INTERVAL = 5000
 
   const pendingTasks = computed(() => tasks.value.filter(t => t.status === 'pending'))
   const runningTasks = computed(() => tasks.value.filter(t => t.status === 'running'))
@@ -43,7 +47,15 @@ export const useTaskStore = defineStore('task', () => {
     }
   })
 
-  async function loadTasks() {
+  async function loadTasks(force = false) {
+    const now = Date.now()
+    
+    if (!force && loading.value) return
+    
+    if (!force && isLoaded.value && now - lastLoadTime.value < MIN_LOAD_INTERVAL) {
+      return
+    }
+    
     loading.value = true
     error.value = null
     try {
@@ -54,6 +66,8 @@ export const useTaskStore = defineStore('task', () => {
           workerStates.value.set(ws.currentTaskId, ws)
         }
       }
+      isLoaded.value = true
+      lastLoadTime.value = now
     } catch (e) {
       error.value = '加载任务列表失败'
       console.error(e)
