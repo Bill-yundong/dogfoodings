@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -20,53 +20,22 @@ export function PageContainer({
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
 
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    try {
-      history.scrollRestoration = 'manual';
-    } catch (e) {}
-    
-    const root = document.documentElement;
-    const originalScrollBehavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = 'auto';
-    
-    const forceTop = () => {
-      window.scrollTo(0, 0);
-      root.scrollTop = 0;
-      document.body.scrollTop = 0;
-      if (mainRef.current) {
-        mainRef.current.scrollTop = 0;
-      }
-    };
-    
-    forceTop();
-    
-    const timeouts = [0, 10, 50, 100, 200, 300].map(delay => 
-      setTimeout(forceTop, delay)
-    );
-    
-    const restoreTimeout = setTimeout(() => {
-      root.style.scrollBehavior = originalScrollBehavior;
-    }, 400);
-    
-    return () => {
-      timeouts.forEach(clearTimeout);
-      clearTimeout(restoreTimeout);
-      root.style.scrollBehavior = originalScrollBehavior;
-    };
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
   }, [pathname]);
 
   return (
-    <div className="page-container min-h-screen">
+    <div className="page-container flex h-screen w-full overflow-hidden">
       {showSidebar && <Sidebar />}
       
-      <div className={`${showSidebar ? 'lg:ml-64' : ''} transition-all duration-300`}>
+      <div className="flex flex-1 flex-col overflow-hidden">
         {showHeader && <Header />}
         
         <main
           ref={mainRef}
-          className="p-6 pt-20"
+          className="flex-1 overflow-y-auto p-6"
         >
           {children}
         </main>

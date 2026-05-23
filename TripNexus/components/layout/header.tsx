@@ -32,7 +32,7 @@ export function Header() {
   };
 
   return (
-    <header className="header h-16 backdrop-blur-lg border-b flex items-center justify-between px-6 fixed top-0 right-0 lg:left-64 z-40 bg-dark-50/80 dark:bg-dark-900/80">
+    <header className="header h-16 flex-shrink-0 backdrop-blur-lg border-b flex items-center justify-between px-6 bg-dark-50 dark:bg-dark-900">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
