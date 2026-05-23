@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Map, Calendar, Route, Database, Settings, Home, BarChart3 } from 'lucide-react';
 import { useUIStore } from '@/lib/store';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home },
@@ -19,22 +20,47 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      return mobile;
+    };
+    
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    const mobile = checkMobile();
+    if (mobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <>
-      {sidebarOpen && (
+      {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
       
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-dark-100 z-50 transform transition-transform duration-300 ease-out ${
+        className={`sidebar fixed lg:sticky top-0 left-0 h-screen w-64 border-r z-50 transform transition-transform duration-300 ease-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'
         }`}
       >
-        <div className="h-16 flex items-center justify-center border-b border-dark-100">
+        <div className="h-16 flex items-center justify-center border-b border-dark-100 dark:border-dark-700">
           <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
             <Map className="w-5 h-5 text-white" />
           </div>
@@ -81,10 +107,10 @@ export function Sidebar() {
         </nav>
 
         {sidebarOpen && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-dark-100">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-primary-50 to-accent-50">
-              <p className="text-sm font-medium text-primary-700 mb-2">💡 使用提示</p>
-              <p className="text-xs text-dark-500">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-dark-100 dark:border-dark-700">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-primary-50 to-accent-50 dark:from-primary-900/30 dark:to-accent-900/30">
+              <p className="text-sm font-medium text-primary-700 dark:text-primary-400 mb-2">💡 使用提示</p>
+              <p className="text-xs text-dark-500 dark:text-dark-400">
                 即使在离线状态下，您也可以创建和编辑行程，系统会自动在恢复网络时同步。
               </p>
             </div>

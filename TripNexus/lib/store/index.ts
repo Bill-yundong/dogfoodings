@@ -10,7 +10,7 @@ export const useInitStores = () => {
   const { loadTrips } = useTripStore();
   const { initScheduler, loadTaskHistory } = useSchedulerStore();
   const { initOfflineServices } = useOfflineStore();
-  const { setThemeMode } = useUIStore();
+  const { themeMode, setThemeMode } = useUIStore();
 
   useEffect(() => {
     const init = async () => {
@@ -21,7 +21,7 @@ export const useInitStores = () => {
         await loadTrips();
         
         const savedTheme = localStorage.getItem('trip-nexus-theme') as 'light' | 'dark' | 'system' | null;
-        if (savedTheme) {
+        if (savedTheme && savedTheme !== themeMode) {
           setThemeMode(savedTheme);
         }
       }
@@ -35,7 +35,7 @@ export const useInitStores = () => {
       shutdownScheduler();
       cleanupOfflineServices();
     };
-  }, []);
+  }, [themeMode]);
 };
 
 export const useStoreHydration = () => {
@@ -45,7 +45,8 @@ export const useStoreHydration = () => {
     const checkHydration = () => {
       const tripHydrated = useTripStore.persist.hasHydrated();
       const schedulerHydrated = useSchedulerStore.persist.hasHydrated();
-      return tripHydrated && schedulerHydrated;
+      const uiHydrated = useUIStore.persist.hasHydrated();
+      return tripHydrated && schedulerHydrated && uiHydrated;
     };
 
     if (checkHydration()) {
@@ -77,12 +78,20 @@ export const useStoreHydration = () => {
         clearTimeout(timeout);
       }
     });
+    const unsub3 = useUIStore.persist.onFinishHydration(() => {
+      if (checkHydration()) {
+        setHydrated(true);
+        clearInterval(interval);
+        clearTimeout(timeout);
+      }
+    });
     
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
       unsub1();
       unsub2();
+      unsub3();
     };
   }, []);
 

@@ -111,7 +111,6 @@ export default function SettingsPage() {
                     key={option.id}
                     onClick={() => {
                       setThemeMode(option.id as any);
-                      localStorage.setItem('trip-nexus-theme', option.id);
                       showToast('success', `已切换到${option.name}`);
                     }}
                     className={`p-6 rounded-2xl border-2 transition-all ${

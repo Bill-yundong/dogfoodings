@@ -33,10 +33,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-dark-50 flex items-center justify-center">
+      <div className="page-container min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-dark-500">加载中...</p>
+          <p className="text-dark-500 dark:text-dark-400">加载中...</p>
         </div>
       </div>
     );

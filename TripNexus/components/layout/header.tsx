@@ -1,12 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Menu, Map, Wifi, WifiOff, Cloud, CloudOff, Settings, Bell } from 'lucide-react';
 import { useUIStore, useOfflineStore } from '@/lib/store';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 export function Header() {
-  const { toggleSidebar } = useUIStore();
+  const router = useRouter();
+  const { toggleSidebar, showToast } = useUIStore();
   const { isOnline, networkLatency, syncStatus, lastSyncTime, pendingOperations } = useOfflineStore();
 
   const getSyncStatusIcon = () => {
@@ -30,13 +32,13 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-lg border-b border-dark-100 flex items-center justify-between px-6 sticky top-0 z-40">
+    <header className="header h-16 backdrop-blur-lg border-b flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-xl hover:bg-dark-50 transition-colors lg:hidden"
+          className="header-icon p-2 rounded-xl transition-colors lg:hidden"
         >
-          <Menu className="w-5 h-5 text-dark-600" />
+          <Menu className="w-5 h-5" />
         </button>
         
         <div className="flex items-center gap-3">
@@ -45,30 +47,39 @@ export function Header() {
           </div>
           <div>
             <h1 className="text-xl font-display font-bold gradient-text">TripNexus</h1>
-            <p className="text-xs text-dark-400">智能多目的地旅行规划</p>
+            <p className="text-xs text-dark-400 dark:text-dark-500">智能多目的地旅行规划</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-50">
+        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-50 dark:bg-dark-700">
           {isOnline ? (
             <Wifi className="w-4 h-4 text-green-500" />
           ) : (
             <WifiOff className="w-4 h-4 text-red-500" />
           )}
-          <span className="text-sm text-dark-600">
+          <span className="text-sm text-dark-600 dark:text-dark-300">
             {isOnline ? `在线 ${networkLatency > 0 ? `(${networkLatency}ms)` : ''}` : '离线'}
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-50 cursor-help" title={getSyncStatusText()}>
+        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-50 dark:bg-dark-700 cursor-help" title={getSyncStatusText()}>
           {getSyncStatusIcon()}
-          <span className="text-sm text-dark-600">{getSyncStatusText()}</span>
+          <span className="text-sm text-dark-600 dark:text-dark-300">{getSyncStatusText()}</span>
         </div>
 
-        <button className="relative p-2 rounded-xl hover:bg-dark-50 transition-colors">
-          <Bell className="w-5 h-5 text-dark-600" />
+        <button
+          onClick={() => {
+            if (pendingOperations > 0) {
+              showToast('info', `有 ${pendingOperations} 项操作待同步`);
+            } else {
+              showToast('info', '暂无待处理通知');
+            }
+          }}
+          className="header-icon relative p-2 rounded-xl transition-colors"
+        >
+          <Bell className="w-5 h-5" />
           {pendingOperations > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
               {pendingOperations}
@@ -76,8 +87,11 @@ export function Header() {
           )}
         </button>
 
-        <button className="p-2 rounded-xl hover:bg-dark-50 transition-colors">
-          <Settings className="w-5 h-5 text-dark-600" />
+        <button
+          onClick={() => router.push('/settings')}
+          className="header-icon p-2 rounded-xl transition-colors"
+        >
+          <Settings className="w-5 h-5" />
         </button>
       </div>
     </header>
