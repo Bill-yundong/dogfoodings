@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Map, Calendar, Route, Database, Settings, Home, BarChart3 } from 'lucide-react';
 import { useUIStore } from '@/lib/store';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home },
@@ -19,6 +19,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -45,6 +46,19 @@ export function Sidebar() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleNavClick = useCallback((e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    
+    if (isMobile) {
+      setSidebarOpen(false);
+      setTimeout(() => {
+        router.push(href, { scroll: false });
+      }, 50);
+    } else {
+      router.push(href, { scroll: false });
+    }
+  }, [router, isMobile, setSidebarOpen]);
 
   return (
     <>
@@ -78,7 +92,8 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setSidebarOpen(false)}
+                scroll={false}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
                     ? 'bg-gradient-primary text-white shadow-glow'

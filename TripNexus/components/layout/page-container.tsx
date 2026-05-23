@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 import { ToastContainer } from '@/components/ui/toast';
@@ -19,23 +18,43 @@ export function PageContainer({
   showSidebar = true,
 }: PageContainerProps) {
   const pathname = usePathname();
+  const mainRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const scrollToTop = () => {
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      history.scrollRestoration = 'manual';
+    } catch (e) {}
+    
+    const root = document.documentElement;
+    const originalScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    
+    const forceTop = () => {
       window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
+      root.scrollTop = 0;
       document.body.scrollTop = 0;
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
     };
     
-    scrollToTop();
+    forceTop();
     
-    const timeoutId = setTimeout(scrollToTop, 50);
+    const timeouts = [0, 10, 50, 100, 200, 300].map(delay => 
+      setTimeout(forceTop, delay)
+    );
     
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
-    }
+    const restoreTimeout = setTimeout(() => {
+      root.style.scrollBehavior = originalScrollBehavior;
+    }, 400);
     
-    return () => clearTimeout(timeoutId);
+    return () => {
+      timeouts.forEach(clearTimeout);
+      clearTimeout(restoreTimeout);
+      root.style.scrollBehavior = originalScrollBehavior;
+    };
   }, [pathname]);
 
   return (
@@ -45,16 +64,12 @@ export function PageContainer({
       <div className={`${showSidebar ? 'lg:ml-64' : ''} transition-all duration-300`}>
         {showHeader && <Header />}
         
-        <motion.main
-          key={pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="p-6"
+        <main
+          ref={mainRef}
+          className="p-6 pt-20"
         >
           {children}
-        </motion.main>
+        </main>
       </div>
       
       <ToastContainer />
