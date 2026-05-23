@@ -11,7 +11,7 @@ interface SecurityPanelProps {
 export const SecurityPanel: React.FC<SecurityPanelProps> = ({ metrics }) => {
   const queueLengths = metrics?.queueLengths || {};
   const avgWaitTime = metrics?.avgWaitTime || {};
-  const zoneDensities = metrics?.zoneDensities || {};
+  const zoneCounts = metrics?.zoneCounts || {};
   const bottlenecks = metrics?.bottlenecks || [];
 
   const securityQueues = Object.entries(queueLengths)
@@ -43,7 +43,7 @@ export const SecurityPanel: React.FC<SecurityPanelProps> = ({ metrics }) => {
         <StatCard
           icon={<Users className="w-5 h-5" />}
           label="安检区人数"
-          value={Math.floor(zoneDensities['zone_security'] * 100 || 0).toString()}
+          value={Math.floor(zoneCounts['zone_security'] || 0).toString()}
           color="alert-amber"
         />
         <StatCard

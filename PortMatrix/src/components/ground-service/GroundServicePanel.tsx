@@ -11,7 +11,7 @@ interface GroundServicePanelProps {
 export const GroundServicePanel: React.FC<GroundServicePanelProps> = ({ metrics }) => {
   const queueLengths = metrics?.queueLengths || {};
   const avgWaitTime = metrics?.avgWaitTime || {};
-  const zoneDensities = metrics?.zoneDensities || {};
+  const zoneCounts = metrics?.zoneCounts || {};
   const bottlenecks = metrics?.bottlenecks || [];
 
   const checkinQueues = Object.entries(queueLengths)
@@ -54,7 +54,7 @@ export const GroundServicePanel: React.FC<GroundServicePanelProps> = ({ metrics 
         <StatCard
           icon={<Users className="w-5 h-5" />}
           label="值机区人数"
-          value={Math.floor(zoneDensities['zone_checkin'] * 100 || 0).toString()}
+          value={Math.floor(zoneCounts['zone_checkin'] || 0).toString()}
           color="biz-purple"
         />
         <StatCard

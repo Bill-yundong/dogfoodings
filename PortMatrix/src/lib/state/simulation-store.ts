@@ -70,6 +70,7 @@ const defaultMetrics: SimulationMetrics = {
   avgTotalTime: 0,
   avgWaitTime: {},
   queueLengths: {},
+  zoneCounts: {},
   zoneDensities: {},
   bottlenecks: [],
   fps: 60,

@@ -41,8 +41,13 @@ export default function HomePage() {
 
   const handleWorkerMessage = useCallback((e: MessageEvent) => {
     const msg = e.data;
-    if (msg.type === 'agent_states' && msg.agents) {
-      setAgents(msg.agents as CompactAgentState[]);
+    if (msg.type === 'agent_states') {
+      if (msg.agents) {
+        setAgents(msg.agents as CompactAgentState[]);
+      }
+      if (msg.metrics) {
+        setMetrics(msg.metrics as SimulationMetrics);
+      }
     } else if (msg.type === 'metrics' && msg.metrics) {
       setMetrics(msg.metrics as SimulationMetrics);
     } else if (msg.type === 'snapshot' && msg.snapshot) {
@@ -247,12 +252,32 @@ export default function HomePage() {
 }
 
 function HistoryPanel() {
-  const { snapshots, waves } = useSimulationStore();
+  const { snapshots, waves, setSnapshots, setWaves } = useSimulationStore();
   const [selectedWave, setSelectedWave] = useState<string | null>(null);
 
   const filteredSnapshots = selectedWave
     ? snapshots.filter(s => s.waveId === selectedWave)
     : snapshots;
+
+  const handleClearSnapshots = async () => {
+    try {
+      await snapshotStorage.clearSnapshots();
+      setSnapshots([]);
+    } catch (error) {
+      console.error('Failed to clear snapshots:', error);
+    }
+  };
+
+  const handleClearWaves = async () => {
+    try {
+      await snapshotStorage.clearWaves();
+      setSnapshots([]);
+      setWaves([]);
+      setSelectedWave(null);
+    } catch (error) {
+      console.error('Failed to clear waves:', error);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col gap-4 p-6 overflow-auto">
@@ -356,13 +381,13 @@ function HistoryPanel() {
         <h3 className="text-cyber-blue text-sm font-mono mb-3">数据管理</h3>
         <div className="flex gap-4">
           <button
-            onClick={() => snapshotStorage.clearSnapshots().catch(console.error)}
+            onClick={handleClearSnapshots}
             className="px-4 py-2 bg-alert-red/10 text-alert-red border border-alert-red/30 rounded-lg hover:bg-alert-red/20 transition-all text-sm font-mono"
           >
             清空所有快照
           </button>
           <button
-            onClick={() => snapshotStorage.clearWaves().catch(console.error)}
+            onClick={handleClearWaves}
             className="px-4 py-2 bg-alert-amber/10 text-alert-amber border border-alert-amber/30 rounded-lg hover:bg-alert-amber/20 transition-all text-sm font-mono"
           >
             清空航班波记录

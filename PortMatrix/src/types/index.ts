@@ -157,6 +157,7 @@ export interface SimulationMetrics {
   avgTotalTime: number;
   avgWaitTime: Record<string, number>;
   queueLengths: Record<string, number>;
+  zoneCounts: Record<string, number>;
   zoneDensities: Record<string, number>;
   bottlenecks: string[];
   fps: number;
@@ -168,6 +169,7 @@ export interface FlowSnapshot {
   timestamp: number;
   simulationTime: number;
   passengerCount: number;
+  zoneCounts: Record<string, number>;
   zoneDensities: Record<string, number>;
   queueLengths: Record<string, number>;
   averageWaitTimes: Record<string, number>;

@@ -557,8 +557,10 @@ class SimulationWorker {
       queueLengths[queue.id] = queue.waitingLine.length;
     }
 
+    const zoneCounts: Record<string, number> = {};
     const zoneDensities: Record<string, number> = {};
     for (const zone of this.layout.zones) {
+      zoneCounts[zone.id] = zone.currentCount;
       const area = zone.polygon.length > 2 ?
         Math.abs(zone.polygon.reduce((acc, p, i) => {
           const j = (i + 1) % zone.polygon.length;
@@ -600,6 +602,7 @@ class SimulationWorker {
       avgTotalTime: avgWaitTime.total,
       avgWaitTime,
       queueLengths,
+      zoneCounts,
       zoneDensities,
       bottlenecks,
       fps: this.currentFps,
@@ -627,6 +630,7 @@ class SimulationWorker {
       timestamp: Date.now(),
       simulationTime: this.simulationTime,
       passengerCount: metrics.activePassengers,
+      zoneCounts: metrics.zoneCounts,
       zoneDensities: metrics.zoneDensities,
       queueLengths: metrics.queueLengths,
       averageWaitTimes: metrics.avgWaitTime,
