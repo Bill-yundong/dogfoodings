@@ -22,8 +22,7 @@
       </div>
 
       <button
-        @click.stop="showNotifications = !showNotifications"
-        data-notification-btn
+        @click="showNotifications = !showNotifications"
         class="relative p-2 rounded-lg text-cyber-text-secondary hover:text-cyber-text hover:bg-cyber-bg-lighter transition-colors"
       >
         <component :is="icons.Bell" class="w-5 h-5" />
@@ -58,7 +57,7 @@
     <transition name="fade">
       <div
         v-if="showNotifications"
-        class="notification-panel absolute top-14 right-4 w-80 max-h-96 bg-cyber-bg-light border border-cyber-border rounded-lg shadow-xl overflow-hidden z-50"
+        class="absolute top-14 right-4 w-80 max-h-96 bg-cyber-bg-light border border-cyber-border rounded-lg shadow-xl overflow-hidden z-50"
       >
         <div class="flex items-center justify-between p-3 border-b border-cyber-border">
           <h3 class="font-medium text-cyber-text">通知中心</h3>
