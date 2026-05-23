@@ -166,8 +166,6 @@ class SimulationWorker {
         }
       }
     }
-
-    this.socialForce.setAgents(Array.from(this.agents.values()));
   }
 
   private handleCheckinStart(event: SimulationEvent): void {
@@ -372,7 +370,7 @@ class SimulationWorker {
     this.isRunning = true;
     this.isPaused = false;
     this.lastFrameTime = performance.now();
-    this.loop();
+    setTimeout(this.loop, 16);
   }
 
   private createDefaultWave(): FlightWave {
@@ -394,7 +392,7 @@ class SimulationWorker {
   resume(): void {
     this.isPaused = false;
     this.lastFrameTime = performance.now();
-    this.loop();
+    setTimeout(this.loop, 16);
   }
 
   reset(): void {
@@ -457,7 +455,7 @@ class SimulationWorker {
       this.lastSnapshotTime = now;
     }
 
-    requestAnimationFrame(this.loop);
+    setTimeout(this.loop, 16);
   };
 
   private step(dt: number): void {
@@ -465,9 +463,9 @@ class SimulationWorker {
     this.realTime += dt;
     this.scheduler.setCurrentTime(this.simulationTime);
 
-    this.processQueues();
+    this.scheduler.processNext(100, this.simulationTime);
 
-    void this.scheduler.processNext(100, this.simulationTime);
+    this.processQueues();
 
     this.processAgentTransitions();
 
@@ -663,7 +661,11 @@ class SimulationWorker {
         this.reset();
         break;
       case 'start':
-        this.start(data?.wave as FlightWave);
+        if (this.isRunning && this.isPaused) {
+          this.resume();
+        } else {
+          this.start(data?.wave as FlightWave);
+        }
         break;
       case 'pause':
         this.pause();

@@ -85,7 +85,7 @@ class MinHeap<T extends { timestamp: number }> {
   }
 }
 
-type EventCallback = (event: SimulationEvent) => void | Promise<void>;
+type EventCallback = (event: SimulationEvent) => void;
 
 export class EventScheduler {
   private heap: MinHeap<SimulationEvent>;
@@ -177,7 +177,7 @@ export class EventScheduler {
     this.callbacks.get(type)?.delete(callback);
   }
 
-  async processNext(maxCount: number = Infinity, maxTime?: number): Promise<SimulationEvent[]> {
+  processNext(maxCount: number = Infinity, maxTime?: number): SimulationEvent[] {
     const processed: SimulationEvent[] = [];
     const endTime = maxTime ?? Infinity;
 
@@ -188,22 +188,22 @@ export class EventScheduler {
       const event = this.heap.extractMin()!;
       this.currentTime = event.timestamp;
 
-      await this.dispatch(event);
+      this.dispatch(event);
       processed.push(event);
     }
 
     return processed;
   }
 
-  private async dispatch(event: SimulationEvent): Promise<void> {
+  private dispatch(event: SimulationEvent): void {
     for (const callback of this.globalCallbacks) {
-      await callback(event);
+      callback(event);
     }
 
     const typeCallbacks = this.callbacks.get(event.type);
     if (typeCallbacks) {
       for (const callback of typeCallbacks) {
-        await callback(event);
+        callback(event);
       }
     }
   }
