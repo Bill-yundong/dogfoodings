@@ -8,19 +8,19 @@
         
         <main class="flex-1 overflow-hidden">
           <router-view v-slot="{ Component, route: routeInfo }">
-            <Suspense>
+            <Suspense timeout="0">
               <template #default>
-                <transition name="fade-fast" mode="in-out">
+                <transition name="fade-fast">
                   <keep-alive :include="cachedViews" :max="6">
-                    <component :is="Component" :key="routeInfo.fullPath" />
+                    <component :is="Component" :key="routeInfo.name" />
                   </keep-alive>
                 </transition>
               </template>
               <template #fallback>
                 <div class="h-full w-full flex items-center justify-center bg-cyber-bg">
                   <div class="text-center">
-                    <div class="w-10 h-10 border-3 border-electric-blue/30 border-t-electric-blue rounded-full animate-spin mx-auto mb-3"></div>
-                    <p class="text-sm text-cyber-text-secondary">正在加载页面...</p>
+                    <div class="w-8 h-8 border-2 border-electric-blue/30 border-t-electric-blue rounded-full animate-spin mx-auto mb-2"></div>
+                    <p class="text-xs text-cyber-text-secondary">加载中...</p>
                   </div>
                 </div>
               </template>
@@ -68,52 +68,23 @@ const isNotFoundPage = computed(() => route.name === 'NotFound')
 const cachedViews = computed(() => ['Dashboard', 'Processing', 'Visualizer', 'Sync', 'Snapshots', 'Settings'])
 
 onMounted(async () => {
-  uiStore.showLoading('正在初始化系统...')
+  uiStore.hideLoading()
   
-  let timeoutId: number | null = null
+  pointCloudStore.loadPointClouds().catch(e => console.error('loadPointClouds error:', e))
+  taskStore.loadTasks().catch(e => console.error('loadTasks error:', e))
+  syncStore.loadSyncTasks().catch(e => console.error('loadSyncTasks error:', e))
+  snapshotStore.loadSnapshots().catch(e => console.error('loadSnapshots error:', e))
+
+  await nextTick()
+  preloadRoutes()
   
-  const initTimeout = new Promise<void>((resolve) => {
-    timeoutId = window.setTimeout(() => {
-      console.warn('Initialization timeout, forcing hide loading')
-      resolve()
-    }, 3000)
-  })
-  
-  try {
-    const initPromise = Promise.all([
-      pointCloudStore.loadPointClouds().catch(e => { console.error('loadPointClouds error:', e); return null }),
-      taskStore.loadTasks().catch(e => { console.error('loadTasks error:', e); return null }),
-      syncStore.loadSyncTasks().catch(e => { console.error('loadSyncTasks error:', e); return null }),
-      snapshotStore.loadSnapshots().catch(e => { console.error('loadSnapshots error:', e); return null })
-    ])
-    
-    await Promise.race([initPromise, initTimeout])
-    
-    uiStore.hideLoading()
-    
+  setTimeout(() => {
     uiStore.addNotification({
       type: 'success',
       title: '系统初始化完成',
       message: '电力巡检点云降维中枢已就绪'
     })
-
-    await nextTick()
-    preloadRoutes()
-  } catch (error) {
-    console.error('Initialization error:', error)
-    uiStore.hideLoading()
-    
-    uiStore.addNotification({
-      type: 'warning',
-      title: '初始化提示',
-      message: '部分数据加载失败，系统以离线模式运行'
-    })
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
-    uiStore.hideLoading()
-  }
+  }, 500)
 })
 
 function preloadRoutes() {

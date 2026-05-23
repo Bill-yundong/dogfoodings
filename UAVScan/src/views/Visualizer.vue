@@ -305,6 +305,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Visualizer' })
 import { ref, computed, watch, onMounted } from 'vue'
 import {
   Box,
@@ -466,20 +467,15 @@ async function handleUpload() {
   }
 }
 
-let isInitialized = false
-
 onMounted(() => {
-  if (!isInitialized) {
-    isInitialized = true
-    pointCloudStore.loadPointClouds()
-    
-    setTimeout(() => {
-      if (pointCloudStore.pointClouds.length > 0 && !pointCloudStore.currentPointCloud) {
-        selectedPointCloudId.value = pointCloudStore.pointClouds[0].id
-        handleSelectPointCloud()
-      }
-    }, 100)
-  }
+  pointCloudStore.loadPointClouds()
+  
+  setTimeout(() => {
+    if (pointCloudStore.pointClouds.length > 0 && !pointCloudStore.currentPointCloud) {
+      selectedPointCloudId.value = pointCloudStore.pointClouds[0].id
+      handleSelectPointCloud()
+    }
+  }, 100)
 })
 
 watch(() => pointCloudStore.currentPointCloud, (pc) => {

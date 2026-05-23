@@ -293,6 +293,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Dashboard' })
 import { ref, computed, onMounted, onUnmounted, shallowRef, type Component } from 'vue'
 import * as echarts from 'echarts'
 import {
@@ -543,24 +544,16 @@ function handleViewTask(task: ProcessingTask) {
 }
 
 let metricsInterval: number | null = null
-let isInitialized = false
 
 onMounted(() => {
-  if (!isInitialized) {
-    isInitialized = true
-    pointCloudStore.loadPointClouds()
-    taskStore.loadTasks()
-    syncStore.loadSyncTasks()
-    syncStore.refreshLinkStatus()
-    
-    setTimeout(() => {
-      initChart()
-    }, 100)
-  } else if (!trendChart.value) {
-    setTimeout(() => {
-      initChart()
-    }, 50)
-  }
+  pointCloudStore.loadPointClouds()
+  taskStore.loadTasks()
+  syncStore.loadSyncTasks()
+  syncStore.refreshLinkStatus()
+  
+  setTimeout(() => {
+    initChart()
+  }, 100)
   
   metricsInterval = window.setInterval(() => {
     if (trendChart.value) {

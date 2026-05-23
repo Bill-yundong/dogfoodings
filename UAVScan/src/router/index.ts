@@ -91,12 +91,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const uiStore = useUiStore()
-  
   document.title = `${to.meta.title || '电力巡检点云中枢'} - UAVScan`
-  
-  uiStore.hideLoading()
-  
   next()
 })
 

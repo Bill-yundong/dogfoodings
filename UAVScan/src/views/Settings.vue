@@ -326,6 +326,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Settings' })
 import { ref, reactive, onMounted } from 'vue'
 import {
   Settings,

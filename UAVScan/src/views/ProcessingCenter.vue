@@ -210,6 +210,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Processing' })
 import { ref, computed, reactive, onMounted } from 'vue'
 import {
   Search,
@@ -409,13 +410,8 @@ function handleViewTask(task: ProcessingTask) {
   }, 500)
 }
 
-let isInitialized = false
-
 onMounted(() => {
-  if (!isInitialized) {
-    isInitialized = true
-    taskStore.loadTasks()
-    pointCloudStore.loadPointClouds()
-  }
+  taskStore.loadTasks()
+  pointCloudStore.loadPointClouds()
 })
 </script>

@@ -424,6 +424,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Sync' })
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import {
   RefreshCw,
@@ -654,21 +655,15 @@ function handleRetrySync(task: SyncTask) {
 }
 
 let linkMonitorInterval: number | null = null
-let isInitialized = false
 
 onMounted(() => {
-  if (!isInitialized) {
-    isInitialized = true
-    syncStore.loadSyncTasks()
-    pointCloudStore.loadPointClouds()
-    syncStore.refreshLinkStatus()
-  }
+  syncStore.loadSyncTasks()
+  pointCloudStore.loadPointClouds()
+  syncStore.refreshLinkStatus()
   
-  if (!linkMonitorInterval) {
-    linkMonitorInterval = window.setInterval(() => {
-      syncStore.refreshLinkStatus()
-    }, 5000)
-  }
+  linkMonitorInterval = window.setInterval(() => {
+    syncStore.refreshLinkStatus()
+  }, 5000)
 })
 
 onUnmounted(() => {

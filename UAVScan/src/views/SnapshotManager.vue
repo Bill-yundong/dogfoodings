@@ -421,6 +421,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Snapshots' })
 import { ref, computed, reactive, onMounted } from 'vue'
 import {
   DatabaseBackup,
@@ -667,14 +668,9 @@ function handleCleanExpired() {
   })
 }
 
-let isInitialized = false
-
 onMounted(() => {
-  if (!isInitialized) {
-    isInitialized = true
-    snapshotStore.loadSnapshots()
-    pointCloudStore.loadPointClouds()
-  }
+  snapshotStore.loadSnapshots()
+  pointCloudStore.loadPointClouds()
   
   storageStats.totalUsed = snapshotStore.totalSize
   storageStats.objectCount = snapshotStore.snapshots.length
