@@ -56,7 +56,7 @@ export const DataCard: React.FC<DataCardProps> = ({
             'text-xs font-mono',
             trend.isUp ? 'text-safety-green-400' : 'text-alert-orange-400'
           )}>
-            {trend.isUp ? '↑' : '↓'} {Math.abs(trend.value)}%
+            {trend.isUp ? '↑' : '↓'} {Math.abs(trend.value).toFixed(1)}%
           </span>
         )}
       </div>
