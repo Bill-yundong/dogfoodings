@@ -82,7 +82,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   speedMultiplier: 1,
   currentWaveId: null,
   agents: [],
-  metrics: null,
+  metrics: defaultMetrics,
   snapshots: [],
   waves: [],
   selectedAgentId: null,

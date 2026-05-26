@@ -367,6 +367,15 @@ class SimulationWorker {
       );
     }
 
+    for (let i = 0; i < 20; i++) {
+      this.scheduler.scheduleAt(
+        'ARRIVAL',
+        i * 0.5,
+        `initial_${i}`,
+        { count: 1, flightId: this.currentWave.flightIds[0] }
+      );
+    }
+
     this.isRunning = true;
     this.isPaused = false;
     this.lastFrameTime = performance.now();
@@ -553,7 +562,7 @@ class SimulationWorker {
       timestamp: performance.now(),
     };
 
-    postMessage(message);
+    self.postMessage(message);
   }
 
   private computeMetrics(): SimulationMetrics {
@@ -650,7 +659,7 @@ class SimulationWorker {
       timestamp: Date.now(),
     };
 
-    postMessage(message);
+    self.postMessage(message);
   }
 
   handleMessage = (e: MessageEvent<WorkerControlMessage>): void => {

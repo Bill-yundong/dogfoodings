@@ -61,7 +61,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const worker = new Worker(
-      new URL('@/workers/simulation.worker.ts', import.meta.url),
+      new URL('../workers/simulation.worker.ts', import.meta.url),
       { type: 'module' }
     );
 
