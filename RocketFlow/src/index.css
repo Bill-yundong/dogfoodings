@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-space-deep text-white h-full w-full overflow-hidden;
+  }
+  
+  #root {
+    @apply h-full w-full;
+  }
+}
+
+@layer utilities {
+  .panel {
+    @apply bg-space-blue/80 backdrop-blur-sm border border-space-blue rounded-lg shadow-xl;
+  }
+  
+  .panel-glow {
+    @apply panel shadow-[0_0_15px_rgba(0,212,255,0.2)];
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+  
+  .border-glow {
+    box-shadow: 0 0 10px currentColor, inset 0 0 10px rgba(0,212,255,0.1);
+  }
+  
+  .scanline {
+    background: linear-gradient(
+      to bottom,
+      transparent 50%,
+      rgba(0, 0, 0, 0.1) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+  }
+  
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  
+  .fluid-flow-oxygen {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 212, 255, 0.3) 25%,
+      rgba(0, 212, 255, 0.8) 50%,
+      rgba(0, 212, 255, 0.3) 75%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+  
+  .fluid-flow-hydrogen {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 255, 200, 0.3) 25%,
+      rgba(0, 255, 200, 0.8) 50%,
+      rgba(0, 255, 200, 0.3) 75%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+  
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .seven-segment {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+}
