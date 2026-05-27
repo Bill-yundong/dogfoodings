@@ -16,6 +16,7 @@ export default function ReportsPage() {
   const { gridSignals, chargeSessions } = useEnergyStore();
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [selectedReport, setSelectedReport] = useState('efficiency');
+  const [isExporting, setIsExporting] = useState(false);
 
   const efficiencyData = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => ({
@@ -69,6 +70,66 @@ export default function ReportsPage() {
     return { totalFlights, onTimeRate, avgDelay, totalEnergy, totalCost, avgSOH };
   }, [flights, chargeSessions, batteries]);
 
+  const handleExportReport = async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const reportData = {
+        reportType: selectedReport,
+        period: selectedPeriod,
+        generatedAt: formatDateTime(new Date()),
+        kpis: {
+          totalFlights: kpiSummary.totalFlights,
+          onTimeRate: `${kpiSummary.onTimeRate.toFixed(1)}%`,
+          avgDelay: `${kpiSummary.avgDelay.toFixed(1)}分钟`,
+          totalEnergy: `${(kpiSummary.totalEnergy / 1000).toFixed(2)} MWh`,
+          totalCost: `${(kpiSummary.totalCost / 1000).toFixed(1)} K元`,
+          avgSOH: `${(kpiSummary.avgSOH * 100).toFixed(1)}%`,
+        },
+        flights: flights.slice(0, 50).map(f => ({
+          flightNumber: f.flightNumber,
+          origin: f.origin,
+          destination: f.destination,
+          status: f.status,
+          delayMinutes: f.delayMinutes || 0,
+          scheduledDeparture: formatDateTime(f.scheduledDeparture),
+        })),
+        batteries: batteries.slice(0, 20).map(b => ({
+          serialNumber: b.serialNumber,
+          chemistry: b.chemistry,
+          cycleCount: b.cycleCount,
+          nominalCapacity: b.nominalCapacity,
+          currentCapacity: b.currentCapacity,
+          status: b.status,
+          soh: `${(Math.max(0.7, 1 - b.cycleCount * 0.0001) * 100).toFixed(1)}%`,
+        })),
+        energy: {
+          totalChargeSessions: chargeSessions.length,
+          totalEnergyCharged: `${(kpiSummary.totalEnergy / 1000).toFixed(2)} MWh`,
+          totalCost: `${(kpiSummary.totalCost / 1000).toFixed(1)} K元`,
+        },
+      };
+
+      const jsonStr = JSON.stringify(reportData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `vertipulset-report-${selectedReport}-${formatDateTime(new Date()).replace(/[:\s]/g, '-')}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -97,9 +158,17 @@ export default function ReportsPage() {
             <option value="30d">最近30天</option>
             <option value="90d">最近90天</option>
           </select>
-          <button className="btn-primary flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            导出报告
+          <button 
+            onClick={handleExportReport} 
+            disabled={isExporting}
+            className="btn-primary flex items-center gap-2"
+          >
+            {isExporting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {isExporting ? '导出中...' : '导出报告'}
           </button>
         </div>
       </div>

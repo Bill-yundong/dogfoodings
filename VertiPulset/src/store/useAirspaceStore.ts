@@ -13,6 +13,7 @@ interface AirspaceState {
   setSectors: (sectors: AirspaceSector[]) => void;
   setFlowData: (flowData: TrafficFlowData[]) => void;
   setSelectedTrajectory: (trajectory: Trajectory4D | null) => void;
+  setDetectingConflicts: (detecting: boolean) => void;
   addTrajectory: (trajectory: Trajectory4D) => void;
   addConflict: (conflict: Conflict) => void;
   resolveConflict: (conflictId: string) => void;
@@ -31,6 +32,7 @@ export const useAirspaceStore = create<AirspaceState>((set) => ({
   setSectors: (sectors) => set({ sectors }),
   setFlowData: (flowData) => set({ flowData }),
   setSelectedTrajectory: (trajectory) => set({ selectedTrajectory: trajectory }),
+  setDetectingConflicts: (detecting) => set({ isDetectingConflicts: detecting }),
   addTrajectory: (trajectory) =>
     set((state) => ({
       trajectories: [...state.trajectories, trajectory],

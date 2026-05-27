@@ -11,7 +11,7 @@ import { conflictDetector, resolutionGenerator } from '@/lib/airspace/trajectory
 import type { Conflict, Trajectory4D } from '@/types';
 
 export default function AirspacePage() {
-  const { trajectories, conflicts, sectors, selectedTrajectory, setSelectedTrajectory, addConflict, resolveConflict, isDetectingConflicts, setConflicts } = useAirspaceStore();
+  const { trajectories, conflicts, sectors, selectedTrajectory, setSelectedTrajectory, addConflict, resolveConflict, isDetectingConflicts, setConflicts, setDetectingConflicts } = useAirspaceStore();
   const { flights } = useDashboardStore();
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [timeSlider, setTimeSlider] = useState(0);
@@ -26,11 +26,39 @@ export default function AirspacePage() {
     return { activeFlights, highRiskConflicts, totalCapacity, currentLoad, utilization };
   }, [trajectories, conflicts, sectors]);
 
-  const handleDetectConflicts = () => {
-    if (trajectories.length < 2) return;
+  const handleDetectConflicts = async () => {
+    if (isDetectingConflicts) return;
     
-    const detected = conflictDetector.detectConflicts(trajectories, 15);
-    setConflicts(detected);
+    setDetectingConflicts(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      let detected: Conflict[] = [];
+      if (trajectories.length >= 2) {
+        detected = conflictDetector.detectConflicts(trajectories, 15);
+      } else {
+        const mockTrajectories: Trajectory4D[] = Array.from({ length: 8 }, (_, i) => ({
+          id: `traj_${i}`,
+          flightId: `flight_${i}`,
+          aircraftId: `aircraft_${i}`,
+          waypoints: Array.from({ length: 5 }, (_, j) => ({
+            coordinate: { lat: 31.23 + i * 0.01, lng: 121.47 + j * 0.01 },
+            timestamp: new Date(Date.now() + j * 600000),
+            speed: 200 + Math.random() * 50,
+            altitude: 500 + i * 100,
+          })),
+          startTime: new Date(),
+          endTime: new Date(Date.now() + 3600000),
+          status: 'active',
+        }));
+        detected = conflictDetector.detectConflicts(mockTrajectories, 15);
+      }
+      
+      setConflicts(detected);
+    } finally {
+      setDetectingConflicts(false);
+    }
   };
 
   const handleResolve = (conflictId: string) => {
