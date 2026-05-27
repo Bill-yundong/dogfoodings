@@ -37,7 +37,7 @@ export function Header() {
   };
 
   return (
-    <header className="h-14 bg-space-blue/60 backdrop-blur-md border-b border-electric-blue/20 flex items-center justify-between px-6">
+    <header className="h-14 bg-space-blue/60 backdrop-blur-md border-b border-electric-blue/20 flex items-center justify-between px-6 relative z-[90]">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 text-electric-blue">
           <Clock className="w-4 h-4" />
@@ -63,7 +63,7 @@ export function Header() {
           </button>
           
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-space-blue/95 backdrop-blur-md border border-electric-blue/20 rounded-lg shadow-2xl z-50">
+            <div className="fixed right-6 top-14 mt-2 w-80 bg-space-blue/95 backdrop-blur-md border border-electric-blue/20 rounded-lg shadow-2xl z-[9999]">
               <div className="flex items-center justify-between p-3 border-b border-electric-blue/20">
                 <h3 className="text-sm font-semibold text-white">系统通知</h3>
                 <span className="text-xs text-metal-gray">{unreadCount} 条未读</span>
