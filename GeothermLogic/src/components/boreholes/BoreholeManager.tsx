@@ -23,7 +23,7 @@ export default function BoreholeManager() {
       setIsLoading(true);
       try {
         const cachedBoreholes = await getBoreholes();
-        if (cachedBoreholes.length > 0) {
+        if (cachedBoreholes && cachedBoreholes.length > 0) {
           setBoreholes(cachedBoreholes);
         } else {
           const newBoreholes = generateBoreholes(200);
@@ -55,7 +55,7 @@ export default function BoreholeManager() {
   const handleSelectBorehole = async (borehole: Borehole) => {
     setSelectedBorehole(borehole);
     const boreholeSnapshots = await getSnapshotsByBorehole(borehole.id);
-    if (boreholeSnapshots.length > 0) {
+    if (boreholeSnapshots && boreholeSnapshots.length > 0) {
       setSnapshots(boreholeSnapshots);
     } else {
       const newSnapshots = generateTemperatureSnapshots(borehole.id, 30);
@@ -99,7 +99,7 @@ export default function BoreholeManager() {
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-400">
             <HardDrive className="w-4 h-4" />
-            <span>本地缓存: {dbStats.size} 条记录</span>
+            <span>本地缓存: {dbStats?.size ?? 0} 条记录</span>
           </div>
         </div>
 

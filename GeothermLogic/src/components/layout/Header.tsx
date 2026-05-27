@@ -45,6 +45,8 @@ export default function Header() {
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              aria-label="消息通知"
+              title="消息通知"
             >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full" />
