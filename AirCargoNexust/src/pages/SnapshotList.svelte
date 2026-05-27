@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navigate } from 'svelte-routing';
+  import { navigate } from '@/router';
   import { Camera, Search, Filter, Clock, User, FileText, Eye } from 'lucide-svelte';
   import DataTable from '@/components/DataTable.svelte';
   import { snapshots, loadPlans, loadAllData, addNotification } from '@/stores';

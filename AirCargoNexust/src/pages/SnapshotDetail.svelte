@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navigate } from 'svelte-routing';
+  import { navigate } from '@/router';
   import { ArrowLeft, Download, Clock, User, FileText, PlaneTakeoff } from 'lucide-svelte';
   import CargoHold3D from '@/components/CargoHold3D.svelte';
   import CGGauge from '@/components/CGGauge.svelte';
@@ -10,7 +10,11 @@
   import * as db from '@/db';
   import type { LoadSnapshot } from '@/types';
 
-  let { id } = $props();
+  interface Props {
+    id: string;
+  }
+
+  let { id }: Props = $props();
   let snapshot = $state<LoadSnapshot | null>(null);
   let isLoading = $state(true);
   let isDbReady = $state(false);
@@ -30,6 +34,12 @@
     await loadAllData();
     currentAircraft.set(DEFAULT_AIRCRAFT);
     loadSnapshot();
+  });
+
+  $effect(() => {
+    if (isDbReady && id) {
+      loadSnapshot();
+    }
   });
 
   function goBack() {

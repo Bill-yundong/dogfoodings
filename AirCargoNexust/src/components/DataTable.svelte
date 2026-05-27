@@ -33,25 +33,24 @@
 
   function toggleSelectAll() {
     if (!selectable) return;
-    if (_selectedIds.size === data.length) {
-      _selectedIds.clear();
-    } else {
+    const newSet = new Set<string>();
+    if (selectedIds.size !== data.length) {
       data.forEach(row => {
-        _selectedIds.add(row.id as string);
+        newSet.add(row.id as string);
       });
     }
-    _selectedIds = new Set(_selectedIds);
+    selectedIds = newSet;
   }
 
   function toggleSelect(id: string) {
     if (!selectable) return;
-    const newSet = new Set(_selectedIds);
+    const newSet = new Set(selectedIds);
     if (newSet.has(id)) {
       newSet.delete(id);
     } else {
       newSet.add(id);
     }
-    _selectedIds = newSet;
+    selectedIds = newSet;
   }
 
   let sortedData = $derived([...data].sort((a, b) => {
@@ -79,7 +78,7 @@
           <th class="px-4 py-3 text-left">
             <input 
               type="checkbox"
-              checked={_selectedIds.size === data.length && data.length > 0}
+              checked={selectedIds.size === data.length && data.length > 0}
               onchange={toggleSelectAll}
               class="w-4 h-4 rounded border-dark-500 bg-dark-800 text-aviation-600 focus:ring-aviation-500"
             />
@@ -124,7 +123,7 @@
             <td class="px-4 py-3">
               <input 
                 type="checkbox"
-                checked={_selectedIds.has(row.id as string)}
+                checked={selectedIds.has(row.id as string)}
                 onchange={() => toggleSelect(row.id as string)}
                 onclick={(e) => e.stopPropagation()}
                 class="w-4 h-4 rounded border-dark-500 bg-dark-800 text-aviation-600 focus:ring-aviation-500"

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Link } from 'svelte-routing';
+  import Link from '@/router/Link.svelte';
+  import { currentRoute } from '@/router';
   import { 
     Box, 
     Package, 
@@ -55,18 +56,15 @@
         <li>
           <Link 
             to={item.path}
-            getProps={({ location }) => {
-              const isActive = location.pathname === item.path;
-              return {
-                class: `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-aviation-700 text-white shadow-lg' 
-                    : 'text-gray-400 hover:text-white hover:bg-dark-700'
-                }`,
-                style: isActive ? 'box-shadow: 0 10px 15px -3px rgba(10, 37, 64, 0.3);' : ''
-              };
-            }}
+            class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              $currentRoute === item.path
+                ? 'bg-aviation-700 text-white' 
+                : 'text-gray-400 hover:text-white hover:bg-dark-700'
+            }`}
           >
+            {#if $currentRoute === item.path}
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-aviation-500 rounded-r"></div>
+            {/if}
             <svelte:component this={item.icon} class="w-5 h-5 flex-shrink-0" />
             {#if !isCollapsed}
               <span class="text-sm whitespace-nowrap">{item.label}</span>
