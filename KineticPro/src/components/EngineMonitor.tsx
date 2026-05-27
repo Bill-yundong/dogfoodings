@@ -18,34 +18,36 @@ export default function EngineMonitor({ status }: EngineMonitorProps) {
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-xl p-4 overflow-hidden"
       style={{ background: '#1A1F2E' }}
     >
-      <div className="flex items-center justify-center gap-2 mb-5">
+      <div className="flex flex-wrap items-center justify-center gap-y-3 gap-x-1 sm:gap-x-2 mb-5">
         {PIPELINE_STAGES.map((stage, i) => {
           const Icon = stage.icon;
           const active = isActive;
           const errored = isError;
+          const isLast = i === PIPELINE_STAGES.length - 1;
           return (
-            <div key={stage.label} className="flex items-center gap-2">
+            <div key={stage.label} className="flex items-center gap-1 sm:gap-2">
               <div
                 className={`
                   relative flex flex-col items-center justify-center
-                  rounded-lg px-4 py-3 min-w-[90px] transition-shadow duration-500
+                  rounded-lg px-2 py-2 sm:px-4 sm:py-3 min-w-0
+                  transition-shadow duration-500
                   ${active && !errored ? 'shadow-[0_0_16px_rgba(0,240,181,0.35)]' : ''}
                   ${errored ? 'shadow-[0_0_16px_rgba(255,60,60,0.35)]' : ''}
                 `}
                 style={{ background: '#242B3D' }}
               >
                 <Icon
-                  size={20}
+                  size={18}
                   style={{
                     color: errored ? '#FF3C3C' : active ? '#00F0B5' : '#6B7280',
                   }}
                   className="mb-1"
                 />
                 <span
-                  className="text-xs font-medium"
+                  className="text-[10px] sm:text-xs font-medium whitespace-nowrap"
                   style={{
                     color: errored ? '#FF3C3C' : active ? '#00F0B5' : '#6B7280',
                   }}
@@ -69,13 +71,13 @@ export default function EngineMonitor({ status }: EngineMonitorProps) {
                   }}
                 />
               </div>
-              {i < PIPELINE_STAGES.length - 1 && (
-                <div className="flex items-center mx-1">
-                  <svg width="32" height="12" className="overflow-visible">
+              {!isLast && (
+                <div className="flex items-center shrink-0">
+                  <svg width="20" height="12" className="overflow-visible sm:w-[32px]">
                     <line
                       x1="0"
                       y1="6"
-                      x2="32"
+                      x2="20"
                       y2="6"
                       stroke={active && !isError ? '#00F0B5' : '#4B5563'}
                       strokeWidth="2"
@@ -92,7 +94,7 @@ export default function EngineMonitor({ status }: EngineMonitorProps) {
                       )}
                     </line>
                     <polygon
-                      points="30,2 32,6 30,10"
+                      points="18,2 20,6 18,10"
                       fill={active && !isError ? '#00F0B5' : '#4B5563'}
                     />
                   </svg>
