@@ -47,8 +47,16 @@
   <main class="flex-1 overflow-auto">
     {#if matchedComponent === SnapshotDetail}
       <SnapshotDetail id={routeParams['id'] || ''} />
-    {:else}
-      <svelte:component this={matchedComponent} />
+    {:else if matchedComponent === CargoHoldVisualization}
+      <CargoHoldVisualization />
+    {:else if matchedComponent === CargoManagement}
+      <CargoManagement />
+    {:else if matchedComponent === LoadCalculation}
+      <LoadCalculation />
+    {:else if matchedComponent === SnapshotList}
+      <SnapshotList />
+    {:else if matchedComponent === CockpitTerminal}
+      <CockpitTerminal />
     {/if}
   </main>
 </div>

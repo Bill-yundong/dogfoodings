@@ -3,7 +3,7 @@
   import { Plus, Search, Trash2, Edit2, Filter, RefreshCw, Package } from 'lucide-svelte';
   import DataTable from '@/components/DataTable.svelte';
   import Modal from '@/components/Modal.svelte';
-  import { cargos, selectedCargoIds, addCargo, updateCargo, removeCargo, addNotification, loadAllData } from '@/stores';
+  import { cargos, addCargo, updateCargo, removeCargo, addNotification, loadAllData } from '@/stores';
   import { generateMockCargos } from '@/data/mockData';
   import * as db from '@/db';
   import { calculateCargoVolume } from '@/utils/calculations';
@@ -12,13 +12,6 @@
   let searchQuery = $state('');
   let localSelectedIds = $state(new Set<string>());
 
-  $effect(() => {
-    localSelectedIds = new Set($selectedCargoIds);
-  });
-
-  $effect(() => {
-    selectedCargoIds.set(localSelectedIds);
-  });
   let showAddModal = $state(false);
   let editingCargo = $state<Cargo | null>(null);
   let formData = $state({

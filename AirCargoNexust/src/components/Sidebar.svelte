@@ -8,10 +8,16 @@
     Camera, 
     Settings, 
     PlaneTakeoff,
-    ChevronRight
+    ChevronRight,
+    X,
+    Database,
+    Trash2
   } from 'lucide-svelte';
+  import * as db from '@/db';
+  import { loadAllData, addNotification } from '@/stores';
 
   let isCollapsed = $state(false);
+  let showSettings = $state(false);
 
   const navItems = [
     { path: '/', icon: Box, label: '货舱可视化' },
@@ -20,6 +26,18 @@
     { path: '/snapshots', icon: Camera, label: '配载快照' },
     { path: '/cockpit', icon: PlaneTakeoff, label: '机组终端' }
   ];
+
+  async function handleClearData() {
+    if (confirm('确定要清除所有数据吗？此操作不可恢复。')) {
+      try {
+        await db.clearAllData();
+        await loadAllData();
+        addNotification({ type: 'success', message: '所有数据已清除' });
+      } catch (e) {
+        addNotification({ type: 'error', message: '清除数据失败' });
+      }
+    }
+  }
 </script>
 
 <aside 
@@ -65,7 +83,7 @@
             {#if $currentRoute === item.path}
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-aviation-500 rounded-r"></div>
             {/if}
-            <svelte:component this={item.icon} class="w-5 h-5 flex-shrink-0" />
+            <item.icon class="w-5 h-5 flex-shrink-0" />
             {#if !isCollapsed}
               <span class="text-sm whitespace-nowrap">{item.label}</span>
             {/if}
@@ -77,6 +95,7 @@
 
   <div class="p-4 border-t border-dark-600">
     <button 
+      onclick={() => showSettings = true}
       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors"
     >
       <Settings class="w-5 h-5 flex-shrink-0" />
@@ -86,3 +105,44 @@
     </button>
   </div>
 </aside>
+
+{#if showSettings}
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div 
+      class="absolute inset-0 backdrop-blur-sm"
+      style="background: rgba(0, 0, 0, 0.6);"
+      onclick={() => showSettings = false}
+    />
+    <div class="relative z-10 w-full max-w-md mx-4 glass-panel">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-dark-600">
+        <h3 class="font-display font-semibold text-white text-lg">系统设置</h3>
+        <button 
+          onclick={() => showSettings = false}
+          class="p-1 hover:bg-dark-600 rounded transition-colors"
+        >
+          <X class="w-5 h-5 text-gray-400" />
+        </button>
+      </div>
+      <div class="p-6 space-y-6">
+        <div>
+          <h4 class="hud-text mb-2">数据管理</h4>
+          <p class="text-sm text-gray-400 mb-3">清除本地数据库中的所有货物、方案和快照数据。</p>
+          <button 
+            onclick={handleClearData}
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-alert-red/20 text-alert-red hover:bg-alert-red/30 transition-colors"
+          >
+            <Trash2 class="w-4 h-4" />
+            清除所有数据
+          </button>
+        </div>
+        <div>
+          <h4 class="hud-text mb-2">关于</h4>
+          <div class="text-sm text-gray-400 space-y-1">
+            <p>AirCargo Nexus v1.0</p>
+            <p>航空货运装载平衡系统</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}

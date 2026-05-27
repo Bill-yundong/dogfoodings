@@ -133,12 +133,7 @@
           {#each columns as col}
             <td class="px-4 py-3 text-sm text-gray-300">
               {#if col.render}
-                {@const value = col.render(row[col.key], row)}
-                {#if typeof value === 'string'}
-                  {value}
-                {:else}
-                  {@html value as string}
-                {/if}
+                {@html col.render(row[col.key], row) ?? ''}
               {:else}
                 {row[col.key]}
               {/if}
