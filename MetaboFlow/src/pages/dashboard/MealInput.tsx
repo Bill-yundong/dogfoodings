@@ -151,12 +151,12 @@ export default function MealInput() {
     <div class="flex-1 overflow-y-auto p-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 relative z-10">
             <h3 class="section-title mb-4">搜索食物</h3>
             <FoodSearch onSelect={handleFoodSelect} />
           </div>
 
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 relative z-0">
             <div class="flex items-center justify-between mb-4">
               <h3 class="section-title">已选食物</h3>
               <span class="font-body text-sm text-metabo-muted">{selectedFoods().length} 项</span>
