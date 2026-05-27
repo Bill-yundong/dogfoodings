@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1E3A5F #0A1628;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: #0A1628;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: #1E3A5F;
+    border-radius: 3px;
+  }
+  body {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .hydro-card {
+    @apply bg-hydro-panel border border-hydro-border rounded-lg p-4;
+  }
+  .hydro-card-glow {
+    @apply hydro-card shadow-[0_0_15px_rgba(255,107,53,0.08)];
+  }
+  .hydro-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+  .hydro-badge-danger {
+    @apply hydro-badge bg-hydro-danger/20 text-hydro-danger;
+  }
+  .hydro-badge-safe {
+    @apply hydro-badge bg-hydro-safe/20 text-hydro-safe;
+  }
+  .hydro-badge-warning {
+    @apply hydro-badge bg-hydro-amber/20 text-hydro-amber;
+  }
+  .hydro-badge-flame {
+    @apply hydro-badge bg-hydro-flame/20 text-hydro-flame;
+  }
+  .hydro-btn {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer;
+  }
+  .hydro-btn-primary {
+    @apply hydro-btn bg-gradient-to-r from-hydro-flame to-orange-600 text-white hover:shadow-lg hover:shadow-hydro-flame/30 active:scale-95;
+  }
+  .hydro-btn-outline {
+    @apply hydro-btn border border-hydro-border text-gray-300 hover:bg-hydro-border/30 hover:text-white;
+  }
+  .hydro-stat-value {
+    @apply font-mono font-bold text-2xl tabular-nums;
+  }
+  .hydro-label {
+    @apply text-xs text-gray-500 uppercase tracking-wider font-medium;
+  }
+}
