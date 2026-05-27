@@ -98,11 +98,11 @@ export default function FoodSearch(props: FoodSearchProps) {
       </div>
 
       <Show when={isOpen() && results().length > 0}>
-        <div class="absolute z-50 top-full left-0 right-0 mt-1 glass-card max-h-64 overflow-y-auto">
+        <div class="absolute z-50 top-full left-0 right-0 mt-1 bg-metabo-surface border border-metabo-border rounded-2xl shadow-lg max-h-64 overflow-y-auto">
           <For each={results()}>
             {(food) => (
               <button
-                class="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-metabo-surface/80 transition-colors duration-150 text-left border-b border-metabo-border/50 last:border-b-0"
+                class="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-metabo-dark/50 transition-colors duration-150 text-left border-b border-metabo-border/50 last:border-b-0"
                 onClick={() => handleSelect(food)}
               >
                 <div class="flex-1 min-w-0">
