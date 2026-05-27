@@ -27,15 +27,22 @@
     { path: '/cockpit', icon: PlaneTakeoff, label: '机组终端' }
   ];
 
+  let isClearing = $state(false);
+
   async function handleClearData() {
-    if (confirm('确定要清除所有数据吗？此操作不可恢复。')) {
-      try {
-        await db.clearAllData();
-        await loadAllData();
-        addNotification({ type: 'success', message: '所有数据已清除' });
-      } catch (e) {
-        addNotification({ type: 'error', message: '清除数据失败' });
-      }
+    if (!confirm('确定要清除所有数据吗？此操作不可恢复。')) return;
+
+    isClearing = true;
+    try {
+      await db.clearAllData();
+      await loadAllData();
+      addNotification({ type: 'success', message: '所有数据已清除' });
+      showSettings = false;
+    } catch (e) {
+      console.error('清除数据失败:', e);
+      addNotification({ type: 'error', message: '清除数据失败，请重试' });
+    } finally {
+      isClearing = false;
     }
   }
 </script>
@@ -128,11 +135,12 @@
           <h4 class="hud-text mb-2">数据管理</h4>
           <p class="text-sm text-gray-400 mb-3">清除本地数据库中的所有货物、方案和快照数据。</p>
           <button 
-            onclick={handleClearData}
-            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-alert-red/20 text-alert-red hover:bg-alert-red/30 transition-colors"
+            onclick={(e) => { e.stopPropagation(); handleClearData(); }}
+            disabled={isClearing}
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-alert-red/20 text-alert-red hover:bg-alert-red/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 class="w-4 h-4" />
-            清除所有数据
+            {isClearing ? '清除中...' : '清除所有数据'}
           </button>
         </div>
         <div>
