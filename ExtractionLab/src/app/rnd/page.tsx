@@ -7,7 +7,7 @@ import { FlavorRadarChart } from '@/components/FlavorRadarChart';
 import { ExtractionCurveChart } from '@/components/ExtractionCurveChart';
 import { Button, Badge, StatsCard } from '@/components/ui/Card';
 import { BREWING_METHODS, ROAST_LEVELS, PROCESSING_METHODS } from '@/lib/constants';
-import { searchPresets } from '@/lib/database';
+import { searchPresets, insert, update } from '@/lib/database';
 import { getCurrentTimestamp } from '@/lib/utils';
 import { optimizationEngine } from '@/lib/optimizationEngine';
 import { syncEngine } from '@/lib/syncEngine';
@@ -26,6 +26,8 @@ import {
   TrendingUp,
   Target,
   Layers,
+  X,
+  Save,
 } from 'lucide-react';
 import type { BrewingPreset, RnDExperiment, ExtractionCurve } from '@/types';
 
@@ -85,38 +87,39 @@ export default function RnDCenterPage() {
     if (presets.length === 0 || stores.length === 0) return;
 
     const approvedPresets = presets.filter(p => p.status === 'approved');
-    const samplePreset = approvedPresets[0];
-    const sampleStore = stores[0];
+    const randomPreset = approvedPresets[Math.floor(Math.random() * approvedPresets.length)] || presets[0];
+    const randomStore = stores[Math.floor(Math.random() * stores.length)];
     const relevantRecords = records.filter(
-      r => r.presetId === samplePreset.id && r.storeId === sampleStore.id
+      r => r.presetId === randomPreset.id && r.storeId === randomStore.id
     );
 
     const result = await optimizationEngine.optimize(
-      samplePreset,
-      sampleStore,
+      randomPreset,
+      randomStore,
       relevantRecords
     );
 
-    if (result.qualityImprovement > 5) {
+    if (result.qualityImprovement > 2) {
       const updatedPreset: BrewingPreset = {
-        ...samplePreset,
+        ...randomPreset,
         ...result.optimizedParameters,
         updatedAt: getCurrentTimestamp(),
-        version: samplePreset.version + 1,
+        version: randomPreset.version + 1,
       };
 
+      await update('presets', updatedPreset.id, updatedPreset);
       await syncEngine.queueSync('preset', 'update', updatedPreset.id, updatedPreset);
-      refreshData();
+      await refreshData();
     }
   };
 
-  const createExperiment = () => {
+  const createExperiment = async () => {
     if (presets.length === 0) return;
 
-    const basePreset = presets[0];
+    const basePreset = presets[Math.floor(Math.random() * presets.length)];
     const newExperiment: RnDExperiment = {
       id: uuidv4(),
-      name: `配方优化实验 - ${new Date().toLocaleDateString('zh-CN')}`,
+      name: `配方优化实验 - ${new Date().toLocaleDateString('zh-CN')} #${Math.floor(Math.random() * 1000)}`,
       description: '多因子变量测试，寻找最佳萃取参数组合',
       hypothesis: '通过调整关键萃取参数，可以显著提升咖啡风味表现',
       beanId: basePreset.beanId,
@@ -128,15 +131,17 @@ export default function RnDCenterPage() {
         { name: 'brewRatio', min: 14, max: 18, step: 0.5, unit: '' },
       ],
       status: 'running',
-      trials: 12,
-      completedTrials: 3,
+      trials: Math.floor(Math.random() * 10) + 8,
+      completedTrials: Math.floor(Math.random() * 3),
       createdAt: new Date().toISOString(),
       startedAt: getCurrentTimestamp(),
       createdBy: '研发团队',
     };
 
-    syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment);
-    refreshData();
+    await insert('experiments', newExperiment);
+    await syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment);
+    await refreshData();
+    setActiveTab('experiments');
   };
 
   const presetStats = useMemo(() => {
@@ -583,6 +588,148 @@ export default function RnDCenterPage() {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-coffee-100">
+              <h3 className="text-xl font-bold text-coffee-800">新建冲煮配方</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 hover:bg-coffee-50 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-coffee-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-coffee-700 mb-1">配方名称</label>
+                <input
+                  type="text"
+                  placeholder="输入配方名称..."
+                  className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">冲煮方式</label>
+                  <select className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500">
+                    {BREWING_METHODS.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">咖啡豆</label>
+                  <select className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500">
+                    {beans.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">粉量 (g)</label>
+                  <input
+                    type="number"
+                    defaultValue="18"
+                    className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">粉水比</label>
+                  <input
+                    type="number"
+                    defaultValue="16"
+                    className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">水温 (°C)</label>
+                  <input
+                    type="number"
+                    defaultValue="93"
+                    className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-coffee-700 mb-1">萃取时间 (s)</label>
+                  <input
+                    type="number"
+                    defaultValue="28"
+                    className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-coffee-700 mb-1">配方描述</label>
+                <textarea
+                  rows={3}
+                  placeholder="描述这个配方的特点和适用场景..."
+                  className="w-full px-4 py-2 border border-coffee-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t border-coffee-100">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-5 py-2 border border-coffee-200 text-coffee-600 rounded-xl hover:bg-coffee-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={async () => {
+                  if (beans.length > 0) {
+                    const randomBean = beans[Math.floor(Math.random() * beans.length)];
+                    const newPreset: BrewingPreset = {
+                      id: uuidv4(),
+                      name: `新配方 - ${new Date().toLocaleTimeString('zh-CN')}`,
+                      description: '新创建的冲煮配方',
+                      beanId: randomBean.id,
+                      bean: randomBean,
+                      method: 'espresso',
+                      region: randomBean.region,
+                      dose: 18,
+                      waterTemperature: 93,
+                      brewTime: 28,
+                      totalWater: 288,
+                      ratio: 16,
+                      grindSize: 0.3,
+                      pressureProfile: [],
+                      temperatureProfile: [],
+                      targetTDS: 10,
+                      targetYield: 36,
+                      targetExtractionYield: 20,
+                      brewRatio: 16,
+                      targetFlavor: { acidity: 7, sweetness: 6, bitterness: 4, body: 6, aroma: 7, aftertaste: 6, complexity: 5, balance: 6 },
+                      tolerance: { acidity: 1, sweetness: 1, bitterness: 1, body: 1, aroma: 1, aftertaste: 1, complexity: 1, balance: 1 },
+                      status: 'draft',
+                      version: 1,
+                      createdAt: getCurrentTimestamp(),
+                      updatedAt: getCurrentTimestamp(),
+                      createdBy: '研发团队',
+                      storeIds: [],
+                      lastSyncedAt: getCurrentTimestamp(),
+                      syncHash: uuidv4(),
+                    };
+                    await insert('presets', newPreset);
+                    await syncEngine.queueSync('preset', 'create', newPreset.id, newPreset);
+                    await refreshData();
+                    setShowCreateModal(false);
+                  }
+                }}
+                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-coffee-700 to-coffee-800 text-white rounded-xl hover:from-coffee-800 hover:to-coffee-900 transition-all"
+              >
+                <Save className="w-4 h-4" />
+                保存配方
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

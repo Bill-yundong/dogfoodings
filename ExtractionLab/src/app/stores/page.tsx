@@ -35,6 +35,7 @@ export default function StoresPage() {
   const [syncStatus, setSyncStatus] = useState<{ pending: number; syncing: number; completed: number; failed: number }>({
     pending: 0, syncing: 0, completed: 0, failed: 0
   });
+  const [syncing, setSyncing] = useState(false);
   const [optimizing, setOptimizing] = useState<string | null>(null);
   const [optimizationResults, setOptimizationResults] = useState<Map<string, OptimizationResult>>(new Map());
 
@@ -98,8 +99,20 @@ export default function StoresPage() {
   }, [selectedStoreCurves]);
 
   const handleSyncAll = async () => {
-    await syncEngine.processSyncQueue();
-    refreshData();
+    setSyncing(true);
+    try {
+      for (const store of stores) {
+        await syncEngine.queueSync('store', 'update', store.id, {
+          lastSyncAt: getCurrentTimestamp(),
+          syncStatus: 'syncing',
+        });
+      }
+      await syncEngine.processSyncQueue();
+      await syncEngine.forceSync();
+      await refreshData();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleSyncStore = async (storeId: string) => {
@@ -222,9 +235,10 @@ export default function StoresPage() {
           </div>
           <Button
             onClick={handleSyncAll}
-            icon={<Upload className="w-4 h-4" />}
+            disabled={syncing}
+            icon={syncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
           >
-            同步全部
+            {syncing ? '同步中...' : '同步全部'}
           </Button>
         </div>
       </div>

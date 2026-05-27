@@ -48,6 +48,13 @@ export function Navigation() {
     completed: number;
     failed: number;
   } | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [notifications] = useState([
+    { id: 1, title: '新配方发布', message: '埃塞俄比亚耶加雪菲新配方已上线', time: '5分钟前', read: false },
+    { id: 2, title: '品质预警', message: '上海浦东门店TDS波动超过阈值', time: '30分钟前', read: false },
+    { id: 3, title: '同步完成', message: '全球30家门店数据同步成功', time: '2小时前', read: true },
+  ]);
 
   useEffect(() => {
     const updateStatus = async () => {
@@ -141,14 +148,77 @@ export function Navigation() {
               )}
             </button>
 
-            <button className="relative p-2 rounded-xl hover:bg-coffee-50 transition-colors">
-              <Bell className="w-5 h-5 text-coffee-600" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowSettings(false);
+                }}
+                className="relative p-2 rounded-xl hover:bg-coffee-50 transition-colors"
+              >
+                <Bell className="w-5 h-5 text-coffee-600" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-coffee-100 z-50 overflow-hidden">
+                  <div className="px-4 py-3 bg-coffee-50 border-b border-coffee-100">
+                    <h3 className="font-semibold text-coffee-800">通知中心</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.map(notification => (
+                      <div
+                        key={notification.id}
+                        className={`px-4 py-3 border-b border-coffee-50 hover:bg-coffee-50 cursor-pointer transition-colors ${
+                          !notification.read ? 'bg-amber-50' : ''
+                        }`}
+                      >
+                        <div className="font-medium text-coffee-800 text-sm">{notification.title}</div>
+                        <div className="text-coffee-500 text-xs mt-1">{notification.message}</div>
+                        <div className="text-coffee-400 text-xs mt-1">{notification.time}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2 bg-coffee-50 border-t border-coffee-100">
+                    <button className="text-sm text-coffee-600 hover:text-coffee-800 font-medium">
+                      查看全部通知
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-            <button className="p-2 rounded-xl hover:bg-coffee-50 transition-colors">
-              <Settings className="w-5 h-5 text-coffee-600" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowSettings(!showSettings);
+                  setShowNotifications(false);
+                }}
+                className="p-2 rounded-xl hover:bg-coffee-50 transition-colors"
+              >
+                <Settings className="w-5 h-5 text-coffee-600" />
+              </button>
+              {showSettings && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-coffee-100 z-50 overflow-hidden">
+                  <div className="px-4 py-3 bg-coffee-50 border-b border-coffee-100">
+                    <h3 className="font-semibold text-coffee-800">系统设置</h3>
+                  </div>
+                  <div className="py-2">
+                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                      账户设置
+                    </button>
+                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                      偏好设置
+                    </button>
+                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                      数据管理
+                    </button>
+                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                      关于系统
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-coffee-400 to-coffee-600 flex items-center justify-center text-white font-medium text-sm shadow-md">
               管

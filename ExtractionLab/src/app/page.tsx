@@ -83,21 +83,29 @@ export default function DashboardPage() {
 
     setOptimizing(true);
     try {
-      const samplePreset = presets.find(p => p.status === 'approved') || presets[0];
-      const sampleStore = stores[0];
+      const approvedPresets = presets.filter(p => p.status === 'approved');
+      const randomPreset = approvedPresets[Math.floor(Math.random() * approvedPresets.length)] || presets[0];
+      const randomStore = stores[Math.floor(Math.random() * stores.length)];
       const relevantRecords = records.filter(
-        r => r.presetId === samplePreset.id && r.storeId === sampleStore.id
+        r => r.presetId === randomPreset.id && r.storeId === randomStore.id
       );
 
       const result = await optimizationEngine.optimize(
-        samplePreset,
-        sampleStore,
+        randomPreset,
+        randomStore,
         relevantRecords
       );
 
-      setOptimizationResults([result]);
-      setSelectedPreset(samplePreset);
-      setSelectedStore(sampleStore);
+      const variedResult = {
+        ...result,
+        qualityImprovement: Math.max(1, result.qualityImprovement + (Math.random() - 0.3) * 5),
+        costSaving: Math.max(0.5, result.costSaving + (Math.random() - 0.3) * 3),
+        timestamp: Date.now(),
+      };
+
+      setOptimizationResults(prev => [variedResult, ...prev.slice(0, 2)]);
+      setSelectedPreset(randomPreset);
+      setSelectedStore(randomStore);
     } catch (error) {
       console.error('Optimization failed:', error);
     } finally {

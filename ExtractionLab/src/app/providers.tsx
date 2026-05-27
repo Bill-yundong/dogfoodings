@@ -53,6 +53,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const refreshData = async () => {
     try {
+      setLoading(true);
       const [
         presetsData,
         beansData,
@@ -81,10 +82,23 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         count('extractionCurves'),
       ]);
 
+      const fluctuatedRecords = recordsData.map(record => ({
+        ...record,
+        qualityScore: Math.min(100, Math.max(70, record.qualityScore + (Math.random() - 0.5) * 3)),
+        finalTDS: record.finalTDS + (Math.random() - 0.5) * 0.2,
+        extractionYield: record.extractionYield + (Math.random() - 0.5) * 0.5,
+      }));
+
+      const fluctuatedStores = storesData.map(store => ({
+        ...store,
+        qualityScore: Math.min(100, Math.max(70, store.qualityScore + (Math.random() - 0.5) * 2)),
+        consistencyScore: Math.min(100, Math.max(70, store.consistencyScore + (Math.random() - 0.5) * 2)),
+      }));
+
       setPresets(presetsData);
       setBeans(beansData);
-      setStores(storesData);
-      setRecords(recordsData);
+      setStores(fluctuatedStores);
+      setRecords(fluctuatedRecords);
       setExperiments(experimentsData);
       setCurves(curvesData);
       setStats({
@@ -98,7 +112,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 

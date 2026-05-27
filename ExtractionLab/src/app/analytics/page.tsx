@@ -43,6 +43,52 @@ export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'quality' | 'flavor' | 'performance'>('overview');
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportReport = async () => {
+    setExporting(true);
+    try {
+      const reportData = {
+        generatedAt: new Date().toISOString(),
+        timeRange,
+        selectedRegion,
+        summary: {
+          totalPresets: presets.length,
+          totalBeans: beans.length,
+          totalStores: stores.length,
+          totalRecords: records.length,
+          totalExperiments: experiments.length,
+          totalCurves: curves.length,
+        },
+        qualityMetrics: {
+          avgQualityScore: records.length > 0 ? records.reduce((sum, r) => sum + r.qualityScore, 0) / records.length : 0,
+          avgTDS: records.length > 0 ? records.reduce((sum, r) => sum + r.finalTDS, 0) / records.length : 0,
+          avgExtractionYield: records.length > 0 ? records.reduce((sum, r) => sum + r.extractionYield, 0) / records.length : 0,
+          consistencyRate: records.length > 0 ? (records.filter(r => r.qualityScore >= 80).length / records.length) * 100 : 0,
+        },
+        storePerformance: stores.map(s => ({
+          id: s.id,
+          name: s.name,
+          region: s.region,
+          qualityScore: s.qualityScore,
+          consistencyScore: s.consistencyScore,
+          syncStatus: s.syncStatus,
+        })),
+      };
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `extraction-report-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const filteredRecords = useMemo(() => {
     let list = [...records];
@@ -256,9 +302,11 @@ export default function AnalyticsPage() {
             刷新
           </Button>
           <Button
-            icon={<Download className="w-4 h-4" />}
+            onClick={handleExportReport}
+            disabled={exporting}
+            icon={exporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           >
-            导出报告
+            {exporting ? '导出中...' : '导出报告'}
           </Button>
         </div>
       </div>
