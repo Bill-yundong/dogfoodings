@@ -3,10 +3,56 @@
 import AppLayout from '../AppLayout';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Users, Sliders, Key, Shield, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Users, Sliders, Key, Shield, Bell, Copy, RefreshCw, Check, Eye, EyeOff } from 'lucide-react';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
+  const [apiKeys, setApiKeys] = useState({
+    energy: {
+      key: 'sk-live-7f9a2c3e8b1d5f0a4e2c6a8b0c2d4e6f',
+      visible: false,
+    },
+    operations: {
+      key: 'sk-live-3c8e1d5f0a4e2c6a8b0c2d4e6f7f9a2b',
+      visible: false,
+    },
+  });
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopyKey = async (keyType: 'energy' | 'operations') => {
+    try {
+      await navigator.clipboard.writeText(apiKeys[keyType].key);
+      setCopiedKey(keyType);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
+  const handleRegenerateKey = (keyType: 'energy' | 'operations') => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let newKey = 'sk-live-';
+    for (let i = 0; i < 32; i++) {
+      newKey += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setApiKeys((prev) => ({
+      ...prev,
+      [keyType]: {
+        ...prev[keyType],
+        key: newKey,
+      },
+    }));
+  };
+
+  const toggleKeyVisibility = (keyType: 'energy' | 'operations') => {
+    setApiKeys((prev) => ({
+      ...prev,
+      [keyType]: {
+        ...prev[keyType],
+        visible: !prev[keyType].visible,
+      },
+    }));
+  };
 
   const tabs = [
     { id: 'general', label: '通用设置', icon: SettingsIcon },
@@ -184,10 +230,33 @@ export default function SettingsPage() {
                   <span className="text-sm font-medium text-white">建筑节能系统 API</span>
                   <span className="text-xs px-2 py-1 bg-green-500/20 text-green-500 rounded-full">已启用</span>
                 </div>
-                <p className="text-sm text-gray-400 font-mono">•••••••••••••••••</p>
-                <div className="flex gap-2 mt-3">
-                  <button className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600">复制</button>
-                  <button className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600">重新生成</button>
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="text-sm text-gray-400 font-mono flex-1">
+                    {apiKeys.energy.visible ? apiKeys.energy.key : '•••••••••••••••••••••••••••••••'}
+                  </p>
+                  <button
+                    onClick={() => toggleKeyVisibility('energy')}
+                    className="p-1 text-gray-400 hover:text-white rounded hover:bg-gray-700"
+                    title={apiKeys.energy.visible ? '隐藏密钥' : '显示密钥'}
+                  >
+                    {apiKeys.energy.visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCopyKey('energy')}
+                    className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center gap-1 transition-colors"
+                  >
+                    {copiedKey === 'energy' ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                    {copiedKey === 'energy' ? '已复制' : '复制'}
+                  </button>
+                  <button
+                    onClick={() => handleRegenerateKey('energy')}
+                    className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center gap-1 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    重新生成
+                  </button>
                 </div>
               </div>
               <div className="bg-gray-900/50 rounded-lg p-4">
@@ -195,10 +264,33 @@ export default function SettingsPage() {
                   <span className="text-sm font-medium text-white">运维系统 API</span>
                   <span className="text-xs px-2 py-1 bg-green-500/20 text-green-500 rounded-full">已启用</span>
                 </div>
-                <p className="text-sm text-gray-400 font-mono">•••••••••••••••••</p>
-                <div className="flex gap-2 mt-3">
-                  <button className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600">复制</button>
-                  <button className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600">重新生成</button>
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="text-sm text-gray-400 font-mono flex-1">
+                    {apiKeys.operations.visible ? apiKeys.operations.key : '•••••••••••••••••••••••••••••••'}
+                  </p>
+                  <button
+                    onClick={() => toggleKeyVisibility('operations')}
+                    className="p-1 text-gray-400 hover:text-white rounded hover:bg-gray-700"
+                    title={apiKeys.operations.visible ? '隐藏密钥' : '显示密钥'}
+                  >
+                    {apiKeys.operations.visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCopyKey('operations')}
+                    className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center gap-1 transition-colors"
+                  >
+                    {copiedKey === 'operations' ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                    {copiedKey === 'operations' ? '已复制' : '复制'}
+                  </button>
+                  <button
+                    onClick={() => handleRegenerateKey('operations')}
+                    className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center gap-1 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    重新生成
+                  </button>
                 </div>
               </div>
             </div>
