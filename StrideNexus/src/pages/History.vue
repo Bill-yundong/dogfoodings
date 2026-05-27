@@ -724,4 +724,45 @@ onMounted(() => {
     }
   }
 }
+
+:deep(.el-drawer) {
+  background: var(--bg-primary) !important;
+  
+  .el-drawer__header {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+    padding: 16px 20px;
+    
+    .el-drawer__title {
+      color: var(--text-primary) !important;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .el-drawer__close-btn {
+      color: var(--text-secondary) !important;
+      
+      &:hover {
+        color: var(--text-primary) !important;
+      }
+    }
+  }
+  
+  .el-drawer__body {
+    background: var(--bg-primary);
+    padding: 24px;
+  }
+}
+
+:deep(.el-progress__text) {
+  color: var(--text-primary) !important;
+}
+
+:deep(.el-progress-dashboard) {
+  .el-progress__text {
+    color: var(--text-primary) !important;
+  }
+}
 </style>
