@@ -108,9 +108,13 @@ export class JitterPredictor {
     allPathResults: Map<string, ProbeResult[]>
   ): SwitchCandidate[] {
     const candidates: SwitchCandidate[] = [];
-    const currentQuality = this.pathQualities.get(currentPathId);
+    let currentQuality = this.pathQualities.get(currentPathId);
 
-    if (!currentQuality) return [];
+    if (!currentQuality) {
+      const currentResults = allPathResults.get(currentPathId);
+      if (!currentResults || currentResults.length < 10) return [];
+      currentQuality = this.calculatePathQualityWithPrediction(currentPathId, currentResults);
+    }
 
     for (const [pathId, results] of allPathResults) {
       if (pathId === currentPathId) continue;
