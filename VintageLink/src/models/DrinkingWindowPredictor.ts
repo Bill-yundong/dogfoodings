@@ -93,6 +93,7 @@ export class AsyncDrinkingWindowPredictor {
     const foodPairings = this.generateFoodPairings(label);
 
     return {
+      id: `dw-${bottle.id}-${Date.now()}`,
       wineId: bottle.id,
       windowStart,
       windowEnd,
