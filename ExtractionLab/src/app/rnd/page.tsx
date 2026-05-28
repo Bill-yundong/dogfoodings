@@ -74,7 +74,14 @@ export default function RnDCenterPage() {
   };
 
   const filteredPresets = useMemo(() => {
-    let list = searchQuery ? searchResults : presets;
+    let list = presets;
+
+    if (searchQuery && searchResults.length > 0) {
+      const resultIds = new Set(searchResults.map(r => r.id));
+      list = list.filter(p => resultIds.has(p.id));
+    } else if (searchQuery && searchResults.length === 0) {
+      list = [];
+    }
 
     if (filterMethod !== 'all') {
       list = list.filter(p => p.method === filterMethod);
@@ -791,7 +798,14 @@ export default function RnDCenterPage() {
                     }
 
                     await refreshData();
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setFilterMethod('all');
+                    setFilterRoast('all');
+                    setFilterStatus('all');
                     setShowCreateModal(false);
+                    setActiveTab('presets');
+                    setSelectedPreset(newPreset);
                     showToast('配方创建成功！');
                   } catch (error) {
                     console.error('Failed to create preset:', error);
