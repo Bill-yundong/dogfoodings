@@ -108,7 +108,7 @@ class RealTimeSyncEngine {
     const db = await getDB();
     await db.add('syncQueue', syncOp);
 
-    setImmediate(() => this.processSyncQueue());
+    setTimeout(() => this.processSyncQueue(), 0);
 
     return syncOp.id;
   }

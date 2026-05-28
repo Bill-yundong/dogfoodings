@@ -166,14 +166,26 @@ export default function RnDCenterPage() {
         createdBy: '研发团队',
       };
 
-      await insert('experiments', newExperiment);
-      await syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment);
+      try {
+        await insert('experiments', newExperiment);
+      } catch (dbError) {
+        console.error('DB insert failed for experiment:', dbError);
+        showToast(`数据库写入失败: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+        return;
+      }
+
+      try {
+        await syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment as any);
+      } catch (syncError) {
+        console.warn('Sync queue failed (non-critical):', syncError);
+      }
+
       await refreshData();
       setActiveTab('experiments');
       showToast('实验创建成功！');
     } catch (error) {
       console.error('Failed to create experiment:', error);
-      showToast('创建实验失败，请重试');
+      showToast(`创建实验失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setCreatingExperiment(false);
     }
@@ -763,14 +775,27 @@ export default function RnDCenterPage() {
                       lastSyncedAt: getCurrentTimestamp(),
                       syncHash: uuidv4(),
                     };
-                    await insert('presets', newPreset);
-                    await syncEngine.queueSync('preset', 'create', newPreset.id, newPreset);
+
+                    try {
+                      await insert('presets', newPreset);
+                    } catch (dbError) {
+                      console.error('DB insert failed for preset:', dbError);
+                      showToast(`数据库写入失败: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+                      return;
+                    }
+
+                    try {
+                      await syncEngine.queueSync('preset', 'create', newPreset.id, newPreset as any);
+                    } catch (syncError) {
+                      console.warn('Sync queue failed (non-critical):', syncError);
+                    }
+
                     await refreshData();
                     setShowCreateModal(false);
                     showToast('配方创建成功！');
                   } catch (error) {
                     console.error('Failed to create preset:', error);
-                    showToast('保存配方失败，请重试');
+                    showToast(`保存配方失败: ${error instanceof Error ? error.message : String(error)}`);
                   } finally {
                     setSavingPreset(false);
                   }
