@@ -50,11 +50,17 @@ export function Navigation() {
   } | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const [notifications] = useState([
     { id: 1, title: '新配方发布', message: '埃塞俄比亚耶加雪菲新配方已上线', time: '5分钟前', read: false },
     { id: 2, title: '品质预警', message: '上海浦东门店TDS波动超过阈值', time: '30分钟前', read: false },
     { id: 3, title: '同步完成', message: '全球30家门店数据同步成功', time: '2小时前', read: true },
   ]);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
+  };
 
   useEffect(() => {
     const updateStatus = async () => {
@@ -203,16 +209,40 @@ export function Navigation() {
                     <h3 className="font-semibold text-coffee-800">系统设置</h3>
                   </div>
                   <div className="py-2">
-                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        showToast('账户设置功能开发中...');
+                        setShowSettings(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors"
+                    >
                       账户设置
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        showToast('偏好设置功能开发中...');
+                        setShowSettings(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors"
+                    >
                       偏好设置
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        showToast('数据管理功能开发中...');
+                        setShowSettings(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors"
+                    >
                       数据管理
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        showToast('ExtractionLab v1.0.0 - 精品咖啡萃取品质管理系统');
+                        setShowSettings(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-coffee-700 hover:bg-coffee-50 transition-colors"
+                    >
                       关于系统
                     </button>
                   </div>
@@ -250,6 +280,12 @@ export function Navigation() {
           })}
         </div>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-coffee-800 text-white rounded-xl shadow-xl z-[100] animate-bounce">
+          {toast}
+        </div>
+      )}
     </nav>
   );
 }

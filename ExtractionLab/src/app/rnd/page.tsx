@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppData } from '../providers';
 import { PresetCard } from '@/components/PresetCard';
 import { FlavorRadarChart } from '@/components/FlavorRadarChart';
@@ -42,6 +42,15 @@ export default function RnDCenterPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<BrewingPreset[]>([]);
+  const [creatingExperiment, setCreatingExperiment] = useState(false);
+  const [batchOptimizing, setBatchOptimizing] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -84,64 +93,90 @@ export default function RnDCenterPage() {
   }, [presets, searchResults, searchQuery, filterMethod, filterRoast, filterStatus, beans]);
 
   const runBatchOptimization = async () => {
-    if (presets.length === 0 || stores.length === 0) return;
+    if (presets.length === 0 || stores.length === 0) {
+      showToast('请确保有可用的配方和门店数据');
+      return;
+    }
 
-    const approvedPresets = presets.filter(p => p.status === 'approved');
-    const randomPreset = approvedPresets[Math.floor(Math.random() * approvedPresets.length)] || presets[0];
-    const randomStore = stores[Math.floor(Math.random() * stores.length)];
-    const relevantRecords = records.filter(
-      r => r.presetId === randomPreset.id && r.storeId === randomStore.id
-    );
+    setBatchOptimizing(true);
+    try {
+      const approvedPresets = presets.filter(p => p.status === 'approved');
+      const randomPreset = approvedPresets[Math.floor(Math.random() * approvedPresets.length)] || presets[0];
+      const randomStore = stores[Math.floor(Math.random() * stores.length)];
+      const relevantRecords = records.filter(
+        r => r.presetId === randomPreset.id && r.storeId === randomStore.id
+      );
 
-    const result = await optimizationEngine.optimize(
-      randomPreset,
-      randomStore,
-      relevantRecords
-    );
+      const result = await optimizationEngine.optimize(
+        randomPreset,
+        randomStore,
+        relevantRecords
+      );
 
-    if (result.qualityImprovement > 2) {
-      const updatedPreset: BrewingPreset = {
-        ...randomPreset,
-        ...result.optimizedParameters,
-        updatedAt: getCurrentTimestamp(),
-        version: randomPreset.version + 1,
-      };
+      if (result.qualityImprovement > 2) {
+        const updatedPreset: BrewingPreset = {
+          ...randomPreset,
+          ...result.optimizedParameters,
+          updatedAt: getCurrentTimestamp(),
+          version: randomPreset.version + 1,
+        };
 
-      await update('presets', updatedPreset.id, updatedPreset);
-      await syncEngine.queueSync('preset', 'update', updatedPreset.id, updatedPreset);
-      await refreshData();
+        await update('presets', updatedPreset.id, updatedPreset);
+        await syncEngine.queueSync('preset', 'update', updatedPreset.id, updatedPreset);
+        await refreshData();
+        showToast(`优化完成！品质提升 ${result.qualityImprovement.toFixed(1)}%`);
+      } else {
+        showToast('当前配方已是最优状态，无需优化');
+      }
+    } catch (error) {
+      console.error('Batch optimization failed:', error);
+      showToast('批量优化失败，请重试');
+    } finally {
+      setBatchOptimizing(false);
     }
   };
 
   const createExperiment = async () => {
-    if (presets.length === 0) return;
+    if (presets.length === 0) {
+      showToast('请先创建一些配方');
+      return;
+    }
 
-    const basePreset = presets[Math.floor(Math.random() * presets.length)];
-    const newExperiment: RnDExperiment = {
-      id: uuidv4(),
-      name: `配方优化实验 - ${new Date().toLocaleDateString('zh-CN')} #${Math.floor(Math.random() * 1000)}`,
-      description: '多因子变量测试，寻找最佳萃取参数组合',
-      hypothesis: '通过调整关键萃取参数，可以显著提升咖啡风味表现',
-      beanId: basePreset.beanId,
-      basePresetId: basePreset.id,
-      variants: [],
-      variables: [
-        { name: 'waterTemperature', min: 90, max: 96, step: 1, unit: '°C' },
-        { name: 'grindSize', min: 0.2, max: 0.4, step: 0.02, unit: 'mm' },
-        { name: 'brewRatio', min: 14, max: 18, step: 0.5, unit: '' },
-      ],
-      status: 'running',
-      trials: Math.floor(Math.random() * 10) + 8,
-      completedTrials: Math.floor(Math.random() * 3),
-      createdAt: new Date().toISOString(),
-      startedAt: getCurrentTimestamp(),
-      createdBy: '研发团队',
-    };
+    setCreatingExperiment(true);
+    try {
+      const basePreset = presets[Math.floor(Math.random() * presets.length)];
+      const newExperiment: RnDExperiment = {
+        id: uuidv4(),
+        name: `配方优化实验 - ${new Date().toLocaleDateString('zh-CN')} #${Math.floor(Math.random() * 1000)}`,
+        description: '多因子变量测试，寻找最佳萃取参数组合',
+        hypothesis: '通过调整关键萃取参数，可以显著提升咖啡风味表现',
+        beanId: basePreset.beanId,
+        basePresetId: basePreset.id,
+        variants: [],
+        variables: [
+          { name: 'waterTemperature', min: 90, max: 96, step: 1, unit: '°C' },
+          { name: 'grindSize', min: 0.2, max: 0.4, step: 0.02, unit: 'mm' },
+          { name: 'brewRatio', min: 14, max: 18, step: 0.5, unit: '' },
+        ],
+        status: 'running',
+        trials: Math.floor(Math.random() * 10) + 8,
+        completedTrials: Math.floor(Math.random() * 3),
+        createdAt: new Date().toISOString(),
+        startedAt: getCurrentTimestamp(),
+        createdBy: '研发团队',
+      };
 
-    await insert('experiments', newExperiment);
-    await syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment);
-    await refreshData();
-    setActiveTab('experiments');
+      await insert('experiments', newExperiment);
+      await syncEngine.queueSync('experiment', 'create', newExperiment.id, newExperiment);
+      await refreshData();
+      setActiveTab('experiments');
+      showToast('实验创建成功！');
+    } catch (error) {
+      console.error('Failed to create experiment:', error);
+      showToast('创建实验失败，请重试');
+    } finally {
+      setCreatingExperiment(false);
+    }
   };
 
   const presetStats = useMemo(() => {
@@ -157,9 +192,11 @@ export default function RnDCenterPage() {
     return curves.filter(c => c.presetId === selectedPreset.id).slice(0, 3);
   }, [selectedPreset, curves]);
 
-  if (!selectedPreset && filteredPresets.length > 0) {
-    setSelectedPreset(filteredPresets[0]);
-  }
+  useEffect(() => {
+    if (!selectedPreset && filteredPresets.length > 0) {
+      setSelectedPreset(filteredPresets[0]);
+    }
+  }, [selectedPreset, filteredPresets]);
 
   return (
     <div className="space-y-6">
@@ -175,16 +212,20 @@ export default function RnDCenterPage() {
         <div className="flex items-center gap-3">
           <Button
             onClick={createExperiment}
+            disabled={creatingExperiment}
+            loading={creatingExperiment}
             icon={<Beaker className="w-4 h-4" />}
           >
-            创建实验
+            {creatingExperiment ? '创建中...' : '创建实验'}
           </Button>
           <Button
             onClick={runBatchOptimization}
+            disabled={batchOptimizing}
+            loading={batchOptimizing}
             variant="secondary"
             icon={<Zap className="w-4 h-4" />}
           >
-            批量优化
+            {batchOptimizing ? '优化中...' : '批量优化'}
           </Button>
           <Button
             onClick={() => setShowCreateModal(true)}
@@ -681,8 +722,15 @@ export default function RnDCenterPage() {
                 取消
               </button>
               <button
+                disabled={savingPreset || beans.length === 0}
                 onClick={async () => {
-                  if (beans.length > 0) {
+                  if (beans.length === 0) {
+                    showToast('请先添加咖啡豆数据');
+                    return;
+                  }
+
+                  setSavingPreset(true);
+                  try {
                     const randomBean = beans[Math.floor(Math.random() * beans.length)];
                     const newPreset: BrewingPreset = {
                       id: uuidv4(),
@@ -719,15 +767,34 @@ export default function RnDCenterPage() {
                     await syncEngine.queueSync('preset', 'create', newPreset.id, newPreset);
                     await refreshData();
                     setShowCreateModal(false);
+                    showToast('配方创建成功！');
+                  } catch (error) {
+                    console.error('Failed to create preset:', error);
+                    showToast('保存配方失败，请重试');
+                  } finally {
+                    setSavingPreset(false);
                   }
                 }}
-                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-coffee-700 to-coffee-800 text-white rounded-xl hover:from-coffee-800 hover:to-coffee-900 transition-all"
+                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-coffee-700 to-coffee-800 text-white rounded-xl hover:from-coffee-800 hover:to-coffee-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4" />
-                保存配方
+                {savingPreset ? (
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {savingPreset ? '保存中...' : '保存配方'}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-coffee-800 text-white rounded-xl shadow-xl z-[100] animate-bounce">
+          {toast}
         </div>
       )}
     </div>
