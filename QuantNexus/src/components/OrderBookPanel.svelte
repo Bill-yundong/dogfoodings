@@ -13,10 +13,10 @@
 
   onMount(() => {
     subscribeToOrderBook();
+  });
 
-    onDestroy(() => {
-      if (unsubscribeOrderBook) unsubscribeOrderBook();
-    });
+  onDestroy(() => {
+    if (unsubscribeOrderBook) unsubscribeOrderBook();
   });
 
   function subscribeToOrderBook() {

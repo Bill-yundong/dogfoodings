@@ -37,13 +37,13 @@
 
     window.addEventListener('mousemove', handleResize);
     window.addEventListener('mouseup', stopResize);
+  });
 
-    onDestroy(() => {
-      stopDataStream();
-      if (statusInterval) clearInterval(statusInterval);
-      window.removeEventListener('mousemove', handleResize);
-      window.removeEventListener('mouseup', stopResize);
-    });
+  onDestroy(() => {
+    stopDataStream();
+    if (statusInterval) clearInterval(statusInterval);
+    window.removeEventListener('mousemove', handleResize);
+    window.removeEventListener('mouseup', stopResize);
   });
 
   async function startDataStream() {

@@ -29,20 +29,22 @@
 
   const maxRecentTrades = 50;
 
+  let updateInterval: number | null = null;
+
   onMount(() => {
     subscribeToData();
 
-    const updateInterval = setInterval(() => {
+    updateInterval = window.setInterval(() => {
       deltaIndicator = orderFlowAggregator.calculateDeltaIndicator(symbol, 20);
       flowImbalance = orderFlowAggregator.detectOrderFlowImbalance(symbol, 10, 2.0);
     }, 500);
+  });
 
-    onDestroy(() => {
-      clearInterval(updateInterval);
-      if (unsubscribeTrades) unsubscribeTrades();
-      if (unsubscribeLiq) unsubscribeLiq();
-      if (unsubscribeAgg) unsubscribeAgg();
-    });
+  onDestroy(() => {
+    if (updateInterval) clearInterval(updateInterval);
+    if (unsubscribeTrades) unsubscribeTrades();
+    if (unsubscribeLiq) unsubscribeLiq();
+    if (unsubscribeAgg) unsubscribeAgg();
   });
 
   function subscribeToData() {

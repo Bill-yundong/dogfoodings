@@ -42,12 +42,12 @@
         pressureHistory = liquidationPressureEngine.getLiquidationHistory(symbol, 50);
       }
     }, 2000);
+  });
 
-    onDestroy(() => {
-      if (updateInterval) clearInterval(updateInterval);
-      if (unsubscribeLiq) unsubscribeLiq();
-      if (unsubscribeOb) unsubscribeOb();
-    });
+  onDestroy(() => {
+    if (updateInterval) clearInterval(updateInterval);
+    if (unsubscribeLiq) unsubscribeLiq();
+    if (unsubscribeOb) unsubscribeOb();
   });
 
   function subscribeToData() {

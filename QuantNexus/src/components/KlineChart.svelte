@@ -61,6 +61,15 @@
     priceScaleId: 'delta'
   };
 
+  function handleResize() {
+    if (chart && chartContainer) {
+      chart.applyOptions({
+        width: chartContainer.clientWidth,
+        height: chartContainer.clientHeight
+      });
+    }
+  }
+
   onMount(async () => {
     if (!chartContainer) return;
 
@@ -93,23 +102,14 @@
     await loadHistoricalData();
     subscribeToRealtimeData();
 
-    const handleResize = () => {
-      if (chart && chartContainer) {
-        chart.applyOptions({
-          width: chartContainer.clientWidth,
-          height: chartContainer.clientHeight
-        });
-      }
-    };
-
     window.addEventListener('resize', handleResize);
     handleResize();
+  });
 
-    onDestroy(() => {
-      window.removeEventListener('resize', handleResize);
-      if (unsubscribeKline) unsubscribeKline();
-      if (chart) chart.remove();
-    });
+  onDestroy(() => {
+    window.removeEventListener('resize', handleResize);
+    if (unsubscribeKline) unsubscribeKline();
+    if (chart) chart.remove();
   });
 
   async function loadHistoricalData() {

@@ -39,12 +39,12 @@
       selectedSignal = signal;
       validateSignal(signal);
     });
+  });
 
-    onDestroy(() => {
-      if (analysisInterval) clearInterval(analysisInterval);
-      if (unsubscribeSignal) unsubscribeSignal();
-      if (unsubscribeOrderBook) unsubscribeOrderBook();
-    });
+  onDestroy(() => {
+    if (analysisInterval) clearInterval(analysisInterval);
+    if (unsubscribeSignal) unsubscribeSignal();
+    if (unsubscribeOrderBook) unsubscribeOrderBook();
   });
 
   function subscribeToData() {
