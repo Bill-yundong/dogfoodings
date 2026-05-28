@@ -19,7 +19,7 @@ export class PoseNexusDB extends Dexie {
       trainingSessions: 'id, userId, courseId, createdAt, synced',
       courses: 'id, category, difficulty',
       actionTemplates: 'id',
-      snapshots: 'id, userId, timestamp, type'
+      snapshots: 'id, userId, timestamp, type, [userId+type]'
     })
   }
 }
