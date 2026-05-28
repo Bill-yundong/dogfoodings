@@ -1,0 +1,24 @@
+{
+  "name": "quant-nexus",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "idb": "^8.0.0",
+    "lightweight-charts": "^4.1.0",
+    "mathjs": "^12.0.0",
+    "svelte": "^5.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "svelte-check": "^3.6.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0"
+  }
+}
