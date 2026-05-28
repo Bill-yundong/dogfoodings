@@ -3,15 +3,20 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
+import Modal from '@/components/Modal';
 import {
   Stethoscope,
   Video,
   MessageCircle,
   Calendar,
-  Clock,
   Star,
   Search,
   Filter,
+  Send,
+  Phone,
+  X,
+  CheckCircle,
+  Clock,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -63,9 +68,17 @@ const mockDoctors: Doctor[] = [
   },
 ];
 
+type ConsultType = 'video' | 'message' | 'appointment' | null;
+
 export default function TelemedicinePage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [consultModal, setConsultModal] = useState<{ type: ConsultType; doctor: Doctor | null }>({ type: null, doctor: null });
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'doctor'; text: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('');
+  const [appointmentSuccess, setAppointmentSuccess] = useState(false);
 
   useEffect(() => {
     setDoctors(mockDoctors);
@@ -77,6 +90,43 @@ export default function TelemedicinePage() {
       doc.specialty.includes(searchQuery) ||
       doc.hospital.includes(searchQuery)
   );
+
+  const handleQuickAction = (type: ConsultType) => {
+    const onlineDoctors = doctors.filter((d) => d.online);
+    if (onlineDoctors.length > 0) {
+      setConsultModal({ type, doctor: onlineDoctors[0] });
+    } else {
+      setConsultModal({ type, doctor: null });
+    }
+  };
+
+  const handleDoctorAction = (type: ConsultType, doctor: Doctor) => {
+    if (!doctor.online) return;
+    setConsultModal({ type, doctor });
+    setChatMessages([]);
+    setChatInput('');
+    setAppointmentDate('');
+    setAppointmentTime('');
+    setAppointmentSuccess(false);
+  };
+
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+    const newMessages = [...chatMessages, { role: 'user' as const, text: chatInput }];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'doctor', text: '您好，我已收到您的咨询，请详细描述一下宠物的症状，我来为您分析。' },
+      ]);
+    }, 1000);
+  };
+
+  const handleAppointmentConfirm = () => {
+    if (!appointmentDate || !appointmentTime) return;
+    setAppointmentSuccess(true);
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -102,7 +152,10 @@ export default function TelemedicinePage() {
             transition={{ delay: 0.1 }}
             className="grid grid-cols-3 gap-6 mb-8"
           >
-            <div className="card p-6 card-hover">
+            <button
+              onClick={() => handleQuickAction('video')}
+              className="card p-6 card-hover text-left"
+            >
               <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
                 <Video className="w-6 h-6 text-primary-600" />
               </div>
@@ -110,8 +163,11 @@ export default function TelemedicinePage() {
               <p className="text-sm text-slate-500">
                 与兽医进行实时视频交流，获得面对面诊断
               </p>
-            </div>
-            <div className="card p-6 card-hover">
+            </button>
+            <button
+              onClick={() => handleQuickAction('message')}
+              className="card p-6 card-hover text-left"
+            >
               <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4">
                 <MessageCircle className="w-6 h-6 text-purple-600" />
               </div>
@@ -119,8 +175,11 @@ export default function TelemedicinePage() {
               <p className="text-sm text-slate-500">
                 发送症状描述和图片，获取专业解答
               </p>
-            </div>
-            <div className="card p-6 card-hover">
+            </button>
+            <button
+              onClick={() => handleQuickAction('appointment')}
+              className="card p-6 card-hover text-left"
+            >
               <div className="w-12 h-12 bg-accent-50 rounded-xl flex items-center justify-center mb-4">
                 <Calendar className="w-6 h-6 text-accent-600" />
               </div>
@@ -128,7 +187,7 @@ export default function TelemedicinePage() {
               <p className="text-sm text-slate-500">
                 预约线下门诊，优先就诊无需等待
               </p>
-            </div>
+            </button>
           </motion.div>
 
           <div className="flex items-center gap-4 mb-6">
@@ -198,6 +257,7 @@ export default function TelemedicinePage() {
                 </div>
                 <div className="flex gap-3 mt-6">
                   <button
+                    onClick={() => handleDoctorAction('video', doctor)}
                     className={`flex-1 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
                       doctor.online
                         ? 'bg-primary-50 text-primary-700 hover:bg-primary-100'
@@ -209,6 +269,7 @@ export default function TelemedicinePage() {
                     视频问诊
                   </button>
                   <button
+                    onClick={() => handleDoctorAction('message', doctor)}
                     className={`flex-1 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
                       doctor.online
                         ? 'bg-primary-600 text-white hover:bg-primary-700'
@@ -225,6 +286,177 @@ export default function TelemedicinePage() {
           </div>
         </div>
       </main>
+
+      <Modal
+        isOpen={consultModal.type === 'video' && consultModal.doctor !== null}
+        onClose={() => setConsultModal({ type: null, doctor: null })}
+        title="视频问诊"
+        maxWidth="max-w-md"
+      >
+        <div className="text-center py-6">
+          <div className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Phone className="w-10 h-10 text-primary-600" />
+          </div>
+          <h3 className="font-poppins font-semibold text-lg text-slate-800 mb-2">
+            正在呼叫 {consultModal.doctor?.name}
+          </h3>
+          <p className="text-slate-500 mb-2">{consultModal.doctor?.specialty}</p>
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-6">
+            <Clock className="w-4 h-4" />
+            <span>等待接听中...</span>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setConsultModal({ type: null, doctor: null })}
+              className="px-6 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              取消呼叫
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={consultModal.type === 'message' && consultModal.doctor !== null}
+        onClose={() => setConsultModal({ type: null, doctor: null })}
+        title={`图文咨询 - ${consultModal.doctor?.name || ''}`}
+        maxWidth="max-w-xl"
+      >
+        <div>
+          <div className="h-64 border border-slate-200 rounded-xl p-4 mb-4 overflow-auto bg-slate-50 space-y-3">
+            {chatMessages.length === 0 && (
+              <div className="text-center text-slate-400 text-sm py-8">
+                请描述宠物的症状或健康问题，医生将为您解答
+              </div>
+            )}
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-sm'
+                    : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="输入消息..."
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400"
+            />
+            <button
+              onClick={sendMessage}
+              className="btn-primary px-4 py-2.5"
+              disabled={!chatInput.trim()}
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={consultModal.type === 'appointment' && consultModal.doctor !== null}
+        onClose={() => {
+          setConsultModal({ type: null, doctor: null });
+          setAppointmentSuccess(false);
+        }}
+        title="预约挂号"
+        maxWidth="max-w-md"
+      >
+        {appointmentSuccess ? (
+          <div className="text-center py-6">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h3 className="font-poppins font-semibold text-lg text-slate-800 mb-2">
+              预约成功
+            </h3>
+            <p className="text-slate-500 mb-2">
+              已成功预约 {consultModal.doctor?.name}
+            </p>
+            <p className="text-slate-500 mb-6">
+              {appointmentDate} {appointmentTime}
+            </p>
+            <button
+              onClick={() => {
+                setConsultModal({ type: null, doctor: null });
+                setAppointmentSuccess(false);
+              }}
+              className="btn-primary"
+            >
+              完成
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-3 mb-6 p-3 bg-slate-50 rounded-xl">
+              {consultModal.doctor && (
+                <Image
+                  src={consultModal.doctor.avatar}
+                  alt={consultModal.doctor.name}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-xl object-cover"
+                />
+              )}
+              <div>
+                <p className="font-medium text-slate-800">{consultModal.doctor?.name}</p>
+                <p className="text-sm text-slate-500">{consultModal.doctor?.specialty}</p>
+              </div>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">预约日期</label>
+                <input
+                  type="date"
+                  value={appointmentDate}
+                  onChange={(e) => setAppointmentDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">预约时间</label>
+                <select
+                  value={appointmentTime}
+                  onChange={(e) => setAppointmentTime(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+                >
+                  <option value="">请选择时间</option>
+                  <option value="09:00">09:00 - 10:00</option>
+                  <option value="10:00">10:00 - 11:00</option>
+                  <option value="14:00">14:00 - 15:00</option>
+                  <option value="15:00">15:00 - 16:00</option>
+                  <option value="16:00">16:00 - 17:00</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConsultModal({ type: null, doctor: null })}
+                className="btn-secondary flex-1"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleAppointmentConfirm}
+                className="btn-primary flex-1"
+                disabled={!appointmentDate || !appointmentTime}
+              >
+                确认预约
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

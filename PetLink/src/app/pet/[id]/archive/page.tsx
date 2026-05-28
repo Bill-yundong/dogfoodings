@@ -15,12 +15,16 @@ import {
   CloudOff,
   ChevronDown,
   ChevronUp,
+  CheckCircle,
 } from 'lucide-react';
 import { HealthRecord } from '@/types';
+import Modal from '@/components/Modal';
 
 export default function ArchivePage({ params }: { params: { id: string } }) {
   const { loadMockData, healthRecords, selectedPet, isOnline } = usePetLinkStore();
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
 
   useEffect(() => {
     loadMockData();
@@ -87,6 +91,36 @@ export default function ArchivePage({ params }: { params: { id: string } }) {
 
   const sortedRecords = [...healthRecords].sort((a, b) => b.date - a.date);
 
+  const handleExport = () => {
+    setExportSuccess(false);
+    setShowExportModal(true);
+  };
+
+  const confirmExport = () => {
+    const exportData = {
+      pet: selectedPet,
+      exportDate: new Date().toISOString(),
+      records: sortedRecords.map((record) => ({
+        type: getTypeName(record.type),
+        date: new Date(record.date).toLocaleDateString('zh-CN'),
+        veterinarian: record.veterinarianName || '未知',
+        notes: record.notes,
+        attachments: record.attachments,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedPet.name}_健康档案_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setExportSuccess(true);
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -114,7 +148,7 @@ export default function ArchivePage({ params }: { params: { id: string } }) {
                   {isOnline ? '已同步' : '离线模式'}
                 </span>
               </div>
-              <button className="btn-primary flex items-center gap-2">
+              <button onClick={handleExport} className="btn-primary flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 导出档案
               </button>
@@ -220,6 +254,65 @@ export default function ArchivePage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </main>
+
+      <Modal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        title="导出健康档案"
+      >
+        {exportSuccess ? (
+          <div className="text-center py-6">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h3 className="font-poppins font-semibold text-lg text-slate-800 mb-2">
+              导出成功
+            </h3>
+            <p className="text-slate-500 mb-6">
+              档案文件已开始下载，共 {sortedRecords.length} 条记录
+            </p>
+            <button
+              onClick={() => setShowExportModal(false)}
+              className="btn-primary"
+            >
+              完成
+            </button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-slate-600 mb-4">
+              即将导出 <strong>{selectedPet?.name}</strong> 的健康档案，包含以下内容：
+            </p>
+            <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">记录数量</span>
+                <span className="font-medium text-slate-800">{sortedRecords.length} 条</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">导出格式</span>
+                <span className="font-medium text-slate-800">JSON</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">包含宠物信息</span>
+                <span className="font-medium text-slate-800">是</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="btn-secondary flex-1"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmExport}
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                确认导出
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
