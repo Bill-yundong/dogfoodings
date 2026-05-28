@@ -6,7 +6,7 @@ import { generateId, formatDateKey, mean } from '@/utils/math';
 import { getQualityLevel } from '@/utils/quality';
 
 const DB_NAME = 'netpulse-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export class StorageService {
   private db: IDBPDatabase<NetPulseDB> | null = null;
@@ -15,10 +15,16 @@ export class StorageService {
   private isFlushing: boolean = false;
   private flushInterval: number | null = null;
 
+  private initPromise: Promise<void> | null = null;
+
   async init(retentionDays: number = 30): Promise<void> {
+    if (this.db) return;
+    if (this.initPromise) return this.initPromise;
+
     this.retentionDays = retentionDays;
 
-    this.db = await openDB<NetPulseDB>(DB_NAME, DB_VERSION, {
+    this.initPromise = (async () => {
+      this.db = await openDB<NetPulseDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains('probeResults')) {
           const probeStore = db.createObjectStore('probeResults', { keyPath: 'id' });
@@ -34,7 +40,8 @@ export class StorageService {
         }
 
         if (!db.objectStoreNames.contains('dailySummaries')) {
-          db.createObjectStore('dailySummaries', { keyPath: 'date' });
+          const summaryStore = db.createObjectStore('dailySummaries', { keyPath: 'date' });
+          summaryStore.createIndex('date', 'date');
         }
 
         if (!db.objectStoreNames.contains('environmentProfiles')) {
@@ -47,6 +54,7 @@ export class StorageService {
 
     this.flushInterval = window.setInterval(() => this.flushQueue(), 2000);
     await this.cleanOldData();
+    })();
   }
 
   setRetentionDays(days: number): void {
@@ -124,23 +132,32 @@ export class StorageService {
     endTime?: number,
     limit?: number
   ): Promise<ProbeResult[]> {
-    if (!this.db) return [];
+    if (!this.db) {
+      await this.init();
+      if (!this.db) return [];
+    }
 
     let results: ProbeResult[] = [];
 
-    if (pathId && startTime && endTime) {
-      const index = this.db.transaction('probeResults').store.index('pathId-timestamp');
-      const range = IDBKeyRange.bound([pathId, startTime], [pathId, endTime]);
-      results = (await index.getAll(range)) as ProbeResult[];
-    } else if (pathId) {
-      const index = this.db.transaction('probeResults').store.index('pathId');
-      results = (await index.getAll(pathId)) as ProbeResult[];
-    } else if (startTime && endTime) {
-      const index = this.db.transaction('probeResults').store.index('timestamp');
-      const range = IDBKeyRange.bound(startTime, endTime);
-      results = (await index.getAll(range)) as ProbeResult[];
-    } else {
+    try {
+      if (pathId && startTime && endTime) {
+        const index = this.db.transaction('probeResults').store.index('pathId-timestamp');
+        const range = IDBKeyRange.bound([pathId, startTime], [pathId, endTime]);
+        results = (await index.getAll(range)) as ProbeResult[];
+      } else if (pathId) {
+        const index = this.db.transaction('probeResults').store.index('pathId');
+        results = (await index.getAll(pathId)) as ProbeResult[];
+      } else if (startTime && endTime) {
+        const index = this.db.transaction('probeResults').store.index('timestamp');
+        const range = IDBKeyRange.bound(startTime, endTime);
+        results = (await index.getAll(range)) as ProbeResult[];
+      } else {
+        results = (await this.db.getAll('probeResults')) as ProbeResult[];
+      }
+    } catch {
       results = (await this.db.getAll('probeResults')) as ProbeResult[];
+      if (pathId) results = results.filter(r => r.pathId === pathId);
+      if (startTime && endTime) results = results.filter(r => r.timestamp >= startTime! && r.timestamp <= endTime!);
     }
 
     return limit ? results.slice(-limit) : results;
@@ -151,16 +168,24 @@ export class StorageService {
     endTime?: number,
     limit?: number
   ): Promise<SwitchEvent[]> {
-    if (!this.db) return [];
+    if (!this.db) {
+      await this.init();
+      if (!this.db) return [];
+    }
 
     let events: SwitchEvent[];
 
-    if (startTime && endTime) {
-      const index = this.db.transaction('switchEvents').store.index('timestamp');
-      const range = IDBKeyRange.bound(startTime, endTime);
-      events = (await index.getAll(range)) as SwitchEvent[];
-    } else {
+    try {
+      if (startTime && endTime) {
+        const index = this.db.transaction('switchEvents').store.index('timestamp');
+        const range = IDBKeyRange.bound(startTime, endTime);
+        events = (await index.getAll(range)) as SwitchEvent[];
+      } else {
+        events = (await this.db.getAll('switchEvents')) as SwitchEvent[];
+      }
+    } catch {
       events = (await this.db.getAll('switchEvents')) as SwitchEvent[];
+      if (startTime && endTime) events = events.filter(e => e.timestamp >= startTime! && e.timestamp <= endTime!);
     }
 
     events.sort((a, b) => b.timestamp - a.timestamp);
@@ -168,13 +193,21 @@ export class StorageService {
   }
 
   async getDailySummaries(startDate?: string, endDate?: string): Promise<DailySummary[]> {
-    if (!this.db) return [];
+    if (!this.db) {
+      await this.init();
+      if (!this.db) return [];
+    }
 
     let summaries: DailySummary[];
 
     if (startDate && endDate) {
-      const range = IDBKeyRange.bound(startDate, endDate);
-      summaries = await this.db.getAllFromIndex('dailySummaries', 'date', range);
+      try {
+        const range = IDBKeyRange.bound(startDate, endDate);
+        summaries = await this.db.getAllFromIndex('dailySummaries', 'date', range);
+      } catch {
+        summaries = await this.db.getAll('dailySummaries');
+        summaries = summaries.filter(s => s.date >= startDate! && s.date <= endDate!);
+      }
     } else {
       summaries = await this.db.getAll('dailySummaries');
     }

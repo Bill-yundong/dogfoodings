@@ -38,6 +38,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['chart.js', 'solid-chartjs'],
+    include: ['chart.js'],
+    exclude: ['lucide-solid'],
   },
 });
