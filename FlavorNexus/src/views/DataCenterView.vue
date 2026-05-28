@@ -7,6 +7,7 @@ const { dbStats, initDatabase, updateStats, clearAllData } = useIndexedDB()
 const ingredientStore = useIngredientStore()
 
 const isClearing = ref(false)
+const isRefreshing = ref(false)
 const showConfirm = ref(false)
 
 onMounted(async () => {
@@ -16,14 +17,31 @@ onMounted(async () => {
 
 const handleClearData = async () => {
   isClearing.value = true
-  await clearAllData()
-  await ingredientStore.loadIngredients()
-  isClearing.value = false
-  showConfirm.value = false
+  try {
+    await clearAllData()
+    await initDatabase()
+    await ingredientStore.loadIngredients()
+    await ingredientStore.loadRecipes()
+  } catch (error) {
+    console.error('Failed to clear data:', error)
+  } finally {
+    isClearing.value = false
+    showConfirm.value = false
+  }
 }
 
 const refreshStats = async () => {
-  await updateStats()
+  isRefreshing.value = true
+  try {
+    await updateStats()
+    await ingredientStore.loadRecipes()
+  } catch (error) {
+    console.error('Failed to refresh stats:', error)
+  } finally {
+    setTimeout(() => {
+      isRefreshing.value = false
+    }, 500)
+  }
 }
 
 const statsItems = [
@@ -50,10 +68,12 @@ const dbInfo = [
       </div>
       <button 
         class="btn-secondary flex items-center gap-2"
+        :class="{ 'opacity-50 cursor-not-allowed': isRefreshing }"
+        :disabled="isRefreshing"
         @click="refreshStats"
       >
-        <span>🔄</span>
-        <span>刷新</span>
+        <span :class="{ 'animate-spin': isRefreshing }">🔄</span>
+        <span>{{ isRefreshing ? '刷新中...' : '刷新' }}</span>
       </button>
     </div>
 

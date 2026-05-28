@@ -132,7 +132,7 @@ export async function clearAllData(): Promise<void> {
   const db = await getDB()
   const tx = db.transaction(['ingredients', 'recipes', 'mealPlans', 'presets', 'matchHistory'], 'readwrite')
   await Promise.all([
-    tx.store.clear(),
+    tx.objectStore('ingredients').clear(),
     tx.objectStore('recipes').clear(),
     tx.objectStore('mealPlans').clear(),
     tx.objectStore('presets').clear(),
