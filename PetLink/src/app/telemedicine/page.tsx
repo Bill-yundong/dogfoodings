@@ -73,6 +73,8 @@ type ConsultType = 'video' | 'message' | 'appointment' | null;
 export default function TelemedicinePage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDoctorSelect, setShowDoctorSelect] = useState(false);
+  const [pendingConsultType, setPendingConsultType] = useState<ConsultType>(null);
   const [consultModal, setConsultModal] = useState<{ type: ConsultType; doctor: Doctor | null }>({ type: null, doctor: null });
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'doctor'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -92,12 +94,14 @@ export default function TelemedicinePage() {
   );
 
   const handleQuickAction = (type: ConsultType) => {
-    const onlineDoctors = doctors.filter((d) => d.online);
-    if (onlineDoctors.length > 0) {
-      setConsultModal({ type, doctor: onlineDoctors[0] });
-    } else {
-      setConsultModal({ type, doctor: null });
-    }
+    setPendingConsultType(type);
+    setShowDoctorSelect(true);
+  };
+
+  const handleSelectDoctor = (doctor: Doctor) => {
+    if (!doctor.online) return;
+    setShowDoctorSelect(false);
+    handleDoctorAction(pendingConsultType, doctor);
   };
 
   const handleDoctorAction = (type: ConsultType, doctor: Doctor) => {
@@ -126,6 +130,32 @@ export default function TelemedicinePage() {
   const handleAppointmentConfirm = () => {
     if (!appointmentDate || !appointmentTime) return;
     setAppointmentSuccess(true);
+  };
+
+  const getConsultTypeLabel = (type: ConsultType) => {
+    switch (type) {
+      case 'video':
+        return '视频问诊';
+      case 'message':
+        return '图文咨询';
+      case 'appointment':
+        return '预约挂号';
+      default:
+        return '';
+    }
+  };
+
+  const getConsultTypeIcon = (type: ConsultType) => {
+    switch (type) {
+      case 'video':
+        return <Video className="w-5 h-5" />;
+      case 'message':
+        return <MessageCircle className="w-5 h-5" />;
+      case 'appointment':
+        return <Calendar className="w-5 h-5" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -456,6 +486,71 @@ export default function TelemedicinePage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={showDoctorSelect}
+        onClose={() => setShowDoctorSelect(false)}
+        title={`选择医生 - ${getConsultTypeLabel(pendingConsultType)}`}
+        maxWidth="max-w-2xl"
+      >
+        <div className="flex items-center gap-2 mb-6 p-3 bg-slate-50 rounded-xl">
+          <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600">
+            {getConsultTypeIcon(pendingConsultType)}
+          </div>
+          <p className="text-sm text-slate-600">
+            请选择一位{getConsultTypeLabel(pendingConsultType)}医生
+          </p>
+        </div>
+        <div className="space-y-3 max-h-[500px] overflow-auto">
+          {doctors.filter(d => d.online).length === 0 ? (
+            <div className="text-center py-8">
+              <Stethoscope className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">暂无在线医生</p>
+            </div>
+          ) : (
+            doctors.filter(d => d.online).map((doctor) => (
+              <button
+                key={doctor.id}
+                onClick={() => handleSelectDoctor(doctor)}
+                className="w-full p-4 card card-hover flex items-center gap-4 text-left"
+              >
+                <div className="relative">
+                  <Image
+                    src={doctor.avatar}
+                    alt={doctor.name}
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 rounded-xl object-cover"
+                  />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-slate-800">{doctor.name}</h3>
+                    <span className="text-primary-600 font-semibold text-sm">¥{doctor.price}</span>
+                  </div>
+                  <p className="text-sm text-primary-600 font-medium">{doctor.specialty}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-slate-500">{doctor.hospital}</span>
+                    <span className="text-xs text-slate-400">·</span>
+                    <span className="text-xs text-slate-500">{doctor.experience}年经验</span>
+                    <span className="text-xs text-slate-400">·</span>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs text-slate-600">{doctor.rating}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-400 text-center">
+            目前只显示在线医生，离线医生暂不支持{getConsultTypeLabel(pendingConsultType)}
+          </p>
+        </div>
       </Modal>
     </div>
   );
