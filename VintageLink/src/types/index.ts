@@ -68,6 +68,7 @@ export interface SemanticMapping {
 }
 
 export interface MaturationModel {
+  id: string;
   wineId: string;
   currentAge: number;
   maturityScore: number;
@@ -87,6 +88,7 @@ export interface MaturationPrediction {
 }
 
 export interface DrinkingWindow {
+  id: string;
   wineId: string;
   windowStart: number;
   windowEnd: number;

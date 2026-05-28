@@ -120,9 +120,9 @@ export const Dashboard: React.FC = () => {
 
   const getAlertSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'warning': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'critical': return 'bg-red-900/50 text-red-400';
+      case 'warning': return 'bg-yellow-900/50 text-yellow-400';
+      default: return 'bg-blue-900/50 text-blue-400';
     }
   };
 
@@ -138,60 +138,67 @@ export const Dashboard: React.FC = () => {
   if (state.isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wine-500" />
       </div>
     );
   }
 
+  const tooltipStyle = {
+    backgroundColor: '#1f2937',
+    border: '1px solid #374151',
+    borderRadius: '8px',
+    color: '#e5e7eb',
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-serif font-bold text-wine-900">📊 酒窖总览</h2>
-        <div className="text-sm text-gray-500">
+        <h2 className="text-2xl font-serif font-bold text-wine-100">📊 酒窖总览</h2>
+        <div className="text-sm text-cellar-400">
           最后同步: {new Date(state.systemStatus.lastSyncTime).toLocaleString('zh-CN')}
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-wine-600 to-wine-700 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-wine-700 to-wine-800 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-wine-100 text-sm">藏酒总数</div>
+              <div className="text-wine-200 text-sm">藏酒总数</div>
               <div className="text-3xl font-bold mt-1">{stats.totalBottles}</div>
-              <div className="text-wine-200 text-xs mt-1">{state.bottles.length} 款不同酒标</div>
+              <div className="text-wine-300 text-xs mt-1">{state.bottles.length} 款不同酒标</div>
             </div>
             <span className="text-4xl">🍷</span>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-amber-100 text-sm">总估值</div>
+              <div className="text-amber-200 text-sm">总估值</div>
               <div className="text-3xl font-bold mt-1">¥{(stats.totalValue / 10000).toFixed(1)}万</div>
-              <div className="text-amber-200 text-xs mt-1">平均 ¥{(stats.totalValue / stats.totalBottles).toFixed(0)}/瓶</div>
+              <div className="text-amber-300 text-xs mt-1">平均 ¥{(stats.totalValue / stats.totalBottles).toFixed(0)}/瓶</div>
             </div>
             <span className="text-4xl">💰</span>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-blue-100 text-sm">传感器</div>
+              <div className="text-blue-200 text-sm">传感器</div>
               <div className="text-3xl font-bold mt-1">{stats.sensorCount}</div>
-              <div className="text-blue-200 text-xs mt-1">覆盖 {state.zones.length} 个区域</div>
+              <div className="text-blue-300 text-xs mt-1">覆盖 {state.zones.length} 个区域</div>
             </div>
             <span className="text-4xl">📡</span>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br ${stats.activeAlerts > 0 ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600'} rounded-xl shadow-lg p-6 text-white`}>
+        <div className={`bg-gradient-to-br ${stats.activeAlerts > 0 ? 'from-red-600 to-red-700' : 'from-green-600 to-green-700'} rounded-xl shadow-lg p-6 text-white`}>
           <div className="flex items-center justify-between">
             <div>
-              <div className={`text-${stats.activeAlerts > 0 ? 'red' : 'green'}-100 text-sm`}>活跃告警</div>
+              <div className={`text-${stats.activeAlerts > 0 ? 'red' : 'green'}-200 text-sm`}>活跃告警</div>
               <div className="text-3xl font-bold mt-1">{stats.activeAlerts}</div>
-              <div className={`text-${stats.activeAlerts > 0 ? 'red' : 'green'}-200 text-xs mt-1`}>
+              <div className={`text-${stats.activeAlerts > 0 ? 'red' : 'green'}-300 text-xs mt-1`}>
                 {stats.activeAlerts > 0 ? '需要关注' : '系统正常'}
               </div>
             </div>
@@ -203,8 +210,8 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">🌍 产区分布</h3>
+            <div className="bg-cellar-800 rounded-xl shadow-md p-6 border border-cellar-700">
+              <h3 className="text-lg font-semibold text-cellar-100 mb-4">🌍 产区分布</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -221,15 +228,15 @@ export const Dashboard: React.FC = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ color: '#9ca3af' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">📅 适饮状态</h3>
+            <div className="bg-cellar-800 rounded-xl shadow-md p-6 border border-cellar-700">
+              <h3 className="text-lg font-semibold text-cellar-100 mb-4">📅 适饮状态</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -246,57 +253,45 @@ export const Dashboard: React.FC = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ color: '#9ca3af' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🍇 年份分布</h3>
+          <div className="bg-cellar-800 rounded-xl shadow-md p-6 border border-cellar-700">
+            <h3 className="text-lg font-semibold text-cellar-100 mb-4">🍇 年份分布</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={vintageDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="vintage" stroke="#9ca3af" fontSize={11} />
                   <YAxis stroke="#9ca3af" fontSize={11} />
-                  <Tooltip />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" name="瓶数" fill="#b86244" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 最近入库</h3>
+          <div className="bg-cellar-800 rounded-xl shadow-md p-6 border border-cellar-700">
+            <h3 className="text-lg font-semibold text-cellar-100 mb-4">📋 最近入库</h3>
             <div className="grid grid-cols-3 gap-4">
               {recentWines.map((wine) => (
                 <div
                   key={wine.bottle.id}
-                  className="p-4 bg-gray-50 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer"
+                  className="p-4 bg-cellar-900 rounded-lg hover:bg-cellar-800 transition-colors cursor-pointer border border-cellar-700"
                   onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'assets' })}
                 >
-                  {wine.label?.imageUrl && (
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-200 mb-3">
-                      <img
-                        src={wine.label.imageUrl}
-                        alt={wine.label.chateau}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="font-medium text-gray-900 text-sm truncate">
+                  <div className="font-medium text-cellar-100 text-sm truncate">
                     {wine.label?.chateau}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-cellar-500">
                     {wine.label?.vintage} · {wine.zone?.name}
                   </div>
-                  <div className="text-xs text-wine-600 mt-1">
+                  <div className="text-xs text-wine-400 mt-1">
                     {wine.bottle.quantity} 瓶 · ¥{wine.bottle.purchasePrice.toLocaleString()}
                   </div>
                 </div>
@@ -306,11 +301,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="bg-cellar-800 rounded-xl shadow-md border border-cellar-700 overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-wine-800 to-wine-700 text-white">
               <h3 className="text-lg font-semibold">📢 最近告警</h3>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-cellar-700">
               {recentAlerts.length > 0 ? (
                 recentAlerts.map(alert => (
                   <div
@@ -330,20 +325,20 @@ export const Dashboard: React.FC = () => {
                             dispatch({ type: 'RESOLVE_ALERT', payload: alert.id });
                             db.resolveAlert(alert.id);
                           }}
-                          className="text-xs text-blue-600 hover:text-blue-800"
+                          className="text-xs text-blue-400 hover:text-blue-300"
                         >
                           处理
                         </button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700">{alert.message}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-sm text-cellar-300">{alert.message}</p>
+                    <p className="text-xs text-cellar-500 mt-1">
                       {new Date(alert.timestamp).toLocaleString('zh-CN')}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-cellar-500">
                   <div className="text-4xl mb-2">✅</div>
                   <p>暂无告警</p>
                 </div>
@@ -351,13 +346,13 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-4 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">🏠 区域状态</h3>
+          <div className="bg-cellar-800 rounded-xl shadow-md p-4 border border-cellar-700">
+            <h3 className="text-lg font-semibold text-cellar-100 mb-3">🏠 区域状态</h3>
             <div className="space-y-3">
               {zoneHealth.map((zone, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-gray-50 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer"
+                  className="p-3 bg-cellar-900 rounded-lg hover:bg-cellar-800 transition-colors cursor-pointer border border-cellar-700"
                   onClick={() => {
                     const zoneId = state.zones.find(z => z.name === zone.name)?.id;
                     if (zoneId) {
@@ -367,15 +362,15 @@ export const Dashboard: React.FC = () => {
                   }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900 text-sm">{zone.name}</span>
+                    <span className="font-medium text-cellar-100 text-sm">{zone.name}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      Number(zone.health) >= 80 ? 'bg-green-100 text-green-800' :
-                      Number(zone.health) >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                      Number(zone.health) >= 80 ? 'bg-green-900/50 text-green-400' :
+                      Number(zone.health) >= 60 ? 'bg-yellow-900/50 text-yellow-400' : 'bg-red-900/50 text-red-400'
                     }`}>
                       {zone.health} 分
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-cellar-700 rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all ${
                         Number(zone.health) >= 80 ? 'bg-green-500' :
@@ -384,7 +379,7 @@ export const Dashboard: React.FC = () => {
                       style={{ width: `${zone.health}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-xs text-cellar-500 mt-1">
                     <span>{zone.wineCount} 瓶藏酒</span>
                     <span>成熟度 {zone.avgMaturity}</span>
                   </div>
@@ -393,9 +388,9 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-wine-50 to-amber-50 rounded-xl shadow-md p-4 border border-wine-200">
-            <h3 className="text-lg font-semibold text-wine-900 mb-3">💡 今日提示</h3>
-            <div className="space-y-2 text-sm text-wine-800">
+          <div className="bg-gradient-to-br from-wine-900/30 to-cellar-800 rounded-xl shadow-md p-4 border border-wine-800/30">
+            <h3 className="text-lg font-semibold text-wine-200 mb-3">💡 今日提示</h3>
+            <div className="space-y-2 text-sm text-cellar-300">
               <p className="flex items-start">
                 <span className="mr-2">🌡️</span>
                 检查所有区域温度是否在目标范围内，避免剧烈波动

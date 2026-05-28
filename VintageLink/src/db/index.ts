@@ -224,11 +224,17 @@ class DatabaseManager {
 
   async getSensorReadingsByZone(zoneId: string, startTime?: number, endTime?: number): Promise<SensorReading[]> {
     const db = await this.getDB();
-    if (startTime && endTime) {
-      const range = IDBKeyRange.bound([zoneId, startTime], [zoneId, endTime]);
-      return db.getAllFromIndex('sensorReadings', 'by-zone-timestamp', range);
+    try {
+      if (startTime && endTime) {
+        const range = IDBKeyRange.bound([zoneId, startTime], [zoneId, endTime]);
+        return db.getAllFromIndex('sensorReadings', 'by-zone-timestamp', range);
+      }
+      return db.getAllFromIndex('sensorReadings', 'by-zone', zoneId);
+    } catch (error) {
+      console.warn('Error getting sensor readings, falling back to full scan:', error);
+      const allReadings = await db.getAll('sensorReadings');
+      return allReadings.filter(r => r.zoneId === zoneId);
     }
-    return db.getAllFromIndex('sensorReadings', 'by-zone', zoneId);
   }
 
   async getLatestSensorReading(zoneId: string): Promise<SensorReading | undefined> {

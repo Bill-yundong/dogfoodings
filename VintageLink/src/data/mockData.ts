@@ -283,6 +283,7 @@ export const generateMaturationModel = (label: WineLabel, bottle: WineBottle): M
   }
 
   return {
+    id: generateId(),
     wineId: bottle.id,
     currentAge,
     maturityScore,
@@ -299,6 +300,7 @@ export const generateDrinkingWindow = (label: WineLabel, bottle: WineBottle, mat
   const vintageTime = label.vintage * 31536000000;
 
   return {
+    id: generateId(),
     wineId: bottle.id,
     windowStart: vintageTime + label.agingPotential.peakStart * 31536000000,
     windowEnd: vintageTime + label.agingPotential.peakEnd * 31536000000,

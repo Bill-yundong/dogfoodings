@@ -46,7 +46,10 @@ type AppAction =
   | { type: 'SET_SELECTED_ZONE'; payload: string | null }
   | { type: 'SET_SELECTED_WINE'; payload: string | null }
   | { type: 'ADD_READING'; payload: SensorReading }
+  | { type: 'ADD_ALERT'; payload: Alert }
   | { type: 'RESOLVE_ALERT'; payload: string }
+  | { type: 'UPDATE_MATURATION_MODEL'; payload: MaturationModel }
+  | { type: 'UPDATE_DRINKING_WINDOW'; payload: DrinkingWindow }
   | { type: 'UPDATE_SYSTEM_STATUS'; payload: Partial<SystemStatus> }
   | { type: 'UPDATE_LAST_UPDATE'; payload: number };
 
@@ -118,6 +121,29 @@ function appReducer(state: AppState, action: AppAction): AppState {
           ...state.systemStatus,
           activeAlerts: state.systemStatus.activeAlerts - 1,
         },
+      };
+    case 'ADD_ALERT':
+      return {
+        ...state,
+        alerts: [action.payload, ...state.alerts].slice(0, 100),
+        systemStatus: {
+          ...state.systemStatus,
+          activeAlerts: state.systemStatus.activeAlerts + (action.payload.resolved ? 0 : 1),
+        },
+      };
+    case 'UPDATE_MATURATION_MODEL':
+      return {
+        ...state,
+        maturationModels: state.maturationModels.some(m => m.wineId === action.payload.wineId)
+          ? state.maturationModels.map(m => m.wineId === action.payload.wineId ? action.payload : m)
+          : [...state.maturationModels, action.payload],
+      };
+    case 'UPDATE_DRINKING_WINDOW':
+      return {
+        ...state,
+        drinkingWindows: state.drinkingWindows.some(w => w.wineId === action.payload.wineId)
+          ? state.drinkingWindows.map(w => w.wineId === action.payload.wineId ? action.payload : w)
+          : [...state.drinkingWindows, action.payload],
       };
     case 'UPDATE_SYSTEM_STATUS':
       return {
@@ -241,27 +267,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         maturationModels = mockData.maturationModels;
         drinkingWindows = mockData.drinkingWindows;
       } else {
-        [labels, zones, bottles, alerts, drinkingWindows] = await Promise.all([
-          db.getAllWineLabels(),
-          db.getAllCellarZones(),
-          db.getAllWineBottles(),
-          db.getActiveAlerts(),
-          db.getAllDrinkingWindows(),
-        ]);
+        try {
+          [labels, zones, bottles, alerts, drinkingWindows] = await Promise.all([
+            db.getAllWineLabels(),
+            db.getAllCellarZones(),
+            db.getAllWineBottles(),
+            db.getActiveAlerts(),
+            db.getAllDrinkingWindows(),
+          ]);
 
-        const [maturationModelsResult, readingsResult] = await Promise.all([
-          Promise.all(bottles.map(b => db.getMaturationModel(b.id))).then(r =>
-            r.filter(Boolean) as MaturationModel[]
-          ),
-          Promise.all(
-            zones.map(zone =>
-              db.getSensorReadingsByZone(zone.id, Date.now() - 86400000 * 30, Date.now())
-            )
-          ),
-        ]);
+          const [maturationModelsResult, readingsResult] = await Promise.all([
+            Promise.all(bottles.map(b => db.getMaturationModel(b.id))).then(r =>
+              r.filter(Boolean) as MaturationModel[]
+            ),
+            Promise.all(
+              zones.map(zone =>
+                db.getSensorReadingsByZone(zone.id, Date.now() - 86400000 * 30, Date.now())
+              )
+            ),
+          ]);
 
-        maturationModels = maturationModelsResult;
-        allReadings = readingsResult.flat();
+          maturationModels = maturationModelsResult;
+          allReadings = readingsResult.flat();
+        } catch (dbError) {
+          console.warn('Database read error, regenerating mock data:', dbError);
+          const mockData = await generateMockDataset();
+          labels = mockData.labels;
+          zones = mockData.zones;
+          bottles = mockData.bottles;
+          allReadings = mockData.readings;
+          alerts = mockData.alerts;
+          maturationModels = mockData.maturationModels;
+          drinkingWindows = mockData.drinkingWindows;
+        }
       }
 
       dispatch({ type: 'SET_LABELS', payload: labels });
@@ -293,7 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.zones, state.alerts, state.bottles]);
+  }, []);
 
   useEffect(() => {
     initializeData();
@@ -308,32 +346,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dispatch({ type: 'UPDATE_LAST_UPDATE', payload: Date.now() });
       },
       onAlert: (alert) => {
-        dispatch({ type: 'SET_ALERTS', payload: [...state.alerts, alert] });
+        dispatch({ type: 'ADD_ALERT', payload: alert });
       },
       onMaturationUpdate: (model) => {
-        dispatch({
-          type: 'SET_MATURATION_MODELS',
-          payload: state.maturationModels.map(m => m.wineId === model.wineId ? model : m),
-        });
+        dispatch({ type: 'UPDATE_MATURATION_MODEL', payload: model });
       },
       onDrinkingWindowUpdate: (window) => {
-        dispatch({
-          type: 'SET_DRINKING_WINDOWS',
-          payload: state.drinkingWindows.map(w => w.wineId === window.wineId ? window : w),
-        });
+        dispatch({ type: 'UPDATE_DRINKING_WINDOW', payload: window });
       },
     });
 
     simulationEngine.initialize(state.zones, state.bottles, state.labels);
 
     const unsub = simulationEngine.subscribe((newState) => {
-      setSimulationState(newState);
-      setSimulationEvents(newState.eventLog);
+      setSimulationState({ ...newState });
+      setSimulationEvents([...newState.eventLog]);
     });
+
+    const initialState = simulationEngine.getState();
+    setSimulationState({ ...initialState });
+    setSimulationEvents([...initialState.eventLog]);
 
     return () => {
       unsub();
-      simulationEngine.destroy();
+      simulationEngine.stop();
     };
   }, [state.isInitialized]);
 
