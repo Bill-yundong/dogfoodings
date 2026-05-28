@@ -157,6 +157,80 @@ export class CareRecommenderService {
     const info = this.ingredientDatabase[key as keyof typeof this.ingredientDatabase]
     return info || null
   }
+
+  generateDetailedReport(carePlan: CarePlan, features: SkinFeatures): string {
+    const typeLabels: Record<string, string> = {
+      cleanser: '洁面',
+      toner: '爽肤水',
+      serum: '精华',
+      moisturizer: '保湿',
+      sunscreen: '防晒'
+    }
+
+    const featureLabels: Record<string, string> = {
+      moisture: '含水量',
+      oiliness: '油脂分泌',
+      elasticity: '肌肤弹性',
+      roughness: '粗糙度',
+      poreSize: '毛孔大小',
+      wrinkles: '细纹程度'
+    }
+
+    let report = '='.repeat(50) + '\n'
+    report += '           DermaLogic 个性化护理方案报告\n'
+    report += '='.repeat(50) + '\n\n'
+    report += `生成日期: ${new Date().toLocaleDateString('zh-CN')}\n`
+    report += `方案有效期: ${new Date(carePlan.startDate).toLocaleDateString('zh-CN')} - ${new Date(carePlan.endDate).toLocaleDateString('zh-CN')}\n\n`
+
+    report += '-'.repeat(50) + '\n'
+    report += '一、肤质检测分析\n'
+    report += '-'.repeat(50) + '\n\n'
+
+    Object.entries(features).forEach(([key, value]) => {
+      if (key !== 'activeIngredients') {
+        const label = featureLabels[key] || key
+        const status = (value as number) >= 70 ? '优秀' : (value as number) >= 50 ? '良好' : '需改善'
+        report += `  ${label}: ${Math.round(value as number)}% [${status}]\n`
+      }
+    })
+
+    report += '\n' + '-'.repeat(50) + '\n'
+    report += '二、活性成分分布\n'
+    report += '-'.repeat(50) + '\n\n'
+
+    Object.entries(features.activeIngredients).forEach(([key, data]) => {
+      const name = key === 'hyaluronic_acid' ? '透明质酸' :
+                   key === 'niacinamide' ? '烟酰胺' :
+                   key === 'vitamin_c' ? '维生素C' :
+                   key === 'retinol' ? '视黄醇' : '肽类'
+      report += `  ${name}: ${Math.round((data as { concentration: number }).concentration)}%\n`
+    })
+
+    report += '\n' + '-'.repeat(50) + '\n'
+    report += '三、推荐护理流程\n'
+    report += '-'.repeat(50) + '\n\n'
+
+    carePlan.recommendations.forEach((rec, index) => {
+      report += `${index + 1}. [${typeLabels[rec.type] || rec.type}] ${rec.product}\n`
+      report += `   匹配度: ${rec.matchScore}%\n`
+      report += `   使用频率: ${rec.frequency}\n`
+      report += `   核心成分: ${rec.ingredients.join('、')}\n\n`
+    })
+
+    report += '-'.repeat(50) + '\n'
+    report += '四、护理建议\n'
+    report += '-'.repeat(50) + '\n\n'
+    report += '  1. 请按照推荐频率坚持使用产品\n'
+    report += '  2. 建议每2周进行一次肤质检测，追踪护理效果\n'
+    report += '  3. 如出现皮肤不适，请立即停用并咨询专业人士\n'
+    report += '  4. 保持良好的作息和饮食习惯，由内而外改善肤质\n\n'
+
+    report += '='.repeat(50) + '\n'
+    report += '                祝您拥有健康美丽的肌肤！\n'
+    report += '='.repeat(50) + '\n'
+
+    return report
+  }
 }
 
 export const careRecommender = new CareRecommenderService()

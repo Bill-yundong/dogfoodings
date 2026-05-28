@@ -257,6 +257,16 @@ export class SkinRenderer {
     this.renderer.setSize(width, height)
   }
 
+  zoomIn(): void {
+    if (!this.camera) return
+    this.camera.position.z = Math.max(3, this.camera.position.z - 0.5)
+  }
+
+  zoomOut(): void {
+    if (!this.camera) return
+    this.camera.position.z = Math.min(10, this.camera.position.z + 0.5)
+  }
+
   dispose(): void {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId)

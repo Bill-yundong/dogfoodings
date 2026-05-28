@@ -3,9 +3,10 @@
   import { skinScans, latestScan, loadUserData, currentUser } from '../stores/appStore'
   import { careRecommender } from '../services/careRecommender'
   import type { CarePlan } from '../types'
-  import { Heart, Sparkles, Clock, CheckCircle2, Droplets, Sun, Zap, Wind } from 'lucide-svelte'
+  import { Heart, Sparkles, Clock, CheckCircle2, Droplets, Sun, Zap, Wind, Download } from 'lucide-svelte'
 
   let carePlan: CarePlan | null = null
+  let isGeneratingReport = false
 
   onMount(async () => {
     await loadUserData($currentUser.id)
@@ -13,6 +14,28 @@
       carePlan = careRecommender.generateCarePlan($latestScan.features, $currentUser.id)
     }
   })
+
+  function generateReport() {
+    if (!carePlan || !$latestScan || isGeneratingReport) return
+    
+    isGeneratingReport = true
+    
+    setTimeout(() => {
+      const report = careRecommender.generateDetailedReport(carePlan!, $latestScan!.features)
+      
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `DermaLogic护理方案报告_${new Date().toLocaleDateString('zh-CN')}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      isGeneratingReport = false
+    }, 500)
+  }
 
   const typeLabels: Record<string, { label: string; icon: unknown }> = {
     cleanser: { label: '洁面', icon: Droplets },
@@ -130,8 +153,18 @@
           </div>
         </div>
 
-        <button class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary-500/25 transition-all duration-300 font-medium">
-          生成详细方案报告
+        <button 
+          onclick={generateReport}
+          disabled={isGeneratingReport}
+          class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary-500/25 transition-all duration-300 font-medium disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {#if isGeneratingReport}
+            <span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            <span>生成中...</span>
+          {:else}
+            <Download class="w-5 h-5" />
+            <span>生成详细方案报告</span>
+          {/if}
         </button>
       </div>
     </div>

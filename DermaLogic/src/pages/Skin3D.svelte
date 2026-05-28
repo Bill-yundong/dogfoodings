@@ -69,14 +69,23 @@
       </div>
       <div class="flex items-center gap-2">
         <button 
-          onclick={() => skinRenderer.resize()}
+          onclick={() => skinRenderer.zoomIn()}
           class="p-2.5 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          title="放大"
         >
           <ZoomIn class="w-5 h-5 text-gray-600" />
         </button>
         <button 
+          onclick={() => skinRenderer.zoomOut()}
+          class="p-2.5 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          title="缩小"
+        >
+          <ZoomOut class="w-5 h-5 text-gray-600" />
+        </button>
+        <button 
           onclick={resetView}
           class="p-2.5 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          title="重置视图"
         >
           <RotateCcw class="w-5 h-5 text-gray-600" />
         </button>
