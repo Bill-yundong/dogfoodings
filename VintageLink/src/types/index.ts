@@ -117,4 +117,4 @@ export interface SystemStatus {
   lastSyncTime: number;
 }
 
-export type TabType = 'dashboard' | 'monitoring' | 'assets' | 'prediction' | 'alignment';
+export type TabType = 'dashboard' | 'monitoring' | 'assets' | 'prediction' | 'alignment' | 'simulation';

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useState } from 'react';
 import type {
   WineLabel,
   CellarZone,
@@ -12,6 +12,8 @@ import type {
 } from '@/types';
 import { db } from '@/db';
 import { generateMockDataset } from '@/data/mockData';
+import { simulationEngine } from '@/models/SimulationEngine';
+import type { SimulationState, SimulationSpeed, SimulationEvent } from '@/models/SimulationEngine';
 
 interface AppState {
   labels: WineLabel[];
@@ -143,12 +145,20 @@ interface AppContextType {
   getMaturationByWine: (wineId: string) => MaturationModel | undefined;
   getWindowByWine: (wineId: string) => DrinkingWindow | undefined;
   getWinesByZone: (zoneId: string) => { bottle: WineBottle; label: WineLabel }[];
+  simulationState: SimulationState;
+  simulationEvents: SimulationEvent[];
+  startSimulation: (speed?: SimulationSpeed) => void;
+  stopSimulation: () => void;
+  setSimulationSpeed: (speed: SimulationSpeed) => void;
+  resetSimulation: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [simulationState, setSimulationState] = useState<SimulationState>(simulationEngine.getState());
+  const [simulationEvents, setSimulationEvents] = useState<SimulationEvent[]>([]);
 
   const getLabelById = useCallback(
     (id: string) => state.labels.find(l => l.id === id),
@@ -292,31 +302,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (!state.isInitialized) return;
 
-    const interval = setInterval(() => {
-      state.zones.forEach(zone => {
-        zone.sensorIds.forEach(() => {
-          const tempVariation = (Math.random() - 0.5) * 2;
-          const humidityVariation = (Math.random() - 0.5) * 5;
-
-          const newReading: SensorReading = {
-            id: Math.random().toString(36).substring(2, 15),
-            timestamp: Date.now(),
-            zoneId: zone.id,
-            temperature: zone.targetTemperature.optimal + tempVariation,
-            humidity: Math.max(50, Math.min(85, zone.targetHumidity.optimal + humidityVariation)),
-            lightIntensity: Math.random() * 30,
-            vibration: Math.random() * 0.3,
-          };
-
-          db.addSensorReading(newReading);
-          dispatch({ type: 'ADD_READING', payload: newReading });
-          dispatch({ type: 'UPDATE_LAST_UPDATE', payload: Date.now() });
+    simulationEngine.setCallbacks({
+      onSensorReading: (reading) => {
+        dispatch({ type: 'ADD_READING', payload: reading });
+        dispatch({ type: 'UPDATE_LAST_UPDATE', payload: Date.now() });
+      },
+      onAlert: (alert) => {
+        dispatch({ type: 'SET_ALERTS', payload: [...state.alerts, alert] });
+      },
+      onMaturationUpdate: (model) => {
+        dispatch({
+          type: 'SET_MATURATION_MODELS',
+          payload: state.maturationModels.map(m => m.wineId === model.wineId ? model : m),
         });
-      });
-    }, 5000);
+      },
+      onDrinkingWindowUpdate: (window) => {
+        dispatch({
+          type: 'SET_DRINKING_WINDOWS',
+          payload: state.drinkingWindows.map(w => w.wineId === window.wineId ? window : w),
+        });
+      },
+    });
 
-    return () => clearInterval(interval);
-  }, [state.isInitialized, state.zones]);
+    simulationEngine.initialize(state.zones, state.bottles, state.labels);
+
+    const unsub = simulationEngine.subscribe((newState) => {
+      setSimulationState(newState);
+      setSimulationEvents(newState.eventLog);
+    });
+
+    return () => {
+      unsub();
+      simulationEngine.destroy();
+    };
+  }, [state.isInitialized]);
+
+  const startSimulation = useCallback((speed?: SimulationSpeed) => {
+    simulationEngine.start(speed || '1x');
+  }, []);
+
+  const stopSimulation = useCallback(() => {
+    simulationEngine.stop();
+  }, []);
+
+  const setSimulationSpeed = useCallback((speed: SimulationSpeed) => {
+    simulationEngine.setSpeed(speed);
+  }, []);
+
+  const resetSimulation = useCallback(async () => {
+    await simulationEngine.reset();
+  }, []);
 
   return (
     <AppContext.Provider
@@ -331,6 +366,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getMaturationByWine,
         getWindowByWine,
         getWinesByZone,
+        simulationState,
+        simulationEvents,
+        startSimulation,
+        stopSimulation,
+        setSimulationSpeed,
+        resetSimulation,
       }}
     >
       {children}

@@ -5,6 +5,7 @@ import { MonitoringPanel } from '@/components/MonitoringPanel';
 import { AssetManagement } from '@/components/AssetManagement';
 import { PredictionPanel } from '@/components/PredictionPanel';
 import { SemanticAlignmentPanel } from '@/components/SemanticAlignmentPanel';
+import { SimulationPanel } from '@/components/SimulationPanel';
 
 function App() {
   const { state } = useApp();
@@ -22,6 +23,8 @@ function App() {
         return <PredictionPanel />;
       case 'alignment':
         return <SemanticAlignmentPanel />;
+      case 'simulation':
+        return <SimulationPanel />;
       default:
         return <Dashboard />;
     }

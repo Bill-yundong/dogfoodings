@@ -8,6 +8,7 @@ const tabs: { id: TabType; label: string; icon: string }[] = [
   { id: 'assets', label: '资产管理', icon: '🍷' },
   { id: 'prediction', label: '适饮预测', icon: '📈' },
   { id: 'alignment', label: '语义对齐', icon: '🔗' },
+  { id: 'simulation', label: '仿真引擎', icon: '🧪' },
 ];
 
 export const Navigation: React.FC = () => {
