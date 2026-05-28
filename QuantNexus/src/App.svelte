@@ -54,6 +54,8 @@
       ['kline', 'orderbook', 'trades', 'liquidation'].forEach(type => {
         connectionStatus[type] = wsClient.getConnectionStatus(type);
       });
+      
+      startStatusMonitoring();
     } catch (e) {
       console.error('[App] 连接数据流失败:', e);
     }
@@ -65,10 +67,28 @@
     Object.keys(connectionStatus).forEach(key => {
       connectionStatus[key] = false;
     });
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
+    }
+    if (systemStatus) {
+      systemStatus = {
+        ...systemStatus,
+        latency: -1,
+        syncStatus: 'paused'
+      };
+    }
   }
 
   function startStatusMonitoring() {
+    if (statusInterval) {
+      clearInterval(statusInterval);
+    }
     statusInterval = window.setInterval(async () => {
+      if (!isConnected) {
+        return;
+      }
+      
       ['kline', 'orderbook', 'trades', 'liquidation'].forEach(type => {
         connectionStatus[type] = wsClient.getConnectionStatus(type);
       });
@@ -206,7 +226,7 @@
         <div class="status-item">
           <span class="status-label">同步</span>
           <span class={`status-value sync ${systemStatus.syncStatus}`}>
-            {systemStatus.syncStatus === 'synced' ? '✓' : systemStatus.syncStatus === 'syncing' ? '⟳' : '!'}
+            {systemStatus.syncStatus === 'synced' ? '✓' : systemStatus.syncStatus === 'syncing' ? '⟳' : systemStatus.syncStatus === 'paused' ? '⏸' : '!'}
           </span>
         </div>
       {/if}
@@ -531,6 +551,10 @@
 
   .status-value.sync.error {
     color: #ef4444;
+  }
+
+  .status-value.sync.paused {
+    color: #6b7280;
   }
 
   @keyframes spin {

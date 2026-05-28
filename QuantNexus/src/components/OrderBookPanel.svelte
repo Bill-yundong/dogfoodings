@@ -19,6 +19,22 @@
     if (unsubscribeOrderBook) unsubscribeOrderBook();
   });
 
+  $effect(() => {
+    const currentSymbol = symbol;
+    return () => {
+      if (unsubscribeOrderBook) {
+        unsubscribeOrderBook();
+        unsubscribeOrderBook = null;
+      }
+    };
+  });
+
+  $effect(() => {
+    symbol;
+    orderBook = null;
+    subscribeToOrderBook();
+  });
+
   function subscribeToOrderBook() {
     unsubscribeOrderBook = wsClient.on<OrderBook>('orderbook', (data) => {
       if (data.symbol !== symbol) return;

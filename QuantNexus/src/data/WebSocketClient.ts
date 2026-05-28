@@ -313,6 +313,8 @@ export class WebSocketClient {
   }
 
   getLatency(type: string): number {
+    const isConnected = this.isConnected.get(type);
+    if (!isConnected) return -1;
     const lastMsg = this.lastMessageTime.get(type);
     return lastMsg ? Date.now() - lastMsg : -1;
   }
@@ -329,8 +331,17 @@ export class WebSocketClient {
     let basePrice = 67500 + Math.random() * 5000;
     let lastVolume = 1000;
 
+    this.isConnected.set(type, true);
+    this.lastMessageTime.set(type, Date.now());
+
     const interval = window.setInterval(async () => {
+      if (!this.isConnected.get(type)) {
+        clearInterval(interval);
+        return;
+      }
+      
       const now = Date.now();
+      this.lastMessageTime.set(type, now);
       
       switch (type) {
         case 'kline': {

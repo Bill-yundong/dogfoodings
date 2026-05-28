@@ -112,7 +112,7 @@ export interface SystemStatus {
   timestamp: number;
   latency: number;
   dataConsistency: number;
-  syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  syncStatus: 'idle' | 'syncing' | 'synced' | 'error' | 'paused';
   lastSyncTime: number;
   pendingOperations: number;
   databaseSize: number;
