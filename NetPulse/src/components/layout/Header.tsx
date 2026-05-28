@@ -52,8 +52,8 @@ export const Header: Component<HeaderProps> = (props) => {
   ];
 
   const connectionStatus = () => {
-    if (!hub.state.isMonitoring) return 'offline';
-    switch (hub.state.connectionStatus) {
+    if (!hub.isMonitoring()) return 'offline';
+    switch (hub.connectionStatus()) {
       case 'connected':
         return 'online';
       case 'connecting':
@@ -109,7 +109,7 @@ export const Header: Component<HeaderProps> = (props) => {
 
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 text-sm">
-            {hub.state.isMonitoring && (
+            {hub.isMonitoring() && (
               <>
                 <div class="flex items-center gap-2 text-metal-300">
                   <Wifi class="w-4 h-4 text-neon-cyan" />
@@ -128,12 +128,12 @@ export const Header: Component<HeaderProps> = (props) => {
           <button
             onClick={props.onToggleMonitor}
             class={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
-              hub.state.isMonitoring
+              hub.isMonitoring()
                 ? 'bg-alert-red/10 text-alert-red border border-alert-red/30 hover:bg-alert-red/20'
                 : 'bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/20'
             }`}
           >
-            {hub.state.isMonitoring ? (
+            {hub.isMonitoring() ? (
               <>
                 <PowerOff class="w-4 h-4" />
                 <span>停止监测</span>

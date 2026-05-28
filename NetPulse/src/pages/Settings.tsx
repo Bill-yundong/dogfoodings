@@ -19,7 +19,7 @@ import { DEFAULT_CONFIG } from '@shared/protocol';
 export const Settings: Component = () => {
   const hub = useHub();
   const [saved, setSaved] = createSignal(false);
-  const [config, setConfig] = createSignal({ ...hub.state.config });
+  const [config, setConfig] = createSignal({ ...hub.config() });
 
   const handleSave = () => {
     hub.updateConfig(config());
@@ -338,32 +338,32 @@ export const Settings: Component = () => {
                 <span class="text-metal-400">监测状态</span>
                 <span
                   class={
-                    hub.state.isMonitoring
+                    hub.isMonitoring()
                       ? 'text-alert-green font-medium'
                       : 'text-metal-500'
                   }
                 >
-                  {hub.state.isMonitoring ? '运行中' : '未启动'}
+                  {hub.isMonitoring() ? '运行中' : '未启动'}
                 </span>
               </div>
               <div class="flex justify-between">
                 <span class="text-metal-400">连接状态</span>
                 <span
                   class={
-                    hub.state.connectionStatus === 'connected'
+                    hub.connectionStatus() === 'connected'
                       ? 'text-alert-green font-medium'
-                      : hub.state.connectionStatus === 'error'
+                      : hub.connectionStatus() === 'error'
                       ? 'text-alert-red'
                       : 'text-metal-500'
                   }
                 >
-                  {hub.state.connectionStatus === 'connected'
+                  {hub.connectionStatus() === 'connected'
                     ? '已连接'
-                    : hub.state.connectionStatus === 'connecting'
+                    : hub.connectionStatus() === 'connecting'
                     ? '连接中'
-                    : hub.state.connectionStatus === 'reconnecting'
+                    : hub.connectionStatus() === 'reconnecting'
                     ? '重连中'
-                    : hub.state.connectionStatus === 'error'
+                    : hub.connectionStatus() === 'error'
                     ? '连接错误'
                     : '未连接'}
                 </span>
@@ -371,19 +371,19 @@ export const Settings: Component = () => {
               <div class="flex justify-between">
                 <span class="text-metal-400">活跃节点</span>
                 <span class="text-metal-200 font-mono">
-                  {hub.state.nodes.filter((n) => n.status === 'online').length}/
-                  {hub.state.nodes.length}
+                  {hub.nodes().filter((n) => n.status === 'online').length}/
+                  {hub.nodes().length}
                 </span>
               </div>
               <div class="flex justify-between">
                 <span class="text-metal-400">告警数量</span>
                 <span class="text-metal-200 font-mono">
-                  {hub.state.alerts.filter((a) => !a.dismissed).length}
+                  {hub.alerts().filter((a) => !a.dismissed).length}
                 </span>
               </div>
               <div class="flex justify-between">
                 <span class="text-metal-400">总切换次数</span>
-                <span class="text-metal-200 font-mono">{hub.state.recentSwitches.length}</span>
+                <span class="text-metal-200 font-mono">{hub.recentSwitches().length}</span>
               </div>
             </div>
           </div>

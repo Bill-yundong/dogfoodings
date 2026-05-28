@@ -16,19 +16,21 @@ export const Dashboard: Component = () => {
   const [displayAlerts] = createSignal(true);
 
   const latestResult = createMemo(() => {
-    if (!hub.state.activePath) return null;
-    return hub.latestResult(hub.state.activePath);
+    const ap = hub.activePath();
+    if (!ap) return null;
+    return hub.latestResult(ap);
   });
 
   const activePathHistory = createMemo(() => {
-    if (!hub.state.activePath) return [] as ProbeResult[];
-    return hub.pathHistory(hub.state.activePath, 60);
+    const ap = hub.activePath();
+    if (!ap) return [] as ProbeResult[];
+    return hub.pathHistory(ap, 60);
   });
 
   const activeQuality = createMemo(() => hub.getActivePathQuality());
   const activeNode = createMemo(() => hub.getActiveNode());
   const activeAlerts = createMemo(() =>
-    hub.state.alerts.filter((a) => !a.dismissed).slice(0, 3)
+    hub.alerts().filter((a) => !a.dismissed).slice(0, 3)
   );
 
   const avgLatency = createMemo(() => {
@@ -76,17 +78,17 @@ export const Dashboard: Component = () => {
         <div>
           <h2 class="font-display text-2xl font-bold text-metal-100">实时监控仪表盘</h2>
           <p class="text-metal-400 text-sm mt-1">
-            {hub.state.isMonitoring
+            {hub.isMonitoring()
               ? `正在通过 ${activeNode()?.name || '未知节点'} 进行实时监测`
               : '监测未启动，点击右上角开始按钮开始'}
           </p>
         </div>
         <div class="flex items-center gap-3">
           <StatusIndicator
-            status={hub.state.isMonitoring ? 'online' : 'offline'}
+            status={hub.isMonitoring() ? 'online' : 'offline'}
             showLabel
           />
-          {hub.state.isMonitoring && activeNode() && (
+          {hub.isMonitoring() && activeNode() && (
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-space-800 border border-white/10">
               <Server class="w-4 h-4 text-neon-cyan" />
               <span class="text-sm text-metal-300">{activeNode()?.name}</span>
@@ -109,7 +111,7 @@ export const Dashboard: Component = () => {
           ).toFixed(1)}ms`}
           icon={Clock}
           description="最近60个样本的平均时延"
-          alert={!!(latestResult()?.latency && latestResult()!.latency > hub.state.config.latencyThreshold)}
+          alert={!!(latestResult()?.latency && latestResult()!.latency > hub.config().latencyThreshold)}
         />
         <MetricCard
           title="时延抖动"
@@ -118,7 +120,7 @@ export const Dashboard: Component = () => {
           quality={getQualityLevel(100 - avgJitter() * 2)}
           icon={Activity}
           description="时延变化的标准差"
-          alert={!!(latestResult()?.jitter && latestResult()!.jitter > hub.state.config.jitterThreshold)}
+          alert={!!(latestResult()?.jitter && latestResult()!.jitter > hub.config().jitterThreshold)}
         />
         <MetricCard
           title="丢包率"
@@ -127,7 +129,7 @@ export const Dashboard: Component = () => {
           quality={getQualityLevel(100 - avgPacketLoss() * 20)}
           icon={Wifi}
           description="最近60个样本的平均丢包率"
-          alert={avgPacketLoss() > hub.state.config.lossThreshold}
+          alert={avgPacketLoss() > hub.config().lossThreshold}
         />
         <MetricCard
           title="可用带宽"
@@ -151,7 +153,7 @@ export const Dashboard: Component = () => {
         <div class="grid grid-cols-2 lg:grid-cols-1 gap-4">
           <PacketLossGauge
             data={activePathHistory()}
-            threshold={hub.state.config.lossThreshold}
+            threshold={hub.config().lossThreshold}
           />
           {activeQuality() && (
             <QualityScoreGauge
@@ -164,8 +166,8 @@ export const Dashboard: Component = () => {
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SwitchTimeline
-          events={hub.state.recentSwitches}
-          nodes={hub.state.nodes}
+          events={hub.recentSwitches()}
+          nodes={hub.nodes()}
         />
 
         <div class="glass-card p-5">

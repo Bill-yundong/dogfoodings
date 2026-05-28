@@ -9,7 +9,7 @@ export const Paths: Component = () => {
 
   const pathQualities = createMemo(() => {
     const qualities = new Map<string, any>();
-    for (const node of hub.state.nodes) {
+    for (const node of hub.nodes()) {
       const quality = hub.getPathQuality(node.id);
       if (quality) {
         qualities.set(node.id, quality);
@@ -19,10 +19,10 @@ export const Paths: Component = () => {
   });
 
   const recommendedPath = createMemo(() => {
-    if (!hub.state.isMonitoring) return null;
+    if (!hub.isMonitoring()) return null;
 
     let best: { id: string; score: number } | null = null;
-    for (const node of hub.state.nodes.filter((n) => n.status === 'online')) {
+    for (const node of hub.nodes().filter((n) => n.status === 'online')) {
       const quality = hub.getPathQuality(node.id);
       if (quality && (!best || quality.overallScore > best.score)) {
         best = { id: node.id, score: quality.overallScore };
@@ -45,7 +45,7 @@ export const Paths: Component = () => {
           </p>
         </div>
         <div class="flex items-center gap-3">
-          {hub.state.config.autoSwitch && (
+          {hub.config().autoSwitch && (
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-alert-green/10 border border-alert-green/30">
               <Sparkles class="w-4 h-4 text-alert-green" />
               <span class="text-sm text-alert-green font-medium">智能切换已启用</span>
@@ -55,7 +55,7 @@ export const Paths: Component = () => {
       </div>
 
       {recommendedPath() &&
-        recommendedPath()!.id !== hub.state.activePath && (
+        recommendedPath()!.id !== hub.activePath() && (
           <div class="glass-card p-5 border border-neon-cyan/30 animate-pulse-glow text-neon-cyan">
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 rounded-xl bg-neon-cyan/20 flex items-center justify-center flex-shrink-0">
@@ -66,7 +66,7 @@ export const Paths: Component = () => {
                 <p class="text-sm text-metal-300 mt-1">
                   检测到{' '}
                   <span class="text-neon-cyan font-semibold">
-                    {hub.state.nodes.find((n) => n.id === recommendedPath()!.id)?.name}
+                    {hub.nodes().find((n) => n.id === recommendedPath()!.id)?.name}
                   </span>{' '}
                   当前质量更优，建议切换以获得更好的网络体验。
                 </p>
@@ -82,9 +82,9 @@ export const Paths: Component = () => {
         )}
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {hub.state.nodes.map((node) => {
+        {hub.nodes().map((node) => {
           const quality = hub.getPathQuality(node.id);
-          const isActive = hub.state.activePath === node.id;
+          const isActive = hub.activePath() === node.id;
 
           return (
             <div class="glass-card p-5">
@@ -211,16 +211,16 @@ export const Paths: Component = () => {
         })}
       </div>
 
-      {hub.state.isMonitoring && (
+      {hub.isMonitoring() && (
         <PathComparison
-          nodes={hub.state.nodes}
+          nodes={hub.nodes()}
           pathQualities={pathQualities()}
-          activePath={hub.state.activePath}
+          activePath={hub.activePath()}
           onSelectPath={handleSelectPath}
         />
       )}
 
-      {!hub.state.isMonitoring && (
+      {!hub.isMonitoring() && (
         <div class="glass-card p-12 text-center">
           <Network class="w-16 h-16 mx-auto mb-4 text-metal-600" />
           <h3 class="font-display text-xl font-semibold text-metal-300 mb-2">

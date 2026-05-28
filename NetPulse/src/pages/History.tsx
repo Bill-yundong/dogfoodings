@@ -439,7 +439,7 @@ export const History: Component = () => {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="p-4 rounded-xl bg-space-800">
             <p class="text-xs text-metal-400 mb-1">数据保留周期</p>
-            <p class="text-xl font-semibold text-metal-100">{hub.state.config.dataRetentionDays} 天</p>
+            <p class="text-xl font-semibold text-metal-100">{hub.config().dataRetentionDays} 天</p>
           </div>
           <div class="p-4 rounded-xl bg-space-800">
             <p class="text-xs text-metal-400 mb-1">探测记录数</p>

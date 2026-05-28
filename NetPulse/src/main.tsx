@@ -26,10 +26,10 @@ const AppLayout: Component<RouteSectionProps> = (props) => {
   });
 
   const handleToggleMonitor = () => {
-    if (hub.state.isMonitoring) {
+    if (hub.isMonitoring()) {
       hub.stopMonitoring();
     } else {
-      void hub.startMonitoring();
+      hub.startMonitoring();
     }
   };
 
