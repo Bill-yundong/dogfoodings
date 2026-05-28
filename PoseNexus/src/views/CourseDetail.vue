@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCourseStore } from '@/stores/course'
 import { useUserStore } from '@/stores/user'
+import { getCourseThumbnail } from '@/utils/courseImages'
 import {
   Clock,
   Star,
@@ -82,9 +83,10 @@ function startTraining() {
         <div class="lg:col-span-2 space-y-6">
           <div class="aspect-video rounded-2xl overflow-hidden relative">
             <img
-              :src="course.thumbnail"
+              :src="getCourseThumbnail(course.thumbnail, course.category)"
               :alt="course.name"
               class="w-full h-full object-cover"
+              @error="($event.target as HTMLImageElement).src = getCourseThumbnail('', course.category)"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-dark-600 via-transparent to-transparent"></div>
             <div class="absolute bottom-6 left-6">

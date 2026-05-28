@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCourseStore } from '@/stores/course'
+import { getCourseThumbnail } from '@/utils/courseImages'
 import {
   Clock,
   Star,
@@ -117,9 +118,10 @@ function getDifficultyColor(difficulty: string) {
       >
         <div class="aspect-video bg-gradient-to-br from-primary-500/20 to-accent-500/20 relative overflow-hidden">
           <img
-            :src="course.thumbnail"
+            :src="getCourseThumbnail(course.thumbnail, course.category)"
             :alt="course.name"
             class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+            @error="($event.target as HTMLImageElement).src = getCourseThumbnail('', course.category)"
           />
           <div class="absolute top-3 left-3">
             <span :class="[getDifficultyColor(course.difficulty), 'px-3 py-1 rounded-full text-xs font-medium']">
