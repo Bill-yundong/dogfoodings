@@ -28,9 +28,9 @@ export class HeliLinkDB extends Dexie {
     this.version(1).stores({
       platformMetadata: '&id, code, status, lastSync',
       submarineCables: '&id, status, lastSync',
-      weatherHistory: '&id, platformId, timestamp, [platformId+timestamp]',
+      weatherHistory: '&id, platformId, timestamp',
       landingHistory: '&id, platformId, startTime, feasibilityScore',
-      semanticTags: '&id, dataType, metricName, [dataType+metricName]',
+      semanticTags: '&id, dataType, metricName',
       syncLog: '&id, tagId, sourceSystem, timestamp, syncStatus',
       offlineQueue: '&id, dataType, status, createdAt',
       alerts: '&id, type, severity, timestamp, acknowledged',
