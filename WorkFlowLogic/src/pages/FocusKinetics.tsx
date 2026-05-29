@@ -1,42 +1,48 @@
 import { onMount, onCleanup, createMemo, createSignal, For, Show } from 'solid-js'
 import { focusState, startTracking, stopTracking, addDistraction } from '~/stores/focus'
-import {
-  generateWaveformPoints,
-  smoothWaveform,
-  computeKineticFrame,
-  getGlowIntensity,
-  getGlowColor,
-} from '~/engines/focus-kinetic'
+import { computeKineticFrame, getGlowIntensity, getGlowColor } from '~/engines/focus-kinetic'
 
 export default function FocusKinetics() {
   let canvasRef: HTMLCanvasElement | undefined
   let animFrameId: number | null = null
-  const [canvasSize, setCanvasSize] = createSignal({ w: 800, h: 200 })
+  const [canvasSize, setCanvasSize] = createSignal({ w: 800, h: 220 })
 
-  const kineticFrame = createMemo(() =>
-    computeKineticFrame(focusState.todaySamples)
-  )
+  const kineticFrame = createMemo(() => computeKineticFrame(focusState.todaySamples))
 
-  const glowIntensity = createMemo(() => getGlowIntensity(focusState.currentLevel))
-  const glowColor = createMemo(() => getGlowColor(focusState.currentLevel))
+  const levelLabels: Record<string, string> = {
+    deep: '深度专注',
+    moderate: '中度专注',
+    distracted: '注意力分散',
+    idle: '闲置',
+  }
 
-  const waveformPath = createMemo(() => {
-    const points = generateWaveformPoints(focusState.todaySamples, canvasSize().w, canvasSize().h)
-    return smoothWaveform(points)
-  })
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'deep': return '#10b981'
+      case 'moderate': return '#6366f1'
+      case 'distracted': return '#f59e0b'
+      case 'idle': return '#64748b'
+      default: return '#64748b'
+    }
+  }
+
+  const distractionTypes = [
+    { type: 'phone', icon: '📱', label: '手机' },
+    { type: 'chat', icon: '💬', label: '消息' },
+    { type: 'mind', icon: '🧠', label: '走神' },
+    { type: 'other', icon: '🔔', label: '其他' },
+  ]
 
   onMount(() => {
     if (canvasRef) {
       const resize = () => {
-        if (canvasRef) {
-          const rect = canvasRef.parentElement?.getBoundingClientRect()
-          if (rect) {
-            setCanvasSize({ w: rect.width, h: 200 })
-            canvasRef.width = rect.width * window.devicePixelRatio
-            canvasRef.height = 200 * window.devicePixelRatio
-            canvasRef.style.width = `${rect.width}px`
-            canvasRef.style.height = '200px'
-          }
+        if (canvasRef && canvasRef.parentElement) {
+          const rect = canvasRef.parentElement.getBoundingClientRect()
+          setCanvasSize({ w: rect.width, h: 220 })
+          canvasRef.width = rect.width * window.devicePixelRatio
+          canvasRef.height = 220 * window.devicePixelRatio
+          canvasRef.style.width = `${rect.width}px`
+          canvasRef.style.height = '220px'
         }
       }
       resize()
@@ -55,15 +61,18 @@ export default function FocusKinetics() {
 
       ctx.clearRect(0, 0, w, h)
 
-      ctx.strokeStyle = 'rgba(26, 29, 46, 0.5)'
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.3)'
+      ctx.fillRect(0, 0, w, h)
+
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)'
       ctx.lineWidth = 1
-      for (let y = 0; y < h; y += 40 * dpr) {
+      for (let y = 0; y < h; y += 44 * dpr) {
         ctx.beginPath()
         ctx.moveTo(0, y)
         ctx.lineTo(w, y)
         ctx.stroke()
       }
-      for (let x = 0; x < w; x += 60 * dpr) {
+      for (let x = 0; x < w; x += 88 * dpr) {
         ctx.beginPath()
         ctx.moveTo(x, 0)
         ctx.lineTo(x, h)
@@ -71,72 +80,72 @@ export default function FocusKinetics() {
       }
 
       const samples = focusState.todaySamples
-      if (samples.length < 2) {
-        animFrameId = requestAnimationFrame(draw)
-        return
-      }
+      if (samples.length >= 2) {
+        const visible = samples.slice(-Math.floor(canvasSize().w / 1.5))
+        const step = w / Math.max(visible.length - 1, 1)
+        const pts = visible.map((s, i) => ({
+          x: i * step,
+          y: h - (s.value / 100) * h * 0.75 - h * 0.1,
+        }))
 
-      const visible = samples.slice(-Math.floor(canvasSize().w / 2))
-      const step = w / Math.max(visible.length - 1, 1)
-
-      const pts = visible.map((s, i) => ({
-        x: i * step,
-        y: h - (s.value / 100) * h,
-      }))
-
-      const tension = 0.3
-      ctx.beginPath()
-      ctx.moveTo(pts[0].x, pts[0].y)
-      for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[Math.max(0, i - 1)]
-        const p1 = pts[i]
-        const p2 = pts[i + 1]
-        const p3 = pts[Math.min(pts.length - 1, i + 2)]
-        const cp1x = p1.x + (p2.x - p0.x) * tension
-        const cp1y = p1.y + (p2.y - p0.y) * tension
-        const cp2x = p2.x - (p3.x - p1.x) * tension
-        const cp2y = p2.y - (p3.y - p1.y) * tension
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
-      }
-
-      const lastPt = pts[pts.length - 1]
-      ctx.lineTo(w, h)
-      ctx.lineTo(0, h)
-      ctx.closePath()
-      const fillGrad = ctx.createLinearGradient(0, 0, 0, h)
-      fillGrad.addColorStop(0, `${glowColor()}33`)
-      fillGrad.addColorStop(1, 'transparent')
-      ctx.fillStyle = fillGrad
-      ctx.fill()
-
-      ctx.beginPath()
-      ctx.moveTo(pts[0].x, pts[0].y)
-      for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[Math.max(0, i - 1)]
-        const p1 = pts[i]
-        const p2 = pts[i + 1]
-        const p3 = pts[Math.min(pts.length - 1, i + 2)]
-        const cp1x = p1.x + (p2.x - p0.x) * tension
-        const cp1y = p1.y + (p2.y - p0.y) * tension
-        const cp2x = p2.x - (p3.x - p1.x) * tension
-        const cp2y = p2.y - (p3.y - p1.y) * tension
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
-      }
-      ctx.strokeStyle = glowColor()
-      ctx.lineWidth = 3 * dpr
-      ctx.shadowColor = glowColor()
-      ctx.shadowBlur = 12 * dpr
-      ctx.stroke()
-      ctx.shadowBlur = 0
-
-      if (lastPt) {
+        const tension = 0.35
         ctx.beginPath()
-        ctx.arc(lastPt.x, lastPt.y, 5 * dpr, 0, Math.PI * 2)
-        ctx.fillStyle = glowColor()
-        ctx.shadowColor = glowColor()
-        ctx.shadowBlur = 16 * dpr
+        ctx.moveTo(pts[0].x, pts[0].y)
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)]
+          const p1 = pts[i]
+          const p2 = pts[i + 1]
+          const p3 = pts[Math.min(pts.length - 1, i + 2)]
+          const cp1x = p1.x + (p2.x - p0.x) * tension
+          const cp1y = p1.y + (p2.y - p0.y) * tension
+          const cp2x = p2.x - (p3.x - p1.x) * tension
+          const cp2y = p2.y - (p3.y - p1.y) * tension
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
+        }
+
+        const lastPt = pts[pts.length - 1]
+        ctx.lineTo(w, h)
+        ctx.lineTo(0, h)
+        ctx.closePath()
+        const fillGrad = ctx.createLinearGradient(0, 0, 0, h)
+        fillGrad.addColorStop(0, 'rgba(99, 102, 241, 0.2)')
+        fillGrad.addColorStop(1, 'rgba(99, 102, 241, 0)')
+        ctx.fillStyle = fillGrad
         ctx.fill()
+
+        ctx.beginPath()
+        ctx.moveTo(pts[0].x, pts[0].y)
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)]
+          const p1 = pts[i]
+          const p2 = pts[i + 1]
+          const p3 = pts[Math.min(pts.length - 1, i + 2)]
+          const cp1x = p1.x + (p2.x - p0.x) * tension
+          const cp1y = p1.y + (p2.y - p0.y) * tension
+          const cp2x = p2.x - (p3.x - p1.x) * tension
+          const cp2y = p2.y - (p3.y - p1.y) * tension
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
+        }
+        ctx.strokeStyle = '#6366f1'
+        ctx.lineWidth = 2.5 * dpr
+        ctx.shadowColor = 'rgba(99, 102, 241, 0.5)'
+        ctx.shadowBlur = 10 * dpr
+        ctx.stroke()
         ctx.shadowBlur = 0
+
+        if (lastPt) {
+          ctx.beginPath()
+          ctx.arc(lastPt.x, lastPt.y, 6 * dpr, 0, Math.PI * 2)
+          ctx.fillStyle = '#6366f1'
+          ctx.shadowColor = 'rgba(99, 102, 241, 0.6)'
+          ctx.shadowBlur = 14 * dpr
+          ctx.fill()
+          ctx.beginPath()
+          ctx.arc(lastPt.x, lastPt.y, 3 * dpr, 0, Math.PI * 2)
+          ctx.fillStyle = '#fff'
+          ctx.fill()
+          ctx.shadowBlur = 0
+        }
       }
 
       animFrameId = requestAnimationFrame(draw)
@@ -148,137 +157,122 @@ export default function FocusKinetics() {
     })
   })
 
-  const levelLabels: Record<string, string> = {
-    deep: '深度专注',
-    moderate: '中度专注',
-    distracted: '注意力分散',
-    idle: '闲置',
-  }
-
-  const distractionTypes = [
-    { type: 'phone', icon: '📱', label: '手机' },
-    { type: 'chat', icon: '💬', label: '消息' },
-    { type: 'mind', icon: '🧠', label: '走神' },
-    { type: 'other', icon: '🔔', label: '其他' },
-  ]
+  const progressPercent = Math.min(100, (focusState.todayDeepFocusMinutes / 240) * 100)
 
   return (
-    <div class="space-y-6">
+    <div class="space-y-6 max-w-6xl">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-white" style={{ 'font-family': 'Orbitron, monospace' }}>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-100">
             专注力动能
           </h1>
-          <p class="text-sm text-gray-500 mt-1">实时专注数据采集与可视化反馈</p>
+          <p class="text-sm text-slate-400 mt-1">实时专注数据采集与可视化反馈</p>
         </div>
         <button
           onClick={() => (focusState.isTracking ? stopTracking() : startTracking())}
-          class={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all border ${
+          class={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
             focusState.isTracking
-              ? 'border-[#ff8c00] text-[#ff8c00] hover:bg-[#ff8c00]/10'
-              : 'border-[#00f0ff] text-[#00f0ff] hover:bg-[#00f0ff]/10'
+              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20'
+              : 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5'
           }`}
         >
           {focusState.isTracking ? '■ 结束专注' : '▶ 开始专注'}
         </button>
       </div>
 
-      <div class="glass-card rounded-xl p-5">
-        <span class="section-title">动能波形</span>
-        <div class="relative w-full">
-          <canvas ref={canvasRef} class="w-full rounded-lg" style={{ height: '200px' }} />
+      <div class="card-base p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-sm font-semibold uppercase tracking-wider text-slate-400">动能波形</div>
+          <div class="flex items-center gap-4 text-xs text-slate-500">
+            <span>速度: <span class="text-indigo-400 font-mono">{kineticFrame().velocity > 0 ? '+' : ''}{kineticFrame().velocity.toFixed(1)}</span></span>
+            <span>加速度: <span class="text-indigo-400 font-mono">{kineticFrame().acceleration > 0 ? '+' : ''}{kineticFrame().acceleration.toFixed(1)}</span></span>
+            <span>动量: <span class="text-indigo-400 font-mono">{kineticFrame().momentum.toFixed(2)}</span></span>
+          </div>
         </div>
-        <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
-          <span>速度: <span class="text-[#00f0ff]">{kineticFrame().velocity > 0 ? '+' : ''}{kineticFrame().velocity.toFixed(1)}</span></span>
-          <span>加速度: <span class="text-[#00f0ff]">{kineticFrame().acceleration > 0 ? '+' : ''}{kineticFrame().acceleration.toFixed(1)}</span></span>
-          <span>动量: <span class="text-[#00f0ff]">{kineticFrame().momentum.toFixed(2)}</span></span>
-        </div>
+        <canvas ref={canvasRef} class="w-full rounded-xl" style={{ height: '220px' }} />
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center">
-          <span class="section-title self-start">反馈光环</span>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card-base p-6 flex flex-col items-center justify-center">
+          <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 self-start mb-4">反馈光环</div>
           <div class="relative w-48 h-48 flex items-center justify-center">
             <svg width="192" height="192" viewBox="0 0 192 192" class="absolute">
               <defs>
-                <filter id="halo-glow">
-                  <feGaussianBlur stdDeviation="6" result="blur" />
+                <filter id="halo-glow-new">
+                  <feGaussianBlur stdDeviation="8" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-                <radialGradient id="halo-gradient" cx="50%" cy="50%" r="50%">
-                  <stop offset="70%" stop-color={glowColor()} stop-opacity={glowIntensity() * 0.3} />
-                  <stop offset="100%" stop-color={glowColor()} stop-opacity="0" />
+                <radialGradient id="halo-gradient-new" cx="50%" cy="50%" r="50%">
+                  <stop offset="60%" stop-color={getLevelColor(focusState.currentLevel)} stop-opacity={getGlowIntensity(focusState.currentLevel) * 0.25} />
+                  <stop offset="100%" stop-color={getLevelColor(focusState.currentLevel)} stop-opacity="0" />
                 </radialGradient>
               </defs>
-              <circle cx="96" cy="96" r="90" fill="url(#halo-gradient)" />
+              <circle cx="96" cy="96" r="90" fill="url(#halo-gradient-new)" />
               <circle
-                cx="96"
-                cy="96"
-                r="76"
+                cx="96" cy="96" r="72"
                 fill="none"
-                stroke={glowColor()}
-                stroke-width="3"
-                opacity={glowIntensity()}
-                filter="url(#halo-glow)"
-                class={focusState.isTracking ? 'animate-pulse-glow' : ''}
+                stroke={getLevelColor(focusState.currentLevel)}
+                stroke-width="2.5"
+                opacity={0.3 + getGlowIntensity(focusState.currentLevel) * 0.5}
+                filter="url(#halo-glow-new)"
+                class={focusState.isTracking ? 'animate-pulse-soft' : ''}
               />
               <circle
-                cx="96"
-                cy="96"
-                r="68"
+                cx="96" cy="96" r="60"
                 fill="none"
-                stroke={glowColor()}
+                stroke={getLevelColor(focusState.currentLevel)}
                 stroke-width="1"
-                opacity={glowIntensity() * 0.4}
-                stroke-dasharray="4 6"
+                opacity="0.2"
+                stroke-dasharray="3 6"
                 class={focusState.isTracking ? 'animate-spin-slow' : ''}
                 style={{ 'transform-origin': '96px 96px' }}
               />
             </svg>
             <div class="z-10 flex flex-col items-center">
               <span
-                class="text-4xl font-bold"
-                style={{ 'font-family': 'Orbitron, monospace', color: glowColor() }}
+                class="text-4xl font-semibold"
+                style={{ 'font-family': "'JetBrains Mono', monospace", color: getLevelColor(focusState.currentLevel) }}
               >
                 {Math.round(focusState.currentFocus)}
               </span>
-              <span class="text-xs text-gray-400 mt-1">{levelLabels[focusState.currentLevel]}</span>
+              <span class="text-sm text-slate-400 mt-1">{levelLabels[focusState.currentLevel]}</span>
             </div>
           </div>
         </div>
 
-        <div class="space-y-6">
-          <div class="glass-card rounded-xl p-5">
-            <span class="section-title">深度专注区间</span>
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-3xl font-bold text-[#39ff14]" style={{ 'font-family': 'Orbitron, monospace' }}>
+        <div class="lg:col-span-2 space-y-6">
+          <div class="card-base p-6">
+            <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">深度专注区间</div>
+            <div class="flex items-baseline gap-3 mb-4">
+              <span class="text-4xl font-semibold text-emerald-400" style={{ 'font-family': "'JetBrains Mono', monospace" }}>
                 {Math.round(focusState.todayDeepFocusMinutes)}
               </span>
-              <span class="text-sm text-gray-400">分钟</span>
+              <span class="text-sm text-slate-400">分钟</span>
+              <span class="text-xs text-slate-500">/ 目标 240 分钟</span>
             </div>
-            <div class="h-3 bg-[#1a1d2e] rounded-full overflow-hidden">
+            <div class="h-3 bg-slate-700/50 rounded-full overflow-hidden">
               <div
-                class="h-full bg-gradient-to-r from-[#39ff14]/60 to-[#39ff14] rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (focusState.todayDeepFocusMinutes / 240) * 100)}%` }}
+                class="h-full bg-gradient-to-r from-emerald-400/70 to-emerald-400 rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <div class="flex justify-between text-xs text-slate-500 mt-2">
               <span>0</span>
-              <span>目标: 240分钟</span>
+              <span>240</span>
             </div>
           </div>
 
-          <div class="glass-card rounded-xl p-5">
-            <span class="section-title">干扰记录</span>
-            <div class="flex gap-2 mb-3">
+          <div class="card-base p-6">
+            <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">干扰记录</div>
+            <div class="flex flex-wrap gap-2 mb-4">
               <For each={distractionTypes}>
                 {(d) => (
                   <button
                     onClick={() => addDistraction(d.type)}
-                    class="px-2.5 py-1.5 rounded text-xs bg-[#1a1d2e] text-gray-300 hover:bg-[#ff8c00]/20 hover:text-[#ff8c00] transition-colors"
+                    class="px-3 py-2 rounded-lg text-xs bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-slate-200 transition-colors"
                   >
                     {d.icon} {d.label}
                   </button>
@@ -287,17 +281,17 @@ export default function FocusKinetics() {
             </div>
             <Show
               when={focusState.todayDistractions.length > 0}
-              fallback={<p class="text-xs text-gray-600">尚无干扰记录</p>}
+              fallback={<p class="text-sm text-slate-500 italic">暂无干扰记录</p>}
             >
-              <div class="space-y-2 max-h-32 overflow-y-auto">
-                <For each={focusState.todayDistractions.slice(-5).reverse()}>
+              <div class="space-y-2 max-h-28 overflow-y-auto">
+                <For each={focusState.todayDistractions.slice(-6).reverse()}>
                   {(d) => (
-                    <div class="flex items-center gap-2 text-xs">
-                      <span class="w-1.5 h-1.5 rounded-full bg-[#ff8c00] shrink-0" />
-                      <span class="text-gray-400">
+                    <div class="flex items-center gap-3 text-sm">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span class="text-slate-500" style={{ 'font-family': "'JetBrains Mono', monospace", 'font-size': '12px' }}>
                         {new Date(d.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </span>
-                      <span class="text-gray-300">{d.type}</span>
+                      <span class="text-slate-300">{d.type}</span>
                     </div>
                   )}
                 </For>

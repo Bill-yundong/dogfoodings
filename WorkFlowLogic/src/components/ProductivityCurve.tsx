@@ -7,9 +7,9 @@ interface ProductivityCurveProps {
 }
 
 const W = 600
-const H = 240
-const PX = 40
-const PY = 24
+const H = 220
+const PX = 48
+const PY = 28
 const PW = W - PX * 2
 const PH = H - PY * 2
 
@@ -67,15 +67,22 @@ export default function ProductivityCurve(props: ProductivityCurveProps) {
 
   return (
     <div class="w-full">
-      <div class="text-xs text-[#00f0ff] mb-2 font-medium" style={{ 'font-family': 'Orbitron, monospace' }}>
+      <div class="text-xs text-[#94a3b8] mb-3 font-semibold uppercase tracking-wider">
         产能曲线
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} class="w-full" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.2" />
-            <stop offset="100%" stop-color="#00f0ff" stop-opacity="0" />
+          <linearGradient id="curveAreaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6366f1" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
           </linearGradient>
+          <filter id="curveGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
         <For each={gridFocusLevels}>
@@ -85,8 +92,10 @@ export default function ProductivityCurve(props: ProductivityCurveProps) {
               y1={toY(level)}
               x2={W - PX}
               y2={toY(level)}
-              stroke="#1a1d2e"
+              stroke="#334155"
               stroke-width="1"
+              stroke-dasharray={level === 0 || level === 100 ? '0' : '2 4'}
+              opacity="0.5"
             />
           )}
         </For>
@@ -98,19 +107,30 @@ export default function ProductivityCurve(props: ProductivityCurveProps) {
               y1={PY}
               x2={toX(h)}
               y2={PY + PH}
-              stroke="#1a1d2e"
+              stroke="#334155"
               stroke-width="1"
+              stroke-dasharray="2 4"
+              opacity="0.3"
             />
           )}
         </For>
 
-        {areaPath() && <path d={areaPath()} fill="url(#curveGradient)" />}
+        {areaPath() && <path d={areaPath()} fill="url(#curveAreaGradient)" />}
         {linePath() && (
-          <path d={linePath()} fill="none" stroke="#00f0ff" stroke-width="2" />
+          <path
+            d={linePath()}
+            fill="none"
+            stroke="#6366f1"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            filter="url(#curveGlow)"
+          />
         )}
 
         <For each={points()}>
-          {(p) => <circle cx={p.x} cy={p.y} r="2.5" fill="#00f0ff" />}
+          {(p) => (
+            <circle cx={p.x} cy={p.y} r="3" fill="#6366f1" stroke="#1e293b" stroke-width="2" />
+          )}
         </For>
 
         <line
@@ -118,31 +138,35 @@ export default function ProductivityCurve(props: ProductivityCurveProps) {
           y1={PY}
           x2={currentX()}
           y2={PY + PH}
-          stroke="#00f0ff"
-          stroke-width="1"
-          stroke-dasharray="4 3"
-          opacity="0.6"
+          stroke="#8b5cf6"
+          stroke-width="1.5"
+          stroke-dasharray="4 4"
+          opacity="0.8"
         />
 
         {currentPoint() && (
-          <circle
-            cx={currentPoint()!.x}
-            cy={currentPoint()!.y}
-            r="5"
-            fill="#00f0ff"
-            stroke="#0a0e27"
-            stroke-width="2"
-          />
+          <>
+            <circle
+              cx={currentPoint()!.x}
+              cy={currentPoint()!.y}
+              r="7"
+              fill="#6366f1"
+              stroke="#0f172a"
+              stroke-width="2"
+              filter="url(#curveGlow)"
+            />
+            <circle cx={currentPoint()!.x} cy={currentPoint()!.y} r="3" fill="#f1f5f9" />
+          </>
         )}
 
         <For each={gridHours()}>
           {(h) => (
             <text
               x={toX(h)}
-              y={H - 4}
+              y={H - 6}
               text-anchor="middle"
-              class="fill-gray-500"
-              style={{ 'font-size': '9px' }}
+              fill="#64748b"
+              style={{ 'font-size': '10px', 'font-family': "'JetBrains Mono', 'SF Mono', monospace" }}
             >
               {String(h).padStart(2, '0')}
             </text>
@@ -152,11 +176,11 @@ export default function ProductivityCurve(props: ProductivityCurveProps) {
         <For each={gridFocusLevels}>
           {(level) => (
             <text
-              x={PX - 6}
-              y={toY(level) + 3}
+              x={PX - 10}
+              y={toY(level) + 4}
               text-anchor="end"
-              class="fill-gray-500"
-              style={{ 'font-size': '9px' }}
+              fill="#64748b"
+              style={{ 'font-size': '10px', 'font-family': "'JetBrains Mono', 'SF Mono', monospace" }}
             >
               {level}
             </text>

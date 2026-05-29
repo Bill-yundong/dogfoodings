@@ -1,4 +1,4 @@
-import { createMemo, For, createSignal } from 'solid-js'
+import { createMemo, For } from 'solid-js'
 import { efficiencyState, setPeriod, getFilteredRecords, getAverageMetrics } from '~/stores/efficiency'
 
 export default function EfficiencyAtlas() {
@@ -6,11 +6,11 @@ export default function EfficiencyAtlas() {
   const avgMetrics = createMemo(() => getAverageMetrics())
 
   const radarDimensions = [
-    { key: 'focusScore', label: '专注深度', color: '#00f0ff' },
-    { key: 'taskCompletionRate', label: '任务完成率', color: '#39ff14' },
-    { key: 'timeUtilization', label: '时间利用率', color: '#ff8c00' },
-    { key: 'rhythmStability', label: '节奏稳定性', color: '#c77dff' },
-    { key: 'recoveryEfficiency', label: '恢复效率', color: '#00f0ff' },
+    { key: 'focusScore', label: '专注深度', color: '#6366f1' },
+    { key: 'taskCompletionRate', label: '任务完成率', color: '#10b981' },
+    { key: 'timeUtilization', label: '时间利用率', color: '#f59e0b' },
+    { key: 'rhythmStability', label: '节奏稳定性', color: '#8b5cf6' },
+    { key: 'recoveryEfficiency', label: '恢复效率', color: '#06b6d4' },
   ] as const
 
   const radarPoints = createMemo(() => {
@@ -25,7 +25,7 @@ export default function EfficiencyAtlas() {
     ]
     const cx = 150
     const cy = 150
-    const r = 110
+    const r = 100
     const n = values.length
 
     return values.map((v, i) => {
@@ -40,16 +40,10 @@ export default function EfficiencyAtlas() {
     })
   })
 
-  const radarPath = createMemo(() => {
-    const pts = radarPoints()
-    if (pts.length === 0) return ''
-    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
-  })
-
-  const W = 600
-  const H = 280
-  const PX = 50
-  const PY = 20
+  const W = 640
+  const H = 260
+  const PX = 48
+  const PY = 24
   const PW = W - PX * 2
   const PH = H - PY * 2
 
@@ -114,12 +108,12 @@ export default function EfficiencyAtlas() {
   })
 
   const heatColor = (score: number): string => {
-    if (score === 0) return '#1a1d2e'
-    if (score < 30) return '#1a2a3e'
-    if (score < 50) return '#0a3d5c'
-    if (score < 70) return '#0070a0'
-    if (score < 85) return '#00b0d0'
-    return '#00f0ff'
+    if (score === 0) return '#1e293b'
+    if (score < 30) return '#334155'
+    if (score < 50) return '#475569'
+    if (score < 70) return '#6366f1'
+    if (score < 85) return '#818cf8'
+    return '#a5b4fc'
   }
 
   const baselineReport = createMemo(() => {
@@ -136,6 +130,7 @@ export default function EfficiencyAtlas() {
     if (avgCompletion < 60) suggestions.push('任务完成率不足，建议拆分大任务为更小的可执行单元')
     if (avgDeepFocus < 60) suggestions.push('深度专注时间偏少，建议屏蔽干扰源并延长单次专注时段')
     if (avgFocus >= 70 && avgCompletion >= 70) suggestions.push('效能状态良好，建议维持当前节奏并适当挑战更高目标')
+    if (suggestions.length === 0) suggestions.push('保持良好状态，持续关注数据变化')
 
     return { avgFocus, avgCompletion, avgDeepFocus, avgTasks, suggestions }
   })
@@ -149,23 +144,23 @@ export default function EfficiencyAtlas() {
   })
 
   return (
-    <div class="space-y-6">
+    <div class="space-y-6 max-w-6xl">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-white" style={{ 'font-family': 'Orbitron, monospace' }}>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-100">
             效能图谱
           </h1>
-          <p class="text-sm text-gray-500 mt-1">长周期效能分析与产能基线报告</p>
+          <p class="text-sm text-slate-400 mt-1">长周期效能分析与产能基线报告</p>
         </div>
-        <div class="flex gap-1">
+        <div class="flex gap-1 bg-slate-800/50 rounded-xl p-1">
           <For each={[7, 30, 90] as const}>
             {(p) => (
               <button
                 onClick={() => setPeriod(p)}
-                class={`px-3 py-1.5 rounded text-xs transition-colors ${
+                class={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
                   efficiencyState.selectedPeriod === p
-                    ? 'bg-[#00f0ff]/20 text-[#00f0ff]'
-                    : 'text-gray-400 hover:text-gray-200'
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {p}天
@@ -175,78 +170,83 @@ export default function EfficiencyAtlas() {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-card rounded-xl p-5">
-          <span class="section-title">{periodLabel()}效能趋势</span>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card-base p-6 lg:col-span-2">
+          <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">{periodLabel()}效能趋势</div>
           <svg viewBox={`0 0 ${W} ${H}`} class="w-full" preserveAspectRatio="xMidYMid meet">
             <defs>
-              <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.15" />
-                <stop offset="100%" stop-color="#00f0ff" stop-opacity="0" />
+              <linearGradient id="trendFillNew" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
               </linearGradient>
             </defs>
             {[0, 25, 50, 75, 100].map((l) => (
               <line
                 x1={PX} y1={PY + PH - (l / 100) * PH}
                 x2={W - PX} y2={PY + PH - (l / 100) * PH}
-                stroke="#1a1d2e" stroke-width="1"
+                stroke="rgba(148, 163, 184, 0.08)" stroke-width="1"
               />
             ))}
-            {trendAreaPath() && <path d={trendAreaPath()} fill="url(#trendFill)" />}
-            {trendPath() && <path d={trendPath()} fill="none" stroke="#00f0ff" stroke-width="2" />}
+            {trendAreaPath() && <path d={trendAreaPath()} fill="url(#trendFillNew)" />}
+            {trendPath() && (
+              <path d={trendPath()} fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" />
+            )}
             {completionPath() && (
-              <path d={completionPath()} fill="none" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4 3" />
+              <path d={completionPath()} fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5 4" stroke-linecap="round" />
             )}
             {[0, 25, 50, 75, 100].map((l) => (
-              <text x={PX - 6} y={PY + PH - (l / 100) * PH + 3} text-anchor="end" fill="#6b7280" style={{ 'font-size': '9px' }}>
+              <text x={PX - 8} y={PY + PH - (l / 100) * PH + 4} text-anchor="end" fill="#64748b" style={{ 'font-size': '11px' }}>
                 {l}
               </text>
             ))}
           </svg>
-          <div class="flex items-center gap-4 mt-2 text-xs">
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-[#00f0ff] inline-block" /> 专注力</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-[#39ff14] inline-block" style={{ 'border-top': '1px dashed #39ff14' }} /> 完成率</span>
+          <div class="flex items-center gap-6 mt-3 text-xs text-slate-500">
+            <span class="flex items-center gap-2">
+              <span class="w-4 h-0.5 bg-[#6366f1] rounded inline-block" /> 专注力
+            </span>
+            <span class="flex items-center gap-2">
+              <span class="w-4 h-0.5 bg-[#10b981] rounded inline-block" style={{ 'border-top': '1px dashed #10b981' }} /> 任务完成率
+            </span>
           </div>
         </div>
 
-        <div class="glass-card rounded-xl p-5 flex flex-col items-center">
-          <span class="section-title self-start">效能雷达</span>
-          <svg width="300" height="300" viewBox="0 0 300 300">
+        <div class="card-base p-6 flex flex-col items-center">
+          <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 self-start mb-4">效能雷达</div>
+          <svg width="280" height="280" viewBox="0 0 300 300">
+            {[0.25, 0.5, 0.75, 1].map((ratio) => {
+              const pts = Array.from({ length: 5 }, (_, i) => {
+                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2
+                return `${150 + 100 * ratio * Math.cos(angle)},${150 + 100 * ratio * Math.sin(angle)}`
+              })
+              return <polygon points={pts.join(' ')} fill="none" stroke="rgba(148, 163, 184, 0.1)" stroke-width="1" />
+            })}
             {radarDimensions.map((_, i) => {
               const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2
               return (
                 <line
                   x1="150" y1="150"
-                  x2={150 + 110 * Math.cos(angle)}
-                  y2={150 + 110 * Math.sin(angle)}
-                  stroke="#1a1d2e" stroke-width="1"
+                  x2={150 + 100 * Math.cos(angle)} y2={150 + 100 * Math.sin(angle)}
+                  stroke="rgba(148, 163, 184, 0.1)" stroke-width="1"
                 />
               )
             })}
-            {[0.25, 0.5, 0.75, 1].map((ratio) => {
-              const pts = Array.from({ length: 5 }, (_, i) => {
-                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2
-                return `${150 + 110 * ratio * Math.cos(angle)},${150 + 110 * ratio * Math.sin(angle)}`
-              })
-              return <polygon points={pts.join(' ')} fill="none" stroke="#1a1d2e" stroke-width="1" />
-            })}
-            {radarPath() && (
+            {radarPoints().length > 0 && (
               <polygon
                 points={radarPoints().map((p) => `${p.x},${p.y}`).join(' ')}
-                fill="rgba(0, 240, 255, 0.12)"
-                stroke="#00f0ff"
+                fill="rgba(99, 102, 241, 0.15)"
+                stroke="#6366f1"
                 stroke-width="2"
               />
             )}
             {radarPoints().map((p, i) => (
               <g>
-                <circle cx={p.x} cy={p.y} r="4" fill="#00f0ff" stroke="#0a0e27" stroke-width="2" />
+                <circle cx={p.x} cy={p.y} r="5" fill="#6366f1" stroke="#0f172a" stroke-width="2" />
                 <text
-                  x={150 + 130 * Math.cos((Math.PI * 2 * i) / 5 - Math.PI / 2)}
-                  y={150 + 130 * Math.sin((Math.PI * 2 * i) / 5 - Math.PI / 2) + 4}
+                  x={150 + 120 * Math.cos((Math.PI * 2 * i) / 5 - Math.PI / 2)}
+                  y={150 + 120 * Math.sin((Math.PI * 2 * i) / 5 - Math.PI / 2) + 4}
                   text-anchor="middle"
-                  fill="#9ca3af"
-                  style={{ 'font-size': '10px' }}
+                  fill="#94a3b8"
+                  style={{ 'font-size': '11px' }}
                 >
                   {p.label}
                 </text>
@@ -256,19 +256,21 @@ export default function EfficiencyAtlas() {
         </div>
       </div>
 
-      <div class="glass-card rounded-xl p-5">
-        <span class="section-title">效能热力日历 - {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}</span>
-        <div class="grid grid-cols-7 gap-1.5 mt-2">
+      <div class="card-base p-6">
+        <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">
+          效能热力日历 - {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+        </div>
+        <div class="grid grid-cols-7 gap-1.5 max-w-md">
           {['日', '一', '二', '三', '四', '五', '六'].map((d) => (
-            <div class="text-center text-[10px] text-gray-500 py-1">{d}</div>
+            <div class="text-center text-xs text-slate-500 py-1.5 font-medium">{d}</div>
           ))}
           <For each={heatCalendar()}>
             {(cell) => (
               <div
-                class="aspect-square rounded-sm flex items-center justify-center text-[10px] cursor-default transition-opacity hover:opacity-80"
+                class="aspect-square rounded-lg flex items-center justify-center text-xs cursor-default transition-all hover:scale-105"
                 style={{
                   'background-color': cell.inMonth ? heatColor(cell.score) : 'transparent',
-                  color: cell.score > 50 ? '#fff' : cell.inMonth ? '#6b7280' : 'transparent',
+                  color: cell.inMonth ? (cell.score > 50 ? '#fff' : '#94a3b8') : 'transparent',
                 }}
                 title={cell.inMonth ? `${cell.date}: 综合效能 ${Math.round(cell.score)}` : ''}
               >
@@ -277,11 +279,11 @@ export default function EfficiencyAtlas() {
             )}
           </For>
         </div>
-        <div class="flex items-center gap-2 mt-3 text-[10px] text-gray-500">
+        <div class="flex items-center gap-3 mt-5 text-xs text-slate-500">
           <span>低</span>
-          <div class="flex gap-0.5">
-            {['#1a1d2e', '#1a2a3e', '#0a3d5c', '#0070a0', '#00b0d0', '#00f0ff'].map((c) => (
-              <div class="w-4 h-3 rounded-sm" style={{ 'background-color': c }} />
+          <div class="flex gap-1">
+            {['#1e293b', '#334155', '#475569', '#6366f1', '#818cf8', '#a5b4fc'].map((c) => (
+              <div class="w-6 h-6 rounded-md" style={{ 'background-color': c }} />
             ))}
           </div>
           <span>高</span>
@@ -289,44 +291,46 @@ export default function EfficiencyAtlas() {
       </div>
 
       {baselineReport() && (
-        <div class="glass-card rounded-xl p-5">
-          <span class="section-title">{periodLabel()}产能基线报告</span>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div class="text-center">
-              <div class="text-xl font-bold text-[#00f0ff]" style={{ 'font-family': 'Orbitron, monospace' }}>
+        <div class="card-base p-6">
+          <div class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">{periodLabel()}产能基线报告</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+            <div>
+              <div class="text-3xl font-semibold text-indigo-400 mb-1" style={{ 'font-family': "'JetBrains Mono', monospace" }}>
                 {Math.round(baselineReport()!.avgFocus)}
               </div>
-              <div class="text-[10px] text-gray-500 mt-0.5">平均专注力</div>
+              <div class="text-xs text-slate-500">平均专注力</div>
             </div>
-            <div class="text-center">
-              <div class="text-xl font-bold text-[#39ff14]" style={{ 'font-family': 'Orbitron, monospace' }}>
+            <div>
+              <div class="text-3xl font-semibold text-emerald-400 mb-1" style={{ 'font-family': "'JetBrains Mono', monospace" }}>
                 {Math.round(baselineReport()!.avgCompletion)}%
               </div>
-              <div class="text-[10px] text-gray-500 mt-0.5">完成率</div>
+              <div class="text-xs text-slate-500">任务完成率</div>
             </div>
-            <div class="text-center">
-              <div class="text-xl font-bold text-[#ff8c00]" style={{ 'font-family': 'Orbitron, monospace' }}>
+            <div>
+              <div class="text-3xl font-semibold text-amber-400 mb-1" style={{ 'font-family': "'JetBrains Mono', monospace" }}>
                 {Math.round(baselineReport()!.avgDeepFocus)}
               </div>
-              <div class="text-[10px] text-gray-500 mt-0.5">日均深度专注(分)</div>
+              <div class="text-xs text-slate-500">日均深度专注 (分)</div>
             </div>
-            <div class="text-center">
-              <div class="text-xl font-bold text-[#c77dff]" style={{ 'font-family': 'Orbitron, monospace' }}>
+            <div>
+              <div class="text-3xl font-semibold text-violet-400 mb-1" style={{ 'font-family': "'JetBrains Mono', monospace" }}>
                 {baselineReport()!.avgTasks.toFixed(1)}
               </div>
-              <div class="text-[10px] text-gray-500 mt-0.5">日均完成任务</div>
+              <div class="text-xs text-slate-500">日均完成任务</div>
             </div>
           </div>
-          <div class="border-t border-gray-700/30 pt-3">
-            <div class="text-xs text-gray-400 mb-2">改善建议</div>
-            <For each={baselineReport()!.suggestions}>
-              {(s) => (
-                <div class="flex items-start gap-2 mb-1.5">
-                  <span class="text-[#00f0ff] mt-0.5">▸</span>
-                  <span class="text-xs text-gray-300">{s}</span>
-                </div>
-              )}
-            </For>
+          <div class="border-t border-slate-700/50 pt-5">
+            <div class="text-xs font-semibold text-slate-400 mb-3">改善建议</div>
+            <div class="space-y-2">
+              <For each={baselineReport()!.suggestions}>
+                {(s) => (
+                  <div class="flex items-start gap-3">
+                    <span class="text-indigo-400 mt-0.5">▸</span>
+                    <span class="text-sm text-slate-300">{s}</span>
+                  </div>
+                )}
+              </For>
+            </div>
           </div>
         </div>
       )}

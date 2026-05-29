@@ -5,72 +5,80 @@ interface FocusGaugeProps {
 }
 
 function getArcColor(v: number): string {
-  if (v < 25) return '#c77dff'
-  if (v < 50) return '#ff8c00'
-  if (v < 80) return '#00f0ff'
-  return '#39ff14'
+  if (v < 30) return '#ef4444'
+  if (v < 60) return '#f59e0b'
+  if (v < 85) return '#6366f1'
+  return '#10b981'
 }
 
 export default function FocusGauge(props: FocusGaugeProps) {
   const cx = 100
   const cy = 100
-  const r = 80
+  const r = 75
   const startAngle = 135
   const sweepAngle = 270
   const endAngle = startAngle + sweepAngle
 
   const circumference = createMemo(() => 2 * Math.PI * r * (sweepAngle / 360))
-  const offset = createMemo(() => circumference() * (1 - Math.min(Math.max(props.value, 0), 100) / 100))
+  const clampedValue = createMemo(() => Math.min(Math.max(props.value, 0), 100))
+  const offset = createMemo(() => circumference() * (1 - clampedValue() / 100))
 
   const startX = createMemo(() => cx + r * Math.cos((startAngle * Math.PI) / 180))
   const startY = createMemo(() => cy + r * Math.sin((startAngle * Math.PI) / 180))
   const endX = createMemo(() => cx + r * Math.cos((endAngle * Math.PI) / 180))
   const endY = createMemo(() => cy + r * Math.sin((endAngle * Math.PI) / 180))
 
-  const arcColor = createMemo(() => getArcColor(props.value))
+  const arcColor = createMemo(() => getArcColor(clampedValue()))
+  const displayValue = createMemo(() => Math.round(clampedValue()))
 
   return (
     <div class="relative flex items-center justify-center">
       <svg width="220" height="220" viewBox="0 0 200 200">
         <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="blur" />
+          <filter id="gaugeGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
             <feMerge>
+              <feMergeNode in="blur" />
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#334155" stop-opacity="0.3" />
+            <stop offset="100%" stop-color="#1e293b" stop-opacity="0.5" />
+          </linearGradient>
         </defs>
 
         <path
           d={`M ${startX()} ${startY()} A ${r} ${r} 0 1 1 ${endX()} ${endY()}`}
           fill="none"
-          stroke="#1a1d2e"
-          stroke-width="12"
+          stroke="#334155"
+          stroke-width="10"
           stroke-linecap="round"
+          opacity="0.4"
         />
 
         <path
           d={`M ${startX()} ${startY()} A ${r} ${r} 0 1 1 ${endX()} ${endY()}`}
           fill="none"
           stroke={arcColor()}
-          stroke-width="12"
+          stroke-width="10"
           stroke-linecap="round"
           stroke-dasharray={`${circumference()}`}
           stroke-dashoffset={`${offset()}`}
-          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out, stroke 0.5s ease' }}
-          filter="url(#glow)"
+          style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease' }}
+          filter="url(#gaugeGlow)"
         />
       </svg>
 
       <div class="absolute flex flex-col items-center justify-center">
         <span
-          class="text-4xl font-bold"
-          style={{ 'font-family': 'Orbitron, monospace', color: arcColor() }}
+          class="text-5xl font-bold tracking-tight"
+          style={{ 'font-family': "'JetBrains Mono', 'SF Mono', monospace", color: arcColor() }}
         >
-          {Math.round(Math.min(Math.max(props.value, 0), 100))}
+          {displayValue()}
         </span>
-        <span class="text-xs text-gray-400 mt-1">专注力指数</span>
+        <span class="text-sm text-[#94a3b8] mt-1 font-medium">专注指数</span>
       </div>
     </div>
   )
