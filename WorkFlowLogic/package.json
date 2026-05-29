@@ -1,0 +1,23 @@
+{
+  "name": "focusflow",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.5",
+    "@solidjs/router": "^0.15.3",
+    "idb-keyval": "^6.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^6.3.5",
+    "vite-plugin-solid": "^2.11.6",
+    "tailwindcss": "^4.1.7",
+    "@tailwindcss/vite": "^4.1.7"
+  }
+}
