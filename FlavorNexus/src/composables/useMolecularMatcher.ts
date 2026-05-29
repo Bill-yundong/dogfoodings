@@ -139,6 +139,8 @@ export function useMolecularMatcher() {
   }
 
   const generateInnovativeCombos = (baseIngredients: Ingredient[], allIngredients: Ingredient[], count: number = 5): MatchResult[] => {
+    if (baseIngredients.length === 0) return []
+    
     const results: MatchResult[] = []
     const usedIds = new Set(baseIngredients.map(i => i.id))
     
