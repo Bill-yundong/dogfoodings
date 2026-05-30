@@ -1,0 +1,32 @@
+import '@testing-library/jest-dom'
+import { vi } from 'vitest'
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})
+
+Object.defineProperty(window, 'requestAnimationFrame', {
+  writable: true,
+  value: (callback: FrameRequestCallback) => {
+    return setTimeout(callback, 16)
+  },
+})
+
+Object.defineProperty(window, 'cancelAnimationFrame', {
+  writable: true,
+  value: (id: number) => {
+    clearTimeout(id)
+  },
+})
+
+globalThis.structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value))
