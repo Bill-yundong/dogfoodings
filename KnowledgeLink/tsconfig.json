@@ -1,0 +1,24 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "checkJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "$lib/*": ["./src/lib/*"],
+      "$components/*": ["./src/lib/components/*"]
+    },
+    "types": ["d3"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte"],
+  "exclude": ["node_modules"]
+}
