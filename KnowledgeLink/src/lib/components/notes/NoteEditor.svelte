@@ -13,6 +13,7 @@ let tagInput = $state('')
 let showLinkSuggestion = $state(false)
 let linkSearchQuery = $state('')
 let suggestedNotes = $state<any[]>([])
+let saveSuccess = $state(false)
 
 let tags = $derived(tagInput.split(',').map(t => t.trim()).filter(Boolean))
 
@@ -42,6 +43,24 @@ async function saveNote() {
     title, content, tags
   })
   if (note) note = { ...note, title, content, tags, updatedAt: Date.now() }
+  
+  const nodeIds: string[] = []
+  for (const match of backlinkMatches) {
+    const nodeId = await graphStore.addNode({
+      label: match,
+      type: 'concept',
+      sourceNoteId: noteId
+    })
+    nodeIds.push(nodeId)
+  }
+  for (let i = 0; i < nodeIds.length - 1; i++) {
+    await graphStore.addEdge(nodeIds[i], nodeIds[i + 1], 'related')
+  }
+  
+  saveSuccess = true
+  setTimeout(() => {
+    saveSuccess = false
+  }, 2000)
 }
 
 function handleContentInput(e: Event) {
@@ -101,6 +120,9 @@ async function deleteNote() {
           >
             <Share2 size={18} />
           </button>
+          {#if saveSuccess}
+            <span class="px-3 py-1.5 text-sm text-success bg-success/10 rounded-lg">✓ 已保存</span>
+          {/if}
           <button
             onclick={saveNote}
             class="flex items-center gap-2 px-4 py-2 bg-accent text-bg font-semibold rounded-lg hover:bg-accent-hover transition-colors"

@@ -1,6 +1,7 @@
 <script lang="ts">
 import { onMount } from 'svelte'
 import { notesStore } from '$lib/stores/notes'
+import { graphStore } from '$lib/stores/graph'
 import { FileText, Plus, Search, LayoutGrid, List, Tag, Link2, Clock } from 'lucide-svelte'
 import { formatDate } from '$lib/utils/time'
 
@@ -9,6 +10,7 @@ let selectedTag = $state('')
 let viewMode = $state<'grid' | 'list'>('grid')
 let showAddModal = $state(false)
 let newNote = $state({ title: '', content: '', tags: '', bookId: '' })
+let saveSuccess = $state(false)
 
 let allTags = $derived(() => {
   const tags = new Set<string>()
@@ -35,17 +37,40 @@ onMount(() => {
   notesStore.load()
 })
 
+function extractBacklinks(content: string): string[] {
+  const matches = content.match(/\[\[(.+?)\]\]/g)
+  if (!matches) return []
+  return matches.map(m => m.replace(/\[\[|\]\]/g, ''))
+}
+
 async function handleAddNote() {
   if (!newNote.title) return
-  await notesStore.addNote({
+  const note = await notesStore.addNote({
     bookId: newNote.bookId || '',
     title: newNote.title,
     content: newNote.content,
     tags: newNote.tags.split(',').map(t => t.trim()).filter(Boolean),
     backlinks: []
   })
+  
+  const backlinks = extractBacklinks(newNote.content)
+  const nodeIds: string[] = []
+  for (const match of backlinks) {
+    const nodeId = await graphStore.addNode({
+      label: match,
+      type: 'concept',
+      sourceNoteId: note.id
+    })
+    nodeIds.push(nodeId)
+  }
+  for (let i = 0; i < nodeIds.length - 1; i++) {
+    await graphStore.addEdge(nodeIds[i], nodeIds[i + 1], 'related')
+  }
+  
   newNote = { title: '', content: '', tags: '', bookId: '' }
   showAddModal = false
+  saveSuccess = true
+  setTimeout(() => { saveSuccess = false }, 2000)
 }
 
 function extractBacklinkPreview(content: string): string {
@@ -61,13 +86,18 @@ function extractBacklinkPreview(content: string): string {
       <h1 class="text-3xl font-bold" style="font-family: var(--font-display)">笔记系统</h1>
       <p class="text-text-secondary mt-1">共 {$notesStore.length} 条笔记 · 双向链接知识网络</p>
     </div>
-    <button
-      onclick={() => showAddModal = true}
-      class="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg font-semibold rounded-lg hover:bg-accent-hover transition-all duration-200 hover:shadow-lg hover:shadow-accent/20"
-    >
-      <Plus size={18} />
-      新建笔记
-    </button>
+    <div class="flex items-center gap-3">
+      {#if saveSuccess}
+        <span class="px-3 py-2 text-sm text-success bg-success/10 rounded-lg">✓ 已创建</span>
+      {/if}
+      <button
+        onclick={() => showAddModal = true}
+        class="flex items-center gap-2 px-5 py-2.5 bg-accent text-bg font-semibold rounded-lg hover:bg-accent-hover transition-all duration-200 hover:shadow-lg hover:shadow-accent/20"
+      >
+        <Plus size={18} />
+        新建笔记
+      </button>
+    </div>
   </div>
 
   <div class="flex items-center gap-4 mb-4 animate-fade-in" style="animation-delay: 80ms">

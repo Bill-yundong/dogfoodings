@@ -4,11 +4,11 @@ import { BookOpen, FileText, Brain, Share2, BarChart3, Link, WifiOff } from 'luc
 let { currentRoute = '' }: { currentRoute: string } = $props()
 
 const navItems = [
-  { route: '/library', label: 'Library', icon: BookOpen },
-  { route: '/notes', label: 'Notes', icon: FileText },
-  { route: '/review', label: 'Review', icon: Brain },
-  { route: '/graph', label: 'Graph', icon: Share2 },
-  { route: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { route: '/library', label: '阅读库', icon: BookOpen },
+  { route: '/notes', label: '笔记', icon: FileText },
+  { route: '/review', label: '复习', icon: Brain },
+  { route: '/graph', label: '知识图谱', icon: Share2 },
+  { route: '/dashboard', label: '成长仪表板', icon: BarChart3 },
 ]
 
 function isActive(route: string): boolean {
